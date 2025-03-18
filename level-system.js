@@ -13,10 +13,10 @@ class LevelSystem {
         // Base level settings - we'll calculate harder difficulties from these
         this.baseSettings = {
             enemyCount: 5,           // Base number of enemies
-            enemySpeedWander: 2.1,     // Base speed when wandering
-            enemySpeedChase: 4.1,      // Base speed when chasing
+            enemySpeedWander: 3,     // Base speed when wandering
+            enemySpeedChase: 5,      // Base speed when chasing
             fogDensity: 0.01,        // Base fog density
-            fogDistance: 100,         // Base fog distance
+            fogDistance: 120,         // Base fog distance
             fogColor: 0xa183e0       // Base fog color
         };
         
@@ -43,8 +43,8 @@ class LevelSystem {
                 enemySpeedChase: this.baseSettings.enemySpeedChase,
                 fogDensity: 0.01,
                 fogColor: this.baseSettings.fogColor,
-                fogDistance: 100,
-                flagHeight: 20, // Starting flag height
+                fogDistance: 120,
+                flagHeight: 25, // Starting flag height
                 terrainHeightMultiplier: 1.0 // Base terrain height
             };
         }
@@ -70,7 +70,7 @@ class LevelSystem {
         const fogColor = (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b);
         
         // NEW: Shrink flag pole with each level (minimum 5 units)
-        const flagHeight = Math.max(5, 20 - (level - 1) * 1.5);
+        const flagHeight = Math.max(5, 25 - (level - 1) * 1.5);
         
         // NEW: Increase terrain height multiplier with each level
         const terrainHeightMultiplier = 1.0 + Math.min(2.0, (level - 1) * 0.1);
@@ -184,19 +184,7 @@ class LevelSystem {
     }
     
     // Create level complete UI
-    createLevelCompleteUI() {
-        const levelCompleteScreen = document.createElement('div');
-        levelCompleteScreen.id = 'level-complete-screen';
-        levelCompleteScreen.innerHTML = `
-            <div class="level-complete-content">
-                <h2>Level Complete!</h2>
-                <p>You've reached the flag!</p>
-                <div id="level-status"></div>
-                <button id="next-level-button">Next Level</button>
-            </div>
-        `;
-        document.body.appendChild(levelCompleteScreen);
-        
+    createLevelCompleteUI() {        
         // Add event listener for next level button
         document.getElementById('next-level-button').addEventListener('click', () => {
             this.advanceToNextLevel();
@@ -211,7 +199,7 @@ class LevelSystem {
         this.updateLevelIndicator();
         
         // Hide level complete screen and reset goal reached state
-        document.getElementById('level-complete-screen').style.display = 'none';
+        document.getElementById('level-complete-content').classList.add('hidden');
         gameState.goalReached = false;
     }
     
@@ -225,7 +213,7 @@ class LevelSystem {
         }
         
         // Show the level complete screen
-        document.getElementById('level-complete-screen').style.display = 'flex';
+        document.getElementById('level-complete-content').classList.remove('hidden');
     }
     
     // Restart the entire game

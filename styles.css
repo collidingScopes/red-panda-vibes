@@ -97,19 +97,15 @@ h2, h3 {
 
 #game-over-screen {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 33%;
+    left: 33%;
+    width: 50%;
     background-color: rgba(0, 0, 0, 0.8);
-    display: none;
     justify-content: center;
     align-items: center;
     z-index: 200;
     backdrop-filter: blur(5px);
-}
 
-.game-over-content {
     background-color: rgba(10, 10, 30, 0.7);
     padding: 30px;
     border: 2px solid #ff4477; /* Darker neon pink */
@@ -177,20 +173,10 @@ h2, h3 {
 
 /* Level Complete Screen */
 #level-complete-screen {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 200;
-    backdrop-filter: blur(5px);
+
 }
 
-.level-complete-content {
+#level-complete-content {
     background-color: rgba(10, 10, 30, 0.7);
     padding: 30px;
     border: 2px solid #ffee84; /* Neon yellow */
@@ -201,9 +187,19 @@ h2, h3 {
     color: #84ffef; /* Neon cyan */
     font-family: 'Courier New', monospace;
     text-transform: uppercase;
+
+    top: 33%;
+    left: 33%;
+    width: 50%;
+    /* height: 50%; */
+    /* background-color: rgba(0, 0, 0, 0.7); */
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    backdrop-filter: blur(5px);
 }
 
-.level-complete-content h2 {
+#level-complete-content h2 {
     color: #ffee84; /* Neon yellow */
     text-shadow: 0 0 5px rgba(255, 238, 132, 0.7); /* Yellow glow */
     font-size: 28px;
@@ -298,4 +294,38 @@ h2, h3 {
     font-size: 18px;
     margin: 10px 0;
     text-shadow: 0 0 8px rgba(255, 238, 132, 0.8);
+}
+
+.game-overlay-screen {
+    position: fixed;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #84ffef;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    z-index: 100;
+    backdrop-filter: blur(5px);
+}
+  
+/* Keyboard hint for overlays */
+.keyboard-hint {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #a2ff84; /* Neon green */
+    text-shadow: 0 0 5px rgba(162, 255, 132, 0.5);
+    font-style: italic;
+}
+
+/* Pulsing animation for keyboard hint */
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.keyboard-hint {
+    animation: pulse 1.5s infinite ease-in-out;
+}
+
+.hidden {
+    display: none;
 }

@@ -196,7 +196,7 @@ function createTerrain() {
     scene.add(baseTerrain);
     
     // Create the actual terrain with hills using many small box segments
-    const segmentSize = 10;
+    const segmentSize = 5;
     const terrainSize = 200;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
@@ -229,10 +229,10 @@ function createTerrain() {
                 
                 const hillMaterial = new THREE.MeshStandardMaterial({
                     color: color,
-                    roughness: 0.7,
-                    metalness: 0.1,
-                    emissive: baseColor,
-                    emissiveIntensity: 0.05 // Subtle glow
+                    // roughness: 0.7,
+                    // metalness: 0.1,
+                    // emissive: baseColor,
+                    // emissiveIntensity: 0.05 // Subtle glow
                 });
                 
                 const hill = new THREE.Mesh(hillGeometry, hillMaterial);
@@ -379,7 +379,7 @@ function createObstacles() {
         
         // Make sure crystals are on the terrain
         const terrainHeight = getTerrainHeight(x, z);
-        crystal.position.set(x, terrainHeight + crystalSize * 0.5, z);
+        crystal.position.set(x, terrainHeight + crystalSize * 0.3, z);
         
         // Add random rotation for variety
         crystal.rotation.x = (Math.random() - 0.5) * 0.2;

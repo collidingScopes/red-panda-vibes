@@ -22,13 +22,32 @@
         <h2>Congratulations!</h2>
         <p>You've reached the flag pole!</p>
         <button onclick="resetGame()">Play Again</button>
+        <div class="keyboard-hint">[Press ENTER to play again]</div>
     </div>
-    
+
+    <div id="level-complete-content" class="hidden">
+        <h2>Level Complete!</h2>
+        <p>You've reached the flag!</p>
+        <div id="level-status"></div>
+        <button id="next-level-button">Next Level</button>
+        <div class="keyboard-hint">[Press ENTER for next level]</div>
+    </div>
+
+    <div id="game-over-screen" class="game-over-content hidden">
+        <h2>Game Over</h2>
+        <p>You were caught by an oil slick monster!</p>
+        <div class="current-game-level"></div>
+        <div class="high-score"></div>
+        <button id="retry-button">Try Again</button>
+        <div class="keyboard-hint">[Press ENTER to try again]</div>
+    </div>
+
     <div id="fps-counter">FPS: </div>
     
     <!-- Scripts with defer to improve page load time -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
     <script src="geometry.js" defer></script>
+    <script src="helperFunctions.js" defer></script>
     <script src="level-system.js" defer></script>
     <script src="enemies.js" defer></script>
     <script src="game.js" defer></script>

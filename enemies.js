@@ -9,9 +9,9 @@ class EnemyManager {
         
         // Enemy settings
         this.COUNT = 15; // Number of enemies in the world
-        this.DETECTION_RADIUS = 20; // How far enemies can see the player
-        this.SPEED_WANDER = 2; // Speed when wandering randomly
-        this.SPEED_CHASE = 4; // Speed when chasing the player
+        this.DETECTION_RADIUS = 25; // How far enemies can see the player
+        this.SPEED_WANDER = 3; // Speed when wandering randomly
+        this.SPEED_CHASE = 5; // Speed when chasing the player
         this.KILL_DISTANCE = 1.5; // How close an enemy needs to be to catch the player
         
         // Reusable vectors to optimize performance
@@ -80,9 +80,9 @@ class EnemyManager {
             vertex.fromBufferAttribute(positionAttribute, i);
             
             // Apply noise to make it blobby (this is a simple way to create organic feel)
-            const noise = Math.sin(vertex.x * 4) * 0.1 + 
-                        Math.sin(vertex.y * 5) * 0.1 + 
-                        Math.sin(vertex.z * 3) * 0.1;
+            const noise = Math.sin(vertex.x * 4) * 0.2 + 
+                        Math.sin(vertex.y * 5) * 0.2 + 
+                        Math.sin(vertex.z * 3) * 0.2;
             
             vertex.multiplyScalar(1 + noise);
             
@@ -95,12 +95,12 @@ class EnemyManager {
         // Create dark, oily material with slight sheen
         const blobMaterial = new THREE.MeshStandardMaterial({
             color: 0x050510, // Very dark blue-black
-            roughness: 0.3, // Somewhat shiny
-            metalness: 0.7, // Metallic look for oil sheen effect
+            roughness: 0.2, // Somewhat shiny
+            metalness: 0.8, // Metallic look for oil sheen effect
             transparent: true,
-            opacity: 0.8,
+            opacity: 0.7,
             emissive: 0x334455, // Slight blue glow
-            emissiveIntensity: 0.2
+            emissiveIntensity: 0.7
         });
         
         const blob = new THREE.Mesh(blobGeometry, blobMaterial);
@@ -108,15 +108,15 @@ class EnemyManager {
         blobGroup.add(blob);
         
         // Add smaller bubbles on the surface for alien look
-        const bubbleCount = 5 + Math.floor(Math.random() * 5);
+        const bubbleCount = 1 + Math.floor(Math.random() * 5);
         const bubbleMaterial = new THREE.MeshStandardMaterial({
-            color: 0x223344, // Dark blue
-            roughness: 0.1, // Very shiny
-            metalness: 0.9, // Very metallic
+            color: 0x050510, // Dark blue
+            roughness: 0.2, // Very shiny
+            metalness: 0.8, // Very metallic
             transparent: true,
-            opacity: 0.6,
+            opacity: 0.7,
             emissive: 0x334455, // Slight blue glow
-            emissiveIntensity: 0.3
+            emissiveIntensity: 0.7
         });
         
         for (let i = 0; i < bubbleCount; i++) {
@@ -136,10 +136,10 @@ class EnemyManager {
             blobGroup.add(bubble);
         }
         
-        // Add a subtle point light to create glow effect
-        const light = new THREE.PointLight(0x334455, 1, 3);
-        light.position.set(0, 0, 0);
-        blobGroup.add(light);
+        // // Add a subtle point light to create glow effect
+        // const light = new THREE.PointLight(0x334455, 1, 3);
+        // light.position.set(0, 0, 0);
+        // blobGroup.add(light);
         
         // Scale the entire enemy
         const scale = 0.8 + Math.random() * 0.5; // Random size variation
@@ -299,22 +299,11 @@ class EnemyManager {
         const gameOverScreen = document.getElementById('game-over-screen');
         const highScoreElement = gameOverScreen.querySelector('.high-score');
         
-        // Create high score element if it doesn't exist
-        if (!highScoreElement) {
-            const scoreElement = document.createElement('div');
-            scoreElement.className = 'high-score';
-            scoreElement.textContent = `Highest Level: ${Math.max(highScore, currentScore)}`;
-            
-            // Insert before the retry button
-            const contentDiv = gameOverScreen.querySelector('.game-over-content');
-            const retryButton = gameOverScreen.querySelector('#retry-button');
-            contentDiv.insertBefore(scoreElement, retryButton);
-        } else {
-            highScoreElement.textContent = `Highest Level: ${Math.max(highScore, currentScore)}`;
-        }
+        document.querySelector('.current-game-level').textContent = `Current Score: Level ${currentScore}`;
+        highScoreElement.textContent = `High Score: Level ${Math.max(highScore, currentScore)}`;
         
         // Show game over screen
-        document.getElementById('game-over-screen').style.display = 'flex';
+        document.getElementById('game-over-screen').classList.remove("hidden");
     }
     
     // Reset enemies for a new game
@@ -327,7 +316,7 @@ class EnemyManager {
         
         this.enemies = [];
         this.gameOver = false;
-        document.getElementById('game-over-screen').style.display = 'none';
+        document.getElementById('game-over-screen').classList.add("hidden");
         
         // Create new enemies
         this.initialize();
@@ -335,24 +324,10 @@ class EnemyManager {
     
     // Create game over screen
     createGameOverScreen() {
-        // Create game over screen if it doesn't exist
-        if (!document.getElementById('game-over-screen')) {
-            const gameOverScreen = document.createElement('div');
-            gameOverScreen.id = 'game-over-screen';
-            gameOverScreen.innerHTML = `
-                <div class="game-over-content">
-                    <h2>Game Over</h2>
-                    <p>You were caught by an oil slick monster!</p>
-                    <button id="retry-button">Try Again</button>
-                </div>
-            `;
-            document.body.appendChild(gameOverScreen);
-            
-            // Add event listener for retry button
-            document.getElementById('retry-button').addEventListener('click', () => {
-                resetGame(); // This function is defined in game.js
-            });
-        }
+        // Add event listener for retry button
+        document.getElementById('retry-button').addEventListener('click', () => {
+            resetGame(); // This function is defined in game.js
+        });
     }
     
     // Properly dispose of enemy resources to prevent memory leaks

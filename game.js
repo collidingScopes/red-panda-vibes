@@ -70,7 +70,7 @@ window.getTerrainHeight = function(x, z) {
         Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
         Math.sin(x * 0.07 + z * 0.05) * 4 +
         Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
-    ) * 0.5 * (window.terrainHeightMultiplier || 1.0));
+    ) * 0.6 * (window.terrainHeightMultiplier || 1.0));
 };
 
 // Add some neon glow point lights scattered around
@@ -141,11 +141,11 @@ const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera() {
     // Update camera angles based on arrow key inputs
-    if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.03;
-    if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.03;
+    if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.04;
+    if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.04;
     // Apply the min/max vertical angle limits
-    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.03, MIN_VERTICAL_ANGLE);
-    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.03, MAX_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
     
     // Calculate camera position with orbit controls
     const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
@@ -166,7 +166,7 @@ function updateCamera() {
 function updatePlayerPosition(deltaTime) {
     if (gameState.goalReached) return;
     
-    const speed = 5.0;
+    const speed = 6.0;
     const jumpForce = 8.0;
     const gravity = 10.0;
     
@@ -246,9 +246,13 @@ function updatePlayerPosition(deltaTime) {
     // Update camera position
     updateCamera();
     
-    // Check for goal (flag pole)
-    const distanceToGoal = player.position.distanceTo(flagPole.position);
-    if (distanceToGoal < 3 && !gameState.goalReached) {
+    // Check for goal (flag pole) - horizontal distance only for better pole collision
+    const dx = player.position.x - flagPole.position.x;
+    const dz = player.position.z - flagPole.position.z;
+    const horizontalDistanceToGoal = Math.sqrt(dx * dx + dz * dz);
+
+    // Use a horizontal threshold of 1 units to detect touching any part of the pole
+    if (horizontalDistanceToGoal < 1 && !gameState.goalReached) {
         gameState.goalReached = true;
         
         // Use level system instead of showing the simple goal message
