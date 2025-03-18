@@ -102,8 +102,7 @@ if (isMobileDevice) {
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 400px;
+            max-width: 80%;
             background-color: rgba(0, 0, 0, 0.8);
             color: #ff84df;
             padding: 20px;
@@ -237,8 +236,21 @@ if (isMobileDevice) {
             this.dragThreshold = 20; // Minimum pixel distance to register as a drag
             this.maxDragDistance = 100; // Maximum drag distance for full speed
             
-            this.createMobileControls();
-            this.initTouchListeners();
+            // Wait briefly to make sure game engine has initialized
+            setTimeout(() => {
+                this.createMobileControls();
+                this.initTouchListeners();
+                console.log("Mobile controls fully initialized");
+                
+                // Make sure the gameState is globally accessible for later use
+                if (window.gameState) {
+                    console.log("gameState found in window object");
+                } else {
+                    // Try to get it from the global scope
+                    console.log("WARNING: gameState not found in window object - attempting to expose it");
+                    window.gameState = gameState; // This makes gameState accessible globally
+                }
+            }, 500);
         }
         
         createMobileControls() {
@@ -416,11 +428,31 @@ if (isMobileDevice) {
                         this.moveDirection.x = -dragDirection.x * speed; // Invert X to match WASD mapping
                         
                         // Update the gameState keys to simulate keyboard input
+                        // Access gameState through multiple possible paths to ensure it works
                         if (window.gameState) {
+                            console.log("Mobile move: x=" + this.moveDirection.x.toFixed(2) + ", z=" + this.moveDirection.z.toFixed(2));
+                            
                             window.gameState.keyStates['KeyW'] = this.moveDirection.z > 0;
                             window.gameState.keyStates['KeyS'] = this.moveDirection.z < 0;
                             window.gameState.keyStates['KeyA'] = this.moveDirection.x > 0;
                             window.gameState.keyStates['KeyD'] = this.moveDirection.x < 0;
+                            
+                            // Force direct access to the keyStates object as well
+                            // This ensures both access patterns work
+                            if (typeof gameState !== 'undefined' && gameState.keyStates) {
+                                gameState.keyStates['KeyW'] = this.moveDirection.z > 0;
+                                gameState.keyStates['KeyS'] = this.moveDirection.z < 0;
+                                gameState.keyStates['KeyA'] = this.moveDirection.x > 0;
+                                gameState.keyStates['KeyD'] = this.moveDirection.x < 0;
+                            }
+                        } else if (typeof gameState !== 'undefined' && gameState.keyStates) {
+                            console.log("Using direct gameState access");
+                            gameState.keyStates['KeyW'] = this.moveDirection.z > 0;
+                            gameState.keyStates['KeyS'] = this.moveDirection.z < 0;
+                            gameState.keyStates['KeyA'] = this.moveDirection.x > 0;
+                            gameState.keyStates['KeyD'] = this.moveDirection.x < 0;
+                        } else {
+                            console.error("No gameState access available!");
                         }
                         
                         // Visual feedback - move joystick inner component
@@ -507,6 +539,46 @@ if (isMobileDevice) {
         window.mobileControls = new MobileControls();
     }
 }
+
+// We need to make the game state globally accessible for mobile controls to work
+// Add a fix to ensure gameState is properly exposed to the window object
+window.addEventListener('load', function() {
+    // Wait briefly to make sure game has initialized
+    setTimeout(function() {
+        // Ensure gameState is accessible globally
+        if (typeof gameState !== 'undefined' && !window.gameState) {
+            window.gameState = gameState;
+            console.log("Exposed gameState to window object");
+        }
+        
+        // Create a hook into the game's update loop to monitor control activity
+        if (window.gameState) {
+            // Save the original updatePlayerPosition function
+            const originalUpdateFn = window.updatePlayerPosition || window.gameState.updatePlayerPosition;
+            
+            // If we find the function, hook into it to verify mobile controls
+            if (typeof originalUpdateFn === 'function') {
+                window.updatePlayerPosition = function(deltaTime) {
+                    // Log active control keys occasionally for debugging
+                    if (Math.random() < 0.01) { // Only log ~1% of the time to avoid spam
+                        const activeKeys = [];
+                        if (window.gameState.keyStates['KeyW']) activeKeys.push('W');
+                        if (window.gameState.keyStates['KeyS']) activeKeys.push('S');
+                        if (window.gameState.keyStates['KeyA']) activeKeys.push('A');
+                        if (window.gameState.keyStates['KeyD']) activeKeys.push('D');
+                        if (activeKeys.length > 0) {
+                            console.log("Active keys: " + activeKeys.join(','));
+                        }
+                    }
+                    
+                    // Call the original function
+                    return originalUpdateFn(deltaTime);
+                };
+                console.log("Hooked into game update function for mobile diagnostics");
+            }
+        }
+    }, 1000);
+});
 
 // Make resetGame function available globally so that mobile controls can access it
 window.resetGame = function() {

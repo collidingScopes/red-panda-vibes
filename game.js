@@ -10,6 +10,13 @@ const gameState = {
     animationId: null, // Track animation frame ID
 };
 
+// Make gameState globally accessible for mobile controls
+window.gameState = gameState;
+
+// Expose some key game functions to the window object for mobile controls
+window.updatePlayerPosition = updatePlayerPosition;
+window.player = player;
+
 // FPS counter variables
 let frameCount = 0;
 let lastFpsUpdate = 0;
