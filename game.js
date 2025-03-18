@@ -60,7 +60,7 @@ const createSunsetBackground = () => {
 scene.background = createSunsetBackground();
 
 // Softer pastel fog to match the scene
-scene.fog = new THREE.Fog(0xa183e0, 150, 350);
+scene.fog = new THREE.Fog(0xa183e0, 20, 50);
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
