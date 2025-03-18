@@ -24,6 +24,7 @@ canvas {
     letter-spacing: 1px;
     box-shadow: 0 0 15px rgba(255, 132, 223, 0.5); /* Pink glow */
     backdrop-filter: blur(5px);
+    max-width: 80%;
 }
 
 .instruction-last-para {

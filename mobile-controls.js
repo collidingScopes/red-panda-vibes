@@ -1,6 +1,7 @@
-// Mobile Controls for Red Panda Explorer
+// Mobile Controls for Red Panda Explorer - Fixed for iOS
 class MobileControls {
     constructor(gameState) {
+        console.log("Mobile controls: Constructor started");
         this.gameState = gameState;
         this.touchStartX = 0;
         this.touchStartY = 0;
@@ -8,32 +9,93 @@ class MobileControls {
         this.touchTime = 0;
         this.lastTapTime = 0;
         this.isMobile = false;
+        this.mobileInstructionsCreated = false;
+        this.controlsCreated = false;
         
         // Movement control variables
         this.moveDirection = { x: 0, z: 0 };
         this.dragThreshold = 20; // Minimum pixel distance to register as a drag
         this.maxDragDistance = 100; // Maximum drag distance for full speed
         
+        // Wait for DOM to be fully ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            // DOM already loaded
+            this.init();
+        }
+    }
+    
+    // Initialize everything after the DOM is ready
+    init() {
         console.log("Mobile controls: Initializing...");
         
-        // Disable default touch behaviors
-        this.disableDefaultTouchBehavior();
+        // Add mobile styles first
+        this.addMobileStyles();
         
-        // Create joystick container for visual feedback
-        this.createJoystickUI();
-        
-        // Create mobile-specific instructions
+        // Create UI elements
         this.createMobileInstructions();
+        this.createJoystickUI();
+        this.mobileInstructionsCreated = true;
+        this.controlsCreated = true;
         
-        // Initialize touch event listeners
-        this.initTouchListeners();
-
-        // Detect if we're on mobile and show/hide controls appropriately
+        // Detect if we're on mobile
         this.detectMobile();
+        
+        // Only if we're on mobile, set up the event listeners and disable default behaviors
+        if (this.isMobile) {
+            // Configure iOS-specific settings first
+            this.configureIOSSettings();
+            
+            // Then init touch listeners
+            this.initTouchListeners();
+            
+            // Make sure helper functions run after a short delay
+            setTimeout(() => {
+                this.updateControlsVisibility(true);
+            }, 500);
+        }
+    }
+
+    // Configure iOS-specific settings
+    configureIOSSettings() {
+        // Add iOS-specific viewport meta tag
+        let metaViewport = document.querySelector('meta[name=viewport]');
+        if (metaViewport) {
+            metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+        } else {
+            metaViewport = document.createElement('meta');
+            metaViewport.name = 'viewport';
+            metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0';
+            document.head.appendChild(metaViewport);
+        }
+        
+        // Prevent document scrolling - iOS specific approach
+        document.addEventListener('touchmove', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        // Force body to fill the screen on iOS
+        document.body.style.position = 'fixed';
+        document.body.style.width = '100%';
+        document.body.style.height = '100%';
+        document.body.style.overflow = 'hidden';
+        
+        console.log("Mobile controls: iOS-specific settings configured");
     }
     
     // Create a visual joystick UI for feedback
     createJoystickUI() {
+        // Check if elements already exist first
+        if (document.getElementById('mobile-joystick-container')) {
+            console.log("Mobile controls: Joystick UI already exists");
+            return;
+        }
+        
+        console.log("Mobile controls: Creating joystick UI");
+        
         // Outer container
         const joystickContainer = document.createElement('div');
         joystickContainer.id = 'mobile-joystick-container';
@@ -53,20 +115,144 @@ class MobileControls {
         joystickContainer.appendChild(joystickInner);
         document.body.appendChild(joystickContainer);
         document.body.appendChild(jumpButton);
+        
+        console.log("Mobile controls: Joystick UI created");
+    }
+    
+    // Create mobile-specific instructions
+    createMobileInstructions() {
+        // Check if the element already exists
+        if (document.getElementById('mobile-instructions')) {
+            console.log("Mobile controls: Mobile instructions already exist");
+            return;
+        }
+        
+        console.log("Mobile controls: Creating mobile instructions");
+        
+        const mobileInstructions = document.createElement('div');
+        mobileInstructions.id = 'mobile-instructions';
+        mobileInstructions.className = 'game-overlay-screen hidden';
+        
+        mobileInstructions.innerHTML = `
+            <button id="close-mobile-instructions" class="close-button">&times;</button>
+            <h3>Red Panda Explorer 🐼</h3>
+            <p>👆 Drag anywhere to move your panda</p>
+            <p>👇 Tap screen to jump</p>
+            <p>🔘 Use jump button for precise jumps</p>
+            <p>🏁 Goal: Find the rainbow flag!</p>
+            <p class="instruction-last-para">Avoid the dark oil monsters!</p>
+            <button id="start-mobile-game" class="start-button">START GAME</button>
+        `;
+        
+        document.body.appendChild(mobileInstructions);
+        
+        // Add event listeners for mobile instruction buttons after a short delay
+        setTimeout(() => {
+            const closeButton = document.getElementById('close-mobile-instructions');
+            if (closeButton) {
+                closeButton.addEventListener('click', () => {
+                    const instructions = document.getElementById('mobile-instructions');
+                    if (instructions) {
+                        instructions.classList.add('hidden');
+                        console.log("Mobile controls: Instructions closed via button");
+                    }
+                });
+            }
+            
+            const startButton = document.getElementById('start-mobile-game');
+            if (startButton) {
+                startButton.addEventListener('click', () => {
+                    const instructions = document.getElementById('mobile-instructions');
+                    if (instructions) {
+                        instructions.classList.add('hidden');
+                        console.log("Mobile controls: Game started via button");
+                    }
+                });
+            }
+        }, 100);
+        
+        console.log("Mobile controls: Mobile instructions created");
+    }
+    
+    // Update visibility of control elements
+    updateControlsVisibility(show) {
+        console.log(`Mobile controls: ${show ? 'Showing' : 'Hiding'} controls`);
+        
+        // Get all elements
+        const mobileElements = document.querySelectorAll('.mobile-control-element');
+        const mobileInstructions = document.getElementById('mobile-instructions');
+        const standardInstructions = document.getElementById('instructions');
+        
+        if (show) {
+            // Show mobile controls
+            mobileElements.forEach(element => {
+                element.classList.remove('hidden');
+                console.log(`Mobile controls: Showed ${element.id}`);
+            });
+            
+            // Position jump button
+            const jumpButton = document.getElementById('mobile-jump-button');
+            if (jumpButton) {
+                jumpButton.style.right = '20px';
+                jumpButton.style.bottom = '20px';
+            }
+            
+            // Hide standard instructions
+            if (standardInstructions) {
+                standardInstructions.classList.add('hidden');
+                console.log("Mobile controls: Standard instructions hidden");
+            }
+            
+            // Show mobile instructions
+            if (mobileInstructions) {
+                mobileInstructions.classList.remove('hidden');
+                console.log("Mobile controls: Mobile instructions shown");
+            }
+        } else {
+            // Hide mobile controls
+            mobileElements.forEach(element => {
+                element.classList.add('hidden');
+            });
+            
+            // Hide mobile instructions
+            if (mobileInstructions) {
+                mobileInstructions.classList.add('hidden');
+            }
+        }
     }
     
     // Initialize all touch event listeners
     initTouchListeners() {
+        console.log("Mobile controls: Setting up touch listeners");
+        
         // Touch start - initial contact
         document.addEventListener('touchstart', (e) => {
-            // Prevent default to avoid browser actions like scrolling
-            e.preventDefault();
+            // Don't prevent default on all touch events in iOS, only when needed
+            // This allows proper button clicks to work
             
-            // Don't process touches if mobile instructions are showing
-            if (!this.isMobile || 
-                (!document.getElementById('mobile-instructions').classList.contains('hidden'))) {
+            // Don't process touches if:
+            // 1. We're not on mobile
+            // 2. Mobile instructions are showing
+            // 3. Touch targets an interactive element like button
+            if (!this.isMobile) return;
+            
+            const target = e.target;
+            // Allow button touches to work normally
+            if (target.tagName === 'BUTTON' || 
+                target.id === 'close-mobile-instructions' || 
+                target.id === 'start-mobile-game' ||
+                target.id === 'mobile-jump-button') {
                 return;
             }
+            
+            // Check if instructions are visible
+            const mobileInstructions = document.getElementById('mobile-instructions');
+            if (mobileInstructions && !mobileInstructions.classList.contains('hidden')) {
+                return;
+            }
+            
+            // Now we can prevent default for game movement
+            e.preventDefault();
             
             console.log("Mobile controls: Touch detected");
             
@@ -107,9 +293,10 @@ class MobileControls {
         // Touch move - dragging motion
         document.addEventListener('touchmove', (e) => {
             if (!this.isTouching || !this.isMobile) return;
-            e.preventDefault();
             
             try {
+                e.preventDefault(); // This is needed for drag to work
+                
                 const touchX = e.touches[0].clientX;
                 const touchY = e.touches[0].clientY;
                 
@@ -149,12 +336,10 @@ class MobileControls {
                         const visualY = dragDirection.y * Math.min(dragDistance, maxVisualMove);
                         joystickInner.style.transform = `translate(${visualX}px, ${visualY}px)`;
                         
-                        // Log movement direction and intensity once per second (to avoid flooding console)
+                        // Log movement direction occasionally
                         if (Math.floor(Date.now() / 1000) % 3 === 0) {
-                            console.log(`Mobile controls: Moving - Direction: (${this.moveDirection.x.toFixed(2)}, ${this.moveDirection.z.toFixed(2)}), Speed: ${speed.toFixed(2)}`);
+                            console.log(`Mobile controls: Moving - Dir: (${this.moveDirection.x.toFixed(2)}, ${this.moveDirection.z.toFixed(2)}), Speed: ${speed.toFixed(2)}`);
                         }
-                    } else {
-                        console.error("Mobile controls: Failed to find joystick inner element during drag");
                     }
                 }
             } catch (error) {
@@ -165,9 +350,13 @@ class MobileControls {
         // Touch end - release touch
         document.addEventListener('touchend', (e) => {
             if (!this.isMobile) return;
-            e.preventDefault();
             
             try {
+                // Only prevent default if we were actually dragging
+                if (this.isTouching) {
+                    e.preventDefault();
+                }
+                
                 // Check if this was a tap (short duration, little movement)
                 if (this.isTouching) {
                     const touchDuration = Date.now() - this.touchTime;
@@ -201,27 +390,46 @@ class MobileControls {
             }
         }, { passive: false });
         
-        // Dedicated jump button event
+        // Setup a dedicated jump button (more reliable than taps)
+        setTimeout(() => {
+            this.setupJumpButton();
+        }, 200);
+    }
+    
+    // Setup the jump button separately
+    setupJumpButton() {
         const jumpButton = document.getElementById('mobile-jump-button');
-        if (jumpButton) {
-            jumpButton.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                if (!this.isMobile) return;
-                
-                this.jump();
-                jumpButton.classList.add('active');
-                console.log("Mobile controls: Jump button pressed");
-            }, { passive: false });
-            
-            jumpButton.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                if (!this.isMobile) return;
-                
-                jumpButton.classList.remove('active');
-            }, { passive: false });
-        } else {
-            console.error("Mobile controls: Failed to find jump button element");
+        if (!jumpButton) {
+            console.error("Mobile controls: Jump button not found");
+            return;
         }
+        
+        // Clear existing listeners
+        const newJumpButton = jumpButton.cloneNode(true);
+        jumpButton.parentNode.replaceChild(newJumpButton, jumpButton);
+        
+        // Add new listeners
+        newJumpButton.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!this.isMobile) return;
+            
+            this.jump();
+            newJumpButton.classList.add('active');
+            console.log("Mobile controls: Jump button pressed");
+            return false;
+        }, { passive: false });
+        
+        newJumpButton.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!this.isMobile) return;
+            
+            newJumpButton.classList.remove('active');
+            return false;
+        }, { passive: false });
+        
+        console.log("Mobile controls: Jump button set up");
     }
     
     // Jump function
@@ -237,330 +445,242 @@ class MobileControls {
             
             // Reset the space key after a short delay
             setTimeout(() => {
-                this.gameState.keyStates['Space'] = false;
-                console.log("Mobile controls: Jump key released");
+                if (this.gameState) {
+                    this.gameState.keyStates['Space'] = false;
+                    console.log("Mobile controls: Jump key released");
+                }
             }, 100);
         } catch (error) {
             console.error("Mobile controls: Error during jump", error);
         }
     }
     
-    // Handle camera rotation via touch
-    initCameraControls() {
-        // We use a two-finger touch for camera rotation
-        let initialTouchDistance = 0;
-        let initialCameraAngle = 0;
-        
-        document.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                
-                // Calculate the initial distance between touches
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                initialTouchDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-                
-                // Store the current camera angle
-                initialCameraAngle = this.gameState.cameraAngleHorizontal || 0;
-            }
-        });
-        
-        document.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 2) {
-                e.preventDefault();
-                
-                // Calculate current touch distance
-                const touch1 = e.touches[0];
-                const touch2 = e.touches[1];
-                const currentTouchDistance = Math.sqrt(
-                    Math.pow(touch2.clientX - touch1.clientX, 2) +
-                    Math.pow(touch2.clientY - touch1.clientY, 2)
-                );
-                
-                // Calculate rotation based on the change in finger positioning
-                const touchCenter1 = {
-                    x: (touch1.clientX + touch2.clientX) / 2,
-                    y: (touch1.clientY + touch2.clientY) / 2
-                };
-                
-                // Get the angle of the line between the two touches
-                const angle = Math.atan2(
-                    touch2.clientY - touch1.clientY,
-                    touch2.clientX - touch1.clientX
-                );
-                
-                // Rotate camera based on the change in angle
-                // Adjust sensitivity as needed
-                this.gameState.cameraAngleHorizontal = initialCameraAngle + (angle * 0.5);
-            }
-        });
-    }
-    
-    // Disable default touch behaviors like pinch zoom, text selection, etc.
-    disableDefaultTouchBehavior() {
-        // Prevent touchmove from scrolling the page
-        document.addEventListener('touchmove', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-        
-        // Prevent touch delay on mobile devices
-        document.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-        }, { passive: false });
-        
-        // Disable context menu (long press)
-        document.addEventListener('contextmenu', function(e) {
-            e.preventDefault();
-        });
-        
-        // Add meta viewport settings to prevent zooming
-        const metaViewport = document.querySelector('meta[name=viewport]');
-        if (metaViewport) {
-            metaViewport.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-        } else {
-            const meta = document.createElement('meta');
-            meta.name = 'viewport';
-            meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
-            document.getElementsByTagName('head')[0].appendChild(meta);
-        }
-        
-        console.log("Mobile controls: Default touch behaviors disabled");
-    }
-    
-    // Create mobile-specific instructions
-    createMobileInstructions() {
-        const mobileInstructions = document.createElement('div');
-        mobileInstructions.id = 'mobile-instructions';
-        mobileInstructions.className = 'game-overlay-screen hidden';
-        
-        mobileInstructions.innerHTML = `
-            <button id="close-mobile-instructions" class="close-button">&times;</button>
-            <h3>Red Panda Explorer 🐼</h3>
-            <p>👆 Drag anywhere to move your panda</p>
-            <p>👇 Tap screen to jump</p>
-            <p>🔘 Use jump button for precise jumps</p>
-            <p>🏁 Goal: Find the rainbow flag!</p>
-            <p class="instruction-last-para">Avoid the dark oil monsters!</p>
-            <button id="start-mobile-game" class="start-button">START GAME</button>
-        `;
-        
-        document.body.appendChild(mobileInstructions);
-        
-        // Add event listeners for mobile instruction buttons
-        document.getElementById('close-mobile-instructions').addEventListener('click', () => {
-            document.getElementById('mobile-instructions').classList.add('hidden');
-            console.log("Mobile controls: Instructions closed via button");
-        });
-        
-        document.getElementById('start-mobile-game').addEventListener('click', () => {
-            document.getElementById('mobile-instructions').classList.add('hidden');
-            console.log("Mobile controls: Game started via button");
-        });
-        
-        console.log("Mobile controls: Mobile-specific instructions created");
-    }
-    
     // Detect if the user is on a mobile device
     detectMobile() {
-        this.isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        // Test with multiple methods for better compatibility
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+        const isAndroid = /Android/.test(userAgent);
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
         
-        if (this.isMobile) {
-            console.log("Mobile controls: Mobile device detected");
-            
-            // Show mobile controls
-            const mobileElements = document.querySelectorAll('.mobile-control-element');
-            mobileElements.forEach(element => {
-                element.classList.remove('hidden');
-            });
-            
-            // Position jump button
-            const jumpButton = document.getElementById('mobile-jump-button');
-            jumpButton.style.right = '20px';
-            jumpButton.style.bottom = '20px';
-            
-            // Hide standard instructions and show mobile instructions
-            const standardInstructions = document.getElementById('instructions');
-            if (standardInstructions) {
-                standardInstructions.classList.add('hidden');
-                console.log("Mobile controls: Standard instructions hidden");
-            }
-            
-            // Show mobile-specific instructions
-            const mobileInstructions = document.getElementById('mobile-instructions');
-            if (mobileInstructions) {
-                mobileInstructions.classList.remove('hidden');
-                console.log("Mobile controls: Mobile instructions shown");
-            } else {
-                console.error("Mobile controls: Failed to find mobile instructions element");
-            }
-        } else {
-            console.log("Mobile controls: Not a mobile device, controls hidden");
+        this.isMobile = isIOS || isAndroid || isMobileUA || isTouchDevice;
+        
+        console.log("Mobile detection results:");
+        console.log("- iOS:", isIOS);
+        console.log("- Android:", isAndroid);
+        console.log("- Mobile UA:", isMobileUA);
+        console.log("- Touch device:", isTouchDevice);
+        console.log("- FINAL RESULT:", this.isMobile);
+        
+        // Always apply iOS specific fixes if it's an iOS device
+        if (isIOS) {
+            console.log("Mobile controls: iOS-specific features enabled");
+            // Add iOS specific class to body
+            document.body.classList.add('ios-device');
         }
+        
+        // Update control visibility based on mobile detection
+        if (this.mobileInstructionsCreated && this.controlsCreated) {
+            this.updateControlsVisibility(this.isMobile);
+        } else {
+            console.log("Mobile controls: UI elements not yet created, will update visibility later");
+        }
+    }
+    
+    // Add mobile-specific styles
+    addMobileStyles() {
+        console.log("Mobile controls: Adding mobile styles");
+        
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            /* Fixed styles for iOS/mobile devices */
+            html, body {
+                position: fixed;
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                -webkit-overflow-scrolling: none;
+                overscroll-behavior: none;
+                touch-action: none;
+            }
+            
+            /* Mobile control styles with z-index higher than other elements */
+            #mobile-joystick-container {
+                position: fixed;
+                width: 100px;
+                height: 100px;
+                border-radius: 50%;
+                background-color: rgba(132, 255, 239, 0.3);
+                border: 3px solid #84ffef;
+                z-index: 2000;
+                touch-action: none;
+                box-shadow: 0 0 15px rgba(132, 255, 239, 0.5);
+                pointer-events: all;
+            }
+            
+            #mobile-joystick-inner {
+                position: absolute;
+                width: 40px;
+                height: 40px;
+                background-color: rgba(255, 132, 223, 0.7);
+                border-radius: 50%;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                transform-origin: center center;
+                box-shadow: 0 0 10px rgba(255, 132, 223, 0.7);
+            }
+            
+            #mobile-jump-button {
+                position: fixed;
+                width: 90px;
+                height: 90px;
+                border-radius: 50%;
+                background-color: rgba(162, 255, 132, 0.3);
+                border: 3px solid #a2ff84;
+                color: #a2ff84;
+                font-family: 'Courier New', monospace;
+                font-size: 16px;
+                font-weight: bold;
+                text-align: center;
+                line-height: 90px;
+                z-index: 2000;
+                touch-action: none;
+                box-shadow: 0 0 15px rgba(162, 255, 132, 0.5);
+                pointer-events: all;
+            }
+            
+            #mobile-jump-button.active {
+                background-color: rgba(162, 255, 132, 0.5);
+                transform: scale(0.95);
+            }
+            
+            /* Mobile instructions styles */
+            #mobile-instructions {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 90%;
+                max-width: 400px;
+                background-color: rgba(0, 0, 0, 0.8);
+                color: #ff84df;
+                padding: 20px;
+                border: 3px solid #84ffef;
+                border-radius: 5px;
+                z-index: 3000;
+                font-family: 'Courier New', monospace;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                text-align: center;
+                box-shadow: 0 0 20px rgba(255, 132, 223, 0.6);
+                backdrop-filter: blur(5px);
+            }
+            
+            #mobile-instructions h3 {
+                color: #ffee84;
+                margin-top: 10px;
+                margin-bottom: 20px;
+                font-size: 24px;
+            }
+            
+            #mobile-instructions p {
+                margin: 10px 0;
+                font-size: 16px;
+            }
+            
+            .start-button {
+                background-color: rgba(162, 255, 132, 0.2);
+                color: #a2ff84;
+                border: 2px solid #a2ff84;
+                padding: 15px 30px;
+                margin-top: 20px;
+                font-size: 18px;
+                font-weight: bold;
+                letter-spacing: 2px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .start-button:hover, .start-button:active {
+                background-color: rgba(162, 255, 132, 0.4);
+                box-shadow: 0 0 15px rgba(162, 255, 132, 0.7);
+            }
+            
+            /* iOS specific fixes */
+            .ios-device .mobile-control-element,
+            .ios-device #mobile-instructions {
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+            
+            /* Disable text selection on mobile */
+            * {
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                -khtml-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+                user-select: none;
+                -webkit-tap-highlight-color: rgba(0,0,0,0);
+            }
+            
+            /* Responsive adjustments for mobile */
+            @media (max-width: 768px) {
+                #instructions {
+                    display: none !important;
+                }
+                
+                #fps-counter {
+                    font-size: 10px;
+                    padding: 3px;
+                    bottom: 3px;
+                    left: 3px;
+                }
+                
+                .game-overlay-screen {
+                    max-width: 90%;
+                    padding: 15px;
+                }
+                
+                #level-indicator {
+                    font-size: 14px;
+                    padding: 5px 10px;
+                    right: 5px;
+                    top: 5px;
+                }
+            }
+        `;
+        
+        document.head.appendChild(styleElement);
     }
 }
 
-// Initialize mobile controls when the DOM is fully loaded
-document.addEventListener('DOMContentLoaded', () => {
+// Initialize mobile controls when the window is loaded
+window.addEventListener('load', () => {
+    console.log("Window loaded, initializing mobile controls");
+    
     // Make sure gameState exists before initializing
     if (window.gameState) {
         window.mobileControls = new MobileControls(window.gameState);
     } else {
-        // If gameState isn't available yet, wait for it
+        // If gameState isn't available yet, wait for it with a retry mechanism
+        let retries = 0;
+        const MAX_RETRIES = 20;
         const checkGameState = setInterval(() => {
+            retries++;
             if (window.gameState) {
+                console.log(`Found gameState after ${retries} attempts`);
                 window.mobileControls = new MobileControls(window.gameState);
+                clearInterval(checkGameState);
+            } else if (retries >= MAX_RETRIES) {
+                console.error("Mobile controls: Failed to find gameState after 20 attempts");
                 clearInterval(checkGameState);
             }
         }, 100);
     }
 });
-
-// Add mobile-specific styles
-function addMobileStyles() {
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        /* Mobile control styles */
-        #mobile-joystick-container {
-            position: fixed;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: rgba(132, 255, 239, 0.2);
-            border: 2px solid #84ffef;
-            z-index: 1000;
-            touch-action: none;
-            box-shadow: 0 0 15px rgba(132, 255, 239, 0.5);
-        }
-        
-        #mobile-joystick-inner {
-            position: absolute;
-            width: 30px;
-            height: 30px;
-            background-color: rgba(255, 132, 223, 0.6);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            transform-origin: center center;
-            box-shadow: 0 0 10px rgba(255, 132, 223, 0.7);
-        }
-        
-        #mobile-jump-button {
-            position: fixed;
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background-color: rgba(162, 255, 132, 0.2);
-            border: 2px solid #a2ff84;
-            color: #a2ff84;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            text-align: center;
-            line-height: 80px;
-            z-index: 1000;
-            touch-action: none;
-            box-shadow: 0 0 15px rgba(162, 255, 132, 0.5);
-        }
-        
-        #mobile-jump-button.active {
-            background-color: rgba(162, 255, 132, 0.4);
-            transform: scale(0.95);
-        }
-        
-        /* Mobile instructions styles */
-        #mobile-instructions {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-            max-width: 400px;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #ff84df;
-            padding: 20px;
-            border: 2px solid #84ffef;
-            border-radius: 5px;
-            z-index: 2000;
-            font-family: 'Courier New', monospace;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(255, 132, 223, 0.6);
-            backdrop-filter: blur(5px);
-        }
-        
-        #mobile-instructions h3 {
-            color: #ffee84;
-            margin-top: 10px;
-            margin-bottom: 20px;
-        }
-        
-        #mobile-instructions p {
-            margin: 10px 0;
-        }
-        
-        .start-button {
-            background-color: rgba(162, 255, 132, 0.2);
-            color: #a2ff84;
-            border: 2px solid #a2ff84;
-            padding: 10px 20px;
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        
-        .start-button:hover, .start-button:active {
-            background-color: rgba(162, 255, 132, 0.4);
-            box-shadow: 0 0 15px rgba(162, 255, 132, 0.7);
-        }
-        
-        /* Disable text selection on mobile */
-        * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: rgba(0,0,0,0);
-        }
-        
-        /* Responsive adjustments for mobile */
-        @media (max-width: 768px) {
-            html, body {
-                overflow: hidden;
-                position: fixed;
-                width: 100%;
-                height: 100%;
-            }
-            
-            #instructions {
-                max-width: 80%;
-                font-size: 14px;
-            }
-            
-            .game-overlay-screen {
-                max-width: 90%;
-                padding: 15px;
-            }
-            
-            #level-indicator {
-                font-size: 14px;
-                padding: 8px 12px;
-            }
-        }
-    `;
-    
-    document.head.appendChild(styleElement);
-    console.log("Mobile controls: Mobile styles added");
-}
-
-// Add the styles when loaded
-document.addEventListener('DOMContentLoaded', addMobileStyles);
