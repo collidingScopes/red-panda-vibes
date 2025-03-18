@@ -1,6 +1,4 @@
-// Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        scene.add(ambientLight);<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -40,6 +38,7 @@
 </head>
 <body>
     <div id="instructions">
+        <button id="close-instructions" style="position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 16px; cursor: pointer;">&times;</button>
         <h3>Peaceful Explorer</h3>
         <p>Move: WASD Keys | Jump: Spacebar</p>
         <p>Camera: Arrow Keys</p>
@@ -65,12 +64,12 @@
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(0x87CEEB); // Sky blue background
         
-        // Add fog to create depth and separate ground from sky
-        scene.fog = new THREE.Fog(0x87CEEB, 60, 100);
+        // Add fog to create depth - increased distance for better visibility
+        scene.fog = new THREE.Fog(0x87CEEB, 100, 200);
         
         // Camera setup
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        camera.position.set(0, 2, 5);
+        camera.position.set(0, 5, 10); // Positioned higher to better see the terrain
         
         // Renderer setup
         const renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -78,29 +77,15 @@
         renderer.shadowMap.enabled = true;
         document.body.appendChild(renderer.domElement);
         
-        // Create skybox for a better horizon
-        function createSkybox() {
-            const skyGeometry = new THREE.BoxGeometry(400, 400, 400);
-            const skyMaterials = [
-                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide}), // right
-                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide}), // left
-                new THREE.MeshBasicMaterial({color: 0x97DEFA, side: THREE.BackSide}), // top (lighter)
-                new THREE.MeshBasicMaterial({color: 0x7EC850, side: THREE.BackSide}), // bottom (grass color for horizon blend)
-                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide}), // front
-                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide})  // back
-            ];
-            
-            const skybox = new THREE.Mesh(skyGeometry, skyMaterials);
-            scene.add(skybox);
-        }
+        // Lights - enhanced ambient and directional light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7); // Brighter ambient light
+        scene.add(ambientLight);
         
-        createSkybox();
-        
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(100, 100, 50);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0); // Brighter directional light
+        directionalLight.position.set(50, 100, 30);
         directionalLight.castShadow = true;
-        directionalLight.shadow.mapSize.width = 1024;
-        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.mapSize.width = 2048; // Higher resolution shadows
+        directionalLight.shadow.mapSize.height = 2048;
         directionalLight.shadow.camera.near = 0.5;
         directionalLight.shadow.camera.far = 500;
         directionalLight.shadow.camera.left = -100;
@@ -113,64 +98,93 @@
         const playerGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
         const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x3344aa });
         const player = new THREE.Mesh(playerGeometry, playerMaterial);
-        player.position.set(0, 0.5, 0);
+        player.position.set(0, 2, 0); // Start player higher up
         player.castShadow = true;
         player.receiveShadow = true;
         scene.add(player);
         
-        // Create terrain
+        // COMPLETELY REDESIGNED TERRAIN SYSTEM
+        // Create terrain using a box geometry for guaranteed visibility
         function createTerrain() {
-            const terrainSize = 200;
-            const resolution = 128;
-            const geometry = new THREE.PlaneGeometry(terrainSize, terrainSize, resolution - 1, resolution - 1);
-            
-            // Generate a natural-looking heightmap with more dramatic rolling hills
-            const vertices = geometry.attributes.position.array;
-            for (let i = 0; i < vertices.length; i += 3) {
-                const x = vertices[i];
-                const z = vertices[i + 2];
-                
-                // Create more pronounced rolling hills
-                const hillHeight = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 4;
-                
-                // Add medium terrain variations
-                const mediumNoise = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 1.5;
-                
-                // Add small terrain variations for texture
-                const smallNoise = (Math.sin(x * 0.8) + Math.sin(z * 0.8)) * 0.3;
-                
-                // Combine all variations
-                vertices[i + 1] = hillHeight + mediumNoise + smallNoise;
-            }
-            
-            geometry.computeVertexNormals();
-            geometry.rotateX(-Math.PI / 2);
-            
-            // We've removed the canvas texture creation in favor of direct color
-            
-            const groundMaterial = new THREE.MeshStandardMaterial({
-                color: 0x7EC850, // Brighter green color
-                roughness: 0.8,
-                metalness: 0.1,
-                transparent: false,
-                opacity: 1.0
+            // Create a large flat base with a box - Much more reliable than a Plane
+            const baseGeometry = new THREE.BoxGeometry(400, 1, 400);
+            const baseMaterial = new THREE.MeshStandardMaterial({
+                color: 0x2E8B57, // Sea Green (darker and more visible)
+                roughness: 0.9,
+                metalness: 0.1
             });
             
-            const terrain = new THREE.Mesh(geometry, groundMaterial);
-            terrain.receiveShadow = true;
-            terrain.castShadow = true;
-            terrain.name = "terrain";
-            scene.add(terrain);
+            const baseTerrain = new THREE.Mesh(baseGeometry, baseMaterial);
+            baseTerrain.position.y = -0.5; // Position the base so top surface is at y=0
+            baseTerrain.receiveShadow = true;
+            scene.add(baseTerrain);
             
-            // Add grass clumps for more detail
+            // Create the actual terrain with hills using many small box segments
+            const segmentSize = 10;
+            const terrainSize = 200; // Full terrain size
+            const segments = Math.floor(terrainSize / segmentSize);
+            const halfTerrainSize = terrainSize / 2;
+            
+            // Create hills group
+            const hillsGroup = new THREE.Group();
+            scene.add(hillsGroup);
+            
+            // Generate terrain segments
+            for (let x = 0; x < segments; x++) {
+                for (let z = 0; z < segments; z++) {
+                    const posX = (x * segmentSize) - halfTerrainSize + segmentSize/2;
+                    const posZ = (z * segmentSize) - halfTerrainSize + segmentSize/2;
+                    
+                    // Generate height variation
+                    const height = getTerrainHeight(posX, posZ);
+                    
+                    // Only create visible hills (if height > 0.2)
+                    if (height > 0.2) {
+                        const hillGeometry = new THREE.BoxGeometry(segmentSize, height, segmentSize);
+                        
+                        // Vary the green color slightly
+                        const colorVariation = Math.random() * 0.2 - 0.1;
+                        const hillColor = new THREE.Color(0x2E8B57);
+                        hillColor.r += colorVariation;
+                        hillColor.g += colorVariation;
+                        hillColor.b += colorVariation;
+                        
+                        const hillMaterial = new THREE.MeshStandardMaterial({
+                            color: hillColor,
+                            roughness: 0.9,
+                            metalness: 0.1
+                        });
+                        
+                        const hill = new THREE.Mesh(hillGeometry, hillMaterial);
+                        hill.position.set(posX, height/2, posZ);
+                        hill.receiveShadow = true;
+                        hill.castShadow = true;
+                        hillsGroup.add(hill);
+                    }
+                }
+            }
+            
+            // Add grass clumps on top of the terrain
             addGrassClumps(terrainSize);
             
-            return terrain;
+            return hillsGroup; // Return the main terrain group
+        }
+        
+        // New terrain height function with more dramatic hills
+        function getTerrainHeight(x, z) {
+            // Create more pronounced rolling hills
+            const hillHeight = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 8;
+            
+            // Add medium terrain variations
+            const mediumNoise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 4;
+            
+            // Combine all variations and ensure we have positive heights
+            return Math.max(0, (hillHeight + mediumNoise) * 0.5);
         }
         
         function addGrassClumps(terrainSize) {
             // Create a simple grass clump geometry
-            const grassGeometry = new THREE.PlaneGeometry(0.8, 0.8);
+            const grassGeometry = new THREE.PlaneGeometry(1, 1);
             
             // Create grass materials with different shades
             const grassColors = [0x66BB6A, 0x81C784, 0xA5D6A7]; // Light green shades
@@ -184,7 +198,7 @@
             );
             
             // Add random grass clumps across terrain
-            const grassCount = 1500; // Increased number of grass clumps
+            const grassCount = 2000; // Increased number of grass clumps
             const halfSize = terrainSize / 2;
             
             for (let i = 0; i < grassCount; i++) {
@@ -197,7 +211,7 @@
                 // Create grass clump (simple cross of planes)
                 const grassClump = new THREE.Group();
                 
-                for (let j = 0; j < 3; j++) { // Added an extra plane for more fullness
+                for (let j = 0; j < 3; j++) { // 3 planes for more fullness
                     const blade = new THREE.Mesh(
                         grassGeometry, 
                         grassMaterials[Math.floor(Math.random() * grassMaterials.length)]
@@ -208,7 +222,7 @@
                     grassClump.add(blade);
                 }
                 
-                grassClump.position.set(x, terrainHeight, z);
+                grassClump.position.set(x, terrainHeight + 0.1, z); // Position just above terrain
                 
                 // Random rotation and slight scaling
                 grassClump.rotation.y = Math.random() * Math.PI;
@@ -225,11 +239,11 @@
         function createFlagPole() {
             const group = new THREE.Group();
             
-            // Pole
-            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 5, 8);
+            // Pole (taller)
+            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 10, 8);
             const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
             const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-            pole.position.y = 2.5;
+            pole.position.y = 5; // Half the height
             pole.castShadow = true;
             
             // Flag
@@ -239,14 +253,17 @@
                 side: THREE.DoubleSide
             });
             const flag = new THREE.Mesh(flagGeometry, flagMaterial);
-            flag.position.set(1, 4, 0);
+            flag.position.set(1, 8, 0); // Positioned high on the pole
             flag.castShadow = true;
             
             group.add(pole);
             group.add(flag);
             
             // Position the flag pole far away from the starting point
-            group.position.set(50, 0, 50);
+            const x = 50;
+            const z = 50;
+            const y = getTerrainHeight(x, z); // Position on top of terrain
+            group.position.set(x, y, z);
             
             scene.add(group);
             return group;
@@ -273,12 +290,12 @@
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 80 + 10;
                 
-                rock.position.x = Math.cos(angle) * distance;
-                rock.position.z = Math.sin(angle) * distance;
+                const x = Math.cos(angle) * distance;
+                const z = Math.sin(angle) * distance;
                 
                 // Make sure rocks are on the terrain
-                const terrainHeight = getTerrainHeight(rock.position.x, rock.position.z);
-                rock.position.y = terrainHeight + rockSize * 0.5;
+                const terrainHeight = getTerrainHeight(x, z);
+                rock.position.set(x, terrainHeight + rockSize * 0.5, z);
                 
                 rock.castShadow = true;
                 rock.receiveShadow = true;
@@ -295,12 +312,12 @@
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 80 + 15;
                 
-                tree.position.x = Math.cos(angle) * distance;
-                tree.position.z = Math.sin(angle) * distance;
+                const x = Math.cos(angle) * distance;
+                const z = Math.sin(angle) * distance;
                 
                 // Make sure trees are on the terrain
-                const terrainHeight = getTerrainHeight(tree.position.x, tree.position.z);
-                tree.position.y = terrainHeight;
+                const terrainHeight = getTerrainHeight(x, z);
+                tree.position.set(x, terrainHeight, z);
                 
                 scene.add(tree);
                 obstacles.push(tree);
@@ -313,11 +330,11 @@
                 const angle = Math.random() * Math.PI * 2;
                 const distance = Math.random() * 90 + 5;
                 
-                flowerGroup.position.x = Math.cos(angle) * distance;
-                flowerGroup.position.z = Math.sin(angle) * distance;
+                const x = Math.cos(angle) * distance;
+                const z = Math.sin(angle) * distance;
                 
-                const terrainHeight = getTerrainHeight(flowerGroup.position.x, flowerGroup.position.z);
-                flowerGroup.position.y = terrainHeight;
+                const terrainHeight = getTerrainHeight(x, z);
+                flowerGroup.position.set(x, terrainHeight, z);
                 
                 scene.add(flowerGroup);
             }
@@ -388,15 +405,6 @@
         
         const obstacles = createObstacles();
         
-        // Terrain height calculations
-        function getTerrainHeight(x, z) {
-            // Function must match the terrain generation algorithm
-            const hillHeight = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 4;
-            const mediumNoise = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 1.5;
-            const smallNoise = (Math.sin(x * 0.8) + Math.sin(z * 0.8)) * 0.3;
-            return hillHeight + mediumNoise + smallNoise;
-        }
-        
         // Input handling
         document.addEventListener('keydown', (event) => {
             gameState.keyStates[event.code] = true;
@@ -404,6 +412,11 @@
         
         document.addEventListener('keyup', (event) => {
             gameState.keyStates[event.code] = false;
+        });
+        
+        // Add event listener for closing the instructions
+        document.getElementById('close-instructions').addEventListener('click', () => {
+            document.getElementById('instructions').style.display = 'none';
         });
         
         window.addEventListener('resize', () => {
@@ -546,7 +559,7 @@
         }
         
         function resetGame() {
-            player.position.set(0, 0.5, 0);
+            player.position.set(0, 2, 0); // Start player higher up
             gameState.playerVelocity.set(0, 0, 0);
             gameState.goalReached = false;
             document.getElementById('goal-message').style.display = 'none';
