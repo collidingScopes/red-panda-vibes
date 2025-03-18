@@ -9,6 +9,11 @@ const gameState = {
 // Scene setup with pastel sunset background
 const scene = new THREE.Scene();
 
+// FPS counter variables
+let frameCount = 0;
+let lastFpsUpdate = 0;
+let fps = 0;
+
 // Create a gradient background for sunset effect
 const createSunsetBackground = () => {
     // Create a gradient texture
@@ -844,6 +849,15 @@ function animate(currentTime) {
     
     // Skip first frame
     if (isNaN(deltaTime) || deltaTime > 0.1) return;
+
+    // Update FPS counter
+    frameCount++;
+    if (currentTime >= lastFpsUpdate + 1000) {
+        fps = Math.round(frameCount * 1000 / (currentTime - lastFpsUpdate));
+        document.getElementById('fps-counter').textContent = `FPS: ${fps}`;
+        frameCount = 0;
+        lastFpsUpdate = currentTime;
+    }
     
     updatePlayerPosition(deltaTime);
     checkCollisions();
