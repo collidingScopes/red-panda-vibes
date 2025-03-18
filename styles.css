@@ -292,3 +292,10 @@ h2, h3 {
     color: #ffffff;
     box-shadow: 0 0 10px rgba(162, 255, 132, 0.6); /* Green glow */
 }
+
+.high-score {
+    color: #ffee84; /* Neon yellow */
+    font-size: 18px;
+    margin: 10px 0;
+    text-shadow: 0 0 8px rgba(255, 238, 132, 0.8);
+}

@@ -6,6 +6,8 @@ const gameState = {
     goalReached: false,
     enemyManager: null,
     levelSystem: null, // Add the level system reference
+    gameOver: false,   // Add game over state
+    animationId: null, // Track animation frame ID
 };
 
 // FPS counter variables
@@ -68,7 +70,7 @@ window.getTerrainHeight = function(x, z) {
         Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
         Math.sin(x * 0.07 + z * 0.05) * 4 +
         Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
-    ) * 0.5);
+    ) * 0.5 * (window.terrainHeightMultiplier || 1.0));
 };
 
 // Add some neon glow point lights scattered around
@@ -279,6 +281,10 @@ function checkCollisions() {
 }
 
 function resetGame() {
+    // Reset game over state
+    gameState.gameOver = false;
+    
+    // Reset player position
     player.position.set(0, 50, 0);
     gameState.playerVelocity.set(0, 0, 0);
     gameState.goalReached = false;
@@ -294,6 +300,12 @@ function resetGame() {
     // Reset enemy manager
     if (gameState.enemyManager) {
         gameState.enemyManager.reset();
+    }
+    
+    // Restart animation loop if it was cancelled
+    if (!gameState.animationId) {
+        lastTime = performance.now();
+        gameState.animationId = requestAnimationFrame(animate);
     }
 }
 
@@ -327,10 +339,12 @@ function disposeMaterial(material) {
 }
 
 // Animation loop
+// Animation loop
 let lastTime = 0;
 
 function animate(currentTime) {
-    requestAnimationFrame(animate);
+    // Store the animation ID so we can cancel it
+    gameState.animationId = requestAnimationFrame(animate);
     
     const deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
@@ -347,13 +361,16 @@ function animate(currentTime) {
         lastFpsUpdate = currentTime;
     }
     
-    // Game logic updates
-    updatePlayerPosition(deltaTime);
-    checkCollisions();
-    
-    // Update enemies
-    if (gameState.enemyManager && !gameState.goalReached) {
-        gameState.enemyManager.update(deltaTime);
+    // Only update game logic if not game over
+    if (!gameState.gameOver) {
+        // Game logic updates
+        updatePlayerPosition(deltaTime);
+        checkCollisions();
+        
+        // Update enemies
+        if (gameState.enemyManager && !gameState.goalReached) {
+            gameState.enemyManager.update(deltaTime);
+        }
     }
     
     // Flag animation - using a single sine calculation
@@ -363,7 +380,6 @@ function animate(currentTime) {
     
     renderer.render(scene, camera);
 }
-
 // Initialize the game
 function init() {
     // Set up event listeners

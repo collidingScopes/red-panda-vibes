@@ -283,7 +283,37 @@ class EnemyManager {
     
     // Trigger game over state
     triggerGameOver() {
+        // Set game state to game over
+        gameState.gameOver = true;
         this.gameOver = true;
+        
+        // Save high score to localStorage
+        const highScore = localStorage.getItem('redPandaHighScore') || 0;
+        const currentScore = gameState.levelSystem ? gameState.levelSystem.currentLevel : 1;
+        
+        if (currentScore > highScore) {
+            localStorage.setItem('redPandaHighScore', currentScore);
+        }
+        
+        // Update game over screen with high score
+        const gameOverScreen = document.getElementById('game-over-screen');
+        const highScoreElement = gameOverScreen.querySelector('.high-score');
+        
+        // Create high score element if it doesn't exist
+        if (!highScoreElement) {
+            const scoreElement = document.createElement('div');
+            scoreElement.className = 'high-score';
+            scoreElement.textContent = `Highest Level: ${Math.max(highScore, currentScore)}`;
+            
+            // Insert before the retry button
+            const contentDiv = gameOverScreen.querySelector('.game-over-content');
+            const retryButton = gameOverScreen.querySelector('#retry-button');
+            contentDiv.insertBefore(scoreElement, retryButton);
+        } else {
+            highScoreElement.textContent = `Highest Level: ${Math.max(highScore, currentScore)}`;
+        }
+        
+        // Show game over screen
         document.getElementById('game-over-screen').style.display = 'flex';
     }
     

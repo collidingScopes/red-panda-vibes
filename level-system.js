@@ -43,12 +43,14 @@ class LevelSystem {
                 enemySpeedChase: this.baseSettings.enemySpeedChase,
                 fogDensity: 0.01,
                 fogColor: this.baseSettings.fogColor,
-                fogDistance: 100
+                fogDistance: 100,
+                flagHeight: 20, // Starting flag height
+                terrainHeightMultiplier: 1.0 // Base terrain height
             };
         }
         
         // For levels 2 and above, scale difficulty
-        const enemyCount = Math.max(0,this.baseSettings.enemyCount + (level - 2) * 5);
+        const enemyCount = Math.max(0, this.baseSettings.enemyCount + (level - 2) * 5);
         
         // Calculate enemy speed: increases by 4% per level above level 2
         const speedMultiplier = 1 + (level - 2) * 0.04;
@@ -67,13 +69,21 @@ class LevelSystem {
         const b = (fogColorValue & 255) - Math.min(50, (level - 2) * 2);
         const fogColor = (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b);
         
+        // NEW: Shrink flag pole with each level (minimum 5 units)
+        const flagHeight = Math.max(5, 20 - (level - 1) * 1.5);
+        
+        // NEW: Increase terrain height multiplier with each level
+        const terrainHeightMultiplier = 1.0 + Math.min(2.0, (level - 1) * 0.1);
+        
         return {
             enemyCount,
             enemySpeedWander,
             enemySpeedChase,
             fogDensity,
             fogColor,
-            fogDistance
+            fogDistance,
+            flagHeight,
+            terrainHeightMultiplier
         };
     }
     
@@ -93,6 +103,12 @@ class LevelSystem {
         // Reset player position
         this.player.position.set(0, 50, 0);
         
+        // NEW: Update flag pole height
+        this.updateFlagHeight(settings.flagHeight);
+        
+        // NEW: Update terrain height multiplier
+        this.updateTerrainHeight(settings.terrainHeightMultiplier);
+        
         // Reposition the flag for this level (further away for higher levels)
         const distance = 50 + (level * 10); // Increase distance with level
         const angle = Math.random() * Math.PI * 2; // Random angle for variety
@@ -109,6 +125,46 @@ class LevelSystem {
         const terrainHeightFunction = window.getTerrainHeight || this.enemyManager.getTerrainHeight;
         const y = terrainHeightFunction(x, z);
         this.flagPole.position.set(x, y, z);
+    }
+
+    // Update flag pole height
+    updateFlagHeight(height) {
+        // Find the pole (first child of flagPole)
+        const pole = this.flagPole.children[0];
+        
+        // Update the pole height if found
+        if (pole) {
+            // Store original y position
+            const originalY = pole.position.y;
+            
+            // We need to modify the geometry to change height
+            if (pole.geometry) {
+                pole.geometry.dispose(); // Dispose old geometry to avoid memory leaks
+                pole.geometry = new THREE.BoxGeometry(0.5, height, 0.5);
+                
+                // Update position to keep the pole base at the same height
+                pole.position.y = height / 2;
+            }
+            
+            // Adjust the flag position (second child) too
+            const flag = this.flagPole.children[1];
+            if (flag) {
+                flag.position.y = height - 2; // Position near the top of the pole
+            }
+            
+            // Adjust the light position (if it exists as the third child)
+            if (this.flagPole.children[2]) {
+                this.flagPole.children[2].position.y = height - 4;
+            }
+        }
+    }
+
+    // Update terrain height multiplier
+    updateTerrainHeight(multiplier) {
+        // Store the current multiplier for use in the terrain height calculation
+        window.terrainHeightMultiplier = multiplier;
+        
+        // The getTerrainHeight function uses this global variable
     }
     
     // Create level indicator UI
