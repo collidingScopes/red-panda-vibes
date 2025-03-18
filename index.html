@@ -9,25 +9,21 @@
 <body>
     <div id="instructions">
         <button id="close-instructions" class="close-button">&times;</button>
-        <h3>Red Panda Explorer</h3>
-        <p>Move: WASD Keys | Jump: Spacebar</p>
-        <p>Camera: Arrow Keys</p>
-        <p>Goal: See how many levels you can complete by finding and reaching the flag!</p>
-        <p>Warning: Avoid the dark oil slick monsters!</p>
-        <p>Difficulty increases with each level - more monsters, faster enemies, and thicker fog!</p>
-        <p>How far can you go?</p>
+        <h3>Red Panda Explorer 🐼</h3>
+        <p>⌨️ Move panda with WASD keys / jump with spacebar</p>
+        <p>↔️ Shift camera with arrow keys</p>
+        <p>🏁 Goal: Find the flag!</p>
+        <p class="instruction-last-para">How far can you go?</p>
     </div>
     
     <div id="goal-message">
         <h2>Congratulations!</h2>
-        <p>You've reached the flag pole!</p>
         <button onclick="resetGame()">Play Again</button>
         <div class="keyboard-hint">[Press ENTER to play again]</div>
     </div>
 
     <div id="level-complete-content" class="hidden">
         <h2>Level Complete!</h2>
-        <p>You've reached the flag!</p>
         <div id="level-status"></div>
         <button id="next-level-button">Next Level</button>
         <div class="keyboard-hint">[Press ENTER for next level]</div>
@@ -48,6 +44,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
     <script src="geometry.js" defer></script>
     <script src="helperFunctions.js" defer></script>
+    <script src="level-warnings.js" defer></script>
     <script src="level-system.js" defer></script>
     <script src="enemies.js" defer></script>
     <script src="game.js" defer></script>

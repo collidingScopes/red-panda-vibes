@@ -28,7 +28,7 @@ function addOverlayClass() {
         const instructionsScreen = document.getElementById('instructions');
         if (instructionsScreen && instructionsScreen.style.display !== 'none') {
           instructionsScreen.style.display = 'none';
-          return;
+          //return;
         }
         
         // Level complete screen

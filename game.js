@@ -343,7 +343,6 @@ function disposeMaterial(material) {
 }
 
 // Animation loop
-// Animation loop
 let lastTime = 0;
 
 function animate(currentTime) {

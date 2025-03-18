@@ -118,6 +118,11 @@ class LevelSystem {
         
         // Update flag pole position
         this.updateFlagPosition(x, z);
+
+        // NEW: Show level warning message if available
+        if (window.levelWarnings) {
+            window.levelWarnings.showWarningForLevel(level);
+        }
     }
     
     // Update flag position for new level
@@ -205,6 +210,9 @@ class LevelSystem {
     
     // Show level complete screen
     showLevelComplete() {
+
+        document.getElementById('instructions').classList.add("hidden");
+
         // Update level status
         const statusEl = document.getElementById('level-status');
         if (statusEl) {
@@ -224,6 +232,11 @@ class LevelSystem {
         
         // Reset game state
         gameState.goalReached = false;
+
+        // Reset warnings
+        if (window.levelWarnings) {
+            window.levelWarnings.reset();
+        }
     }
 }
 

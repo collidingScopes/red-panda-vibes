@@ -26,13 +26,18 @@ canvas {
     backdrop-filter: blur(5px);
 }
 
+.instruction-last-para {
+    color: white;
+    font-weight: bold;
+}
+
 /* Added class for close button instead of inline styles */
 .close-button {
     position: absolute;
     top: -9px;
     right: 5px;
     padding: 0px 5px;
-    background: none;
+    background: rgba(0, 255, 0, 0.15);
     border: 1;
     font-size: 32px;
     cursor: pointer;
@@ -97,9 +102,10 @@ h2, h3 {
 
 #game-over-screen {
     position: fixed;
-    top: 33%;
-    left: 33%;
-    width: 50%;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    
     background-color: rgba(0, 0, 0, 0.8);
     justify-content: center;
     align-items: center;
@@ -172,10 +178,6 @@ h2, h3 {
 }
 
 /* Level Complete Screen */
-#level-complete-screen {
-
-}
-
 #level-complete-content {
     background-color: rgba(10, 10, 30, 0.7);
     padding: 30px;
@@ -188,10 +190,11 @@ h2, h3 {
     font-family: 'Courier New', monospace;
     text-transform: uppercase;
 
-    top: 33%;
-    left: 33%;
-    width: 50%;
-    /* height: 50%; */
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+
     /* background-color: rgba(0, 0, 0, 0.7); */
     justify-content: center;
     align-items: center;
@@ -328,4 +331,39 @@ h2, h3 {
 
 .hidden {
     display: none;
+}
+
+.level-warning {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #84ffef; /* Neon cyan */
+    padding: 20px 30px;
+    border: 2px solid #ffee84; /* Neon yellow */
+    border-radius: 5px;
+    text-align: center;
+    z-index: 150;
+    font-family: 'Courier New', monospace;
+    font-size: 18px;
+    text-transform: uppercase;
+    box-shadow: 0 0 25px rgba(255, 238, 132, 0.7); /* Yellow glow */
+    backdrop-filter: blur(5px);
+    max-width: 400px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.level-warning.fade-out {
+    animation: fadeOut 1s ease-in-out forwards;
 }
