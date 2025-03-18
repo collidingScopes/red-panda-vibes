@@ -12,7 +12,8 @@ const gameState = {
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,
     keyStates: {},
-    goalReached: false
+    goalReached: false,
+    enemyManager: null,
 };
 
 // Scene setup with pastel sunset background
@@ -788,10 +789,15 @@ function checkCollisions() {
 }
 
 function resetGame() {
-    player.position.set(0, 2, 0);
+    player.position.set(0, 50, 0);
     gameState.playerVelocity.set(0, 0, 0);
     gameState.goalReached = false;
     document.getElementById('goal-message').style.display = 'none';
+
+    // Reset enemy manager
+    if (gameState.enemyManager) {
+        gameState.enemyManager.reset();
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly
@@ -848,6 +854,11 @@ function animate(currentTime) {
     updatePlayerPosition(deltaTime);
     checkCollisions();
     
+    // Update enemies
+    if (gameState.enemyManager && !gameState.goalReached) {
+        gameState.enemyManager.update(deltaTime);
+    }
+    
     // Flag animation - using a single sine calculation
     const sineValue = Math.sin(currentTime * 0.004);
     flagMesh.rotation.y = sineValue * 0.1;
@@ -860,6 +871,10 @@ function animate(currentTime) {
 function init() {
     // Set up event listeners
     initEventListeners();
+
+    // Initialize enemy manager
+    gameState.enemyManager = new EnemyManager(scene, player, getTerrainHeight);
+    gameState.enemyManager.initialize();
     
     // Start the animation loop with the correct timestamp
     lastTime = performance.now();
