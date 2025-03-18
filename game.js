@@ -274,7 +274,7 @@ function createRedPandaPlayer() {
 
 // Create the red panda player
 const player = createRedPandaPlayer();
-player.position.set(0, 2, 0);
+player.position.set(0, 50, 0);
 player.receiveShadow = true;
 scene.add(player);
 
@@ -682,7 +682,7 @@ function updatePlayerPosition(deltaTime) {
     
     const speed = 5.0;
     const jumpForce = 8.0;
-    const gravity = 20.0;
+    const gravity = 10.0;
     
     // Ground check
     const groundHeight = getTerrainHeight(player.position.x, player.position.z);
