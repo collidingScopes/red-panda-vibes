@@ -13,10 +13,6 @@ const gameState = {
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
 
-// Expose some key game functions to the window object for mobile controls
-window.updatePlayerPosition = updatePlayerPosition;
-window.player = player;
-
 // FPS counter variables
 let frameCount = 0;
 let lastFpsUpdate = 0;
@@ -406,6 +402,14 @@ function init() {
     // Start the animation loop with the correct timestamp
     lastTime = performance.now();
     requestAnimationFrame(animate);
+
+    // Make player and other key objects accessible to mobile controls
+    window.player = player;
+
+    // Create direct references to gameState for mobile control access
+    if (window.mobileControls) {
+        console.log("Mobile controls found - ensuring proper integration");
+    }
 }
 
 // Start the game

@@ -422,6 +422,11 @@ if (isMobileDevice) {
                         // Calculate movement speed based on drag distance
                         const speed = Math.min(dragDistance / this.maxDragDistance, 1.0);
                         
+                        // Log drag information for debugging
+                        if (Math.random() < 0.05) { // Log occasionally
+                            console.log(`Drag: dist=${dragDistance.toFixed(0)}, dir=(${dragDirection.x.toFixed(2)},${dragDirection.y.toFixed(2)}), speed=${speed.toFixed(2)}`);
+                        }
+                        
                         // Map drag direction to WASD controls
                         // Note: Z is forward/backward, X is left/right
                         this.moveDirection.z = -dragDirection.y * speed; // Invert Y since positive Y is down on screen
