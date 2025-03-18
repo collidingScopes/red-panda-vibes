@@ -1,0 +1,576 @@
+// Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Peaceful Explorer</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            display: block;
+        }
+        #instructions {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 10px;
+            border-radius: 5px;
+            z-index: 100;
+        }
+        #goal-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            display: none;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="instructions">
+        <h3>Peaceful Explorer</h3>
+        <p>Move: WASD Keys | Jump: Spacebar</p>
+        <p>Camera: Arrow Keys</p>
+        <p>Goal: Find and reach the flag pole!</p>
+    </div>
+    <div id="goal-message">
+        <h2>Congratulations!</h2>
+        <p>You've reached the flag pole!</p>
+        <button onclick="resetGame()">Play Again</button>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Game state
+        const gameState = {
+            playerVelocity: new THREE.Vector3(),
+            playerOnGround: false,
+            keyStates: {},
+            goalReached: false
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky blue background
+        
+        // Add fog to create depth and separate ground from sky
+        scene.fog = new THREE.Fog(0x87CEEB, 60, 100);
+        
+        // Camera setup
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 2, 5);
+        
+        // Renderer setup
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        document.body.appendChild(renderer.domElement);
+        
+        // Create skybox for a better horizon
+        function createSkybox() {
+            const skyGeometry = new THREE.BoxGeometry(400, 400, 400);
+            const skyMaterials = [
+                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide}), // right
+                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide}), // left
+                new THREE.MeshBasicMaterial({color: 0x97DEFA, side: THREE.BackSide}), // top (lighter)
+                new THREE.MeshBasicMaterial({color: 0x7EC850, side: THREE.BackSide}), // bottom (grass color for horizon blend)
+                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide}), // front
+                new THREE.MeshBasicMaterial({color: 0x87CEEB, side: THREE.BackSide})  // back
+            ];
+            
+            const skybox = new THREE.Mesh(skyGeometry, skyMaterials);
+            scene.add(skybox);
+        }
+        
+        createSkybox();
+        
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(100, 100, 50);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 500;
+        directionalLight.shadow.camera.left = -100;
+        directionalLight.shadow.camera.right = 100;
+        directionalLight.shadow.camera.top = 100;
+        directionalLight.shadow.camera.bottom = -100;
+        scene.add(directionalLight);
+        
+        // Create player
+        const playerGeometry = new THREE.BoxGeometry(0.5, 1, 0.5);
+        const playerMaterial = new THREE.MeshLambertMaterial({ color: 0x3344aa });
+        const player = new THREE.Mesh(playerGeometry, playerMaterial);
+        player.position.set(0, 0.5, 0);
+        player.castShadow = true;
+        player.receiveShadow = true;
+        scene.add(player);
+        
+        // Create terrain
+        function createTerrain() {
+            const terrainSize = 200;
+            const resolution = 128;
+            const geometry = new THREE.PlaneGeometry(terrainSize, terrainSize, resolution - 1, resolution - 1);
+            
+            // Generate a natural-looking heightmap with more dramatic rolling hills
+            const vertices = geometry.attributes.position.array;
+            for (let i = 0; i < vertices.length; i += 3) {
+                const x = vertices[i];
+                const z = vertices[i + 2];
+                
+                // Create more pronounced rolling hills
+                const hillHeight = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 4;
+                
+                // Add medium terrain variations
+                const mediumNoise = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 1.5;
+                
+                // Add small terrain variations for texture
+                const smallNoise = (Math.sin(x * 0.8) + Math.sin(z * 0.8)) * 0.3;
+                
+                // Combine all variations
+                vertices[i + 1] = hillHeight + mediumNoise + smallNoise;
+            }
+            
+            geometry.computeVertexNormals();
+            geometry.rotateX(-Math.PI / 2);
+            
+            // We've removed the canvas texture creation in favor of direct color
+            
+            const groundMaterial = new THREE.MeshStandardMaterial({
+                color: 0x7EC850, // Brighter green color
+                roughness: 0.8,
+                metalness: 0.1,
+                transparent: false,
+                opacity: 1.0
+            });
+            
+            const terrain = new THREE.Mesh(geometry, groundMaterial);
+            terrain.receiveShadow = true;
+            terrain.castShadow = true;
+            terrain.name = "terrain";
+            scene.add(terrain);
+            
+            // Add grass clumps for more detail
+            addGrassClumps(terrainSize);
+            
+            return terrain;
+        }
+        
+        function addGrassClumps(terrainSize) {
+            // Create a simple grass clump geometry
+            const grassGeometry = new THREE.PlaneGeometry(0.8, 0.8);
+            
+            // Create grass materials with different shades
+            const grassColors = [0x66BB6A, 0x81C784, 0xA5D6A7]; // Light green shades
+            const grassMaterials = grassColors.map(color => 
+                new THREE.MeshBasicMaterial({
+                    color: color,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.9
+                })
+            );
+            
+            // Add random grass clumps across terrain
+            const grassCount = 1500; // Increased number of grass clumps
+            const halfSize = terrainSize / 2;
+            
+            for (let i = 0; i < grassCount; i++) {
+                const x = Math.random() * terrainSize - halfSize;
+                const z = Math.random() * terrainSize - halfSize;
+                
+                // Get terrain height at this point
+                const terrainHeight = getTerrainHeight(x, z);
+                
+                // Create grass clump (simple cross of planes)
+                const grassClump = new THREE.Group();
+                
+                for (let j = 0; j < 3; j++) { // Added an extra plane for more fullness
+                    const blade = new THREE.Mesh(
+                        grassGeometry, 
+                        grassMaterials[Math.floor(Math.random() * grassMaterials.length)]
+                    );
+                    
+                    blade.rotation.y = Math.PI / 3 * j;
+                    blade.position.set(0, 0.4, 0);
+                    grassClump.add(blade);
+                }
+                
+                grassClump.position.set(x, terrainHeight, z);
+                
+                // Random rotation and slight scaling
+                grassClump.rotation.y = Math.random() * Math.PI;
+                const scale = 0.8 + Math.random() * 0.4;
+                grassClump.scale.set(scale, scale, scale);
+                
+                scene.add(grassClump);
+            }
+        }
+        
+        const terrain = createTerrain();
+        
+        // Create flag pole (goal)
+        function createFlagPole() {
+            const group = new THREE.Group();
+            
+            // Pole
+            const poleGeometry = new THREE.CylinderGeometry(0.1, 0.1, 5, 8);
+            const poleMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const pole = new THREE.Mesh(poleGeometry, poleMaterial);
+            pole.position.y = 2.5;
+            pole.castShadow = true;
+            
+            // Flag
+            const flagGeometry = new THREE.PlaneGeometry(2, 1);
+            const flagMaterial = new THREE.MeshBasicMaterial({ 
+                color: 0xff0000,
+                side: THREE.DoubleSide
+            });
+            const flag = new THREE.Mesh(flagGeometry, flagMaterial);
+            flag.position.set(1, 4, 0);
+            flag.castShadow = true;
+            
+            group.add(pole);
+            group.add(flag);
+            
+            // Position the flag pole far away from the starting point
+            group.position.set(50, 0, 50);
+            
+            scene.add(group);
+            return group;
+        }
+        
+        const flagPole = createFlagPole();
+        
+        // Create obstacles
+        function createObstacles() {
+            const obstacles = [];
+            
+            // Create some rocks
+            for (let i = 0; i < 50; i++) {
+                const rockSize = Math.random() * 1 + 0.5;
+                const rockGeometry = new THREE.DodecahedronGeometry(rockSize, 0);
+                const rockMaterial = new THREE.MeshStandardMaterial({ 
+                    color: 0xA0A0A0,
+                    roughness: 0.9
+                });
+                
+                const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+                
+                // Position rocks randomly around the map
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 80 + 10;
+                
+                rock.position.x = Math.cos(angle) * distance;
+                rock.position.z = Math.sin(angle) * distance;
+                
+                // Make sure rocks are on the terrain
+                const terrainHeight = getTerrainHeight(rock.position.x, rock.position.z);
+                rock.position.y = terrainHeight + rockSize * 0.5;
+                
+                rock.castShadow = true;
+                rock.receiveShadow = true;
+                
+                scene.add(rock);
+                obstacles.push(rock);
+            }
+            
+            // Create some trees
+            for (let i = 0; i < 30; i++) {
+                const tree = createTree();
+                
+                // Position trees randomly around the map
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 80 + 15;
+                
+                tree.position.x = Math.cos(angle) * distance;
+                tree.position.z = Math.sin(angle) * distance;
+                
+                // Make sure trees are on the terrain
+                const terrainHeight = getTerrainHeight(tree.position.x, tree.position.z);
+                tree.position.y = terrainHeight;
+                
+                scene.add(tree);
+                obstacles.push(tree);
+            }
+            
+            // Create some flowers
+            for (let i = 0; i < 100; i++) {
+                const flowerGroup = createFlowerPatch();
+                
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 90 + 5;
+                
+                flowerGroup.position.x = Math.cos(angle) * distance;
+                flowerGroup.position.z = Math.sin(angle) * distance;
+                
+                const terrainHeight = getTerrainHeight(flowerGroup.position.x, flowerGroup.position.z);
+                flowerGroup.position.y = terrainHeight;
+                
+                scene.add(flowerGroup);
+            }
+            
+            return obstacles;
+        }
+        
+        function createTree() {
+            const treeGroup = new THREE.Group();
+            
+            // Tree trunk
+            const trunkGeometry = new THREE.CylinderGeometry(0.2, 0.4, 2, 8);
+            const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+            const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+            trunk.position.y = 1;
+            trunk.castShadow = true;
+            
+            // Tree foliage (simple cone for now)
+            const foliageGeometry = new THREE.ConeGeometry(1.5, 3, 8);
+            const foliageMaterial = new THREE.MeshStandardMaterial({ color: 0x228B22 });
+            const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
+            foliage.position.y = 3;
+            foliage.castShadow = true;
+            
+            treeGroup.add(trunk);
+            treeGroup.add(foliage);
+            
+            return treeGroup;
+        }
+        
+        function createFlowerPatch() {
+            const flowerGroup = new THREE.Group();
+            
+            // Create 3-5 flowers in a small patch
+            const flowerCount = Math.floor(Math.random() * 3) + 3;
+            const colors = [0xFFFF00, 0xFF00FF, 0xFFFFFF, 0xFF0000, 0x0000FF];
+            
+            for (let i = 0; i < flowerCount; i++) {
+                // Stem
+                const stemGeometry = new THREE.CylinderGeometry(0.02, 0.02, 0.3, 8);
+                const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x00FF00 });
+                const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+                stem.position.y = 0.15;
+                
+                // Flower head
+                const flowerGeometry = new THREE.SphereGeometry(0.1, 8, 8);
+                const flowerMaterial = new THREE.MeshStandardMaterial({ 
+                    color: colors[Math.floor(Math.random() * colors.length)]
+                });
+                const flowerHead = new THREE.Mesh(flowerGeometry, flowerMaterial);
+                flowerHead.position.y = 0.35;
+                
+                const flower = new THREE.Group();
+                flower.add(stem);
+                flower.add(flowerHead);
+                
+                // Position flower within the patch
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 0.5;
+                flower.position.x = Math.cos(angle) * distance;
+                flower.position.z = Math.sin(angle) * distance;
+                
+                flowerGroup.add(flower);
+            }
+            
+            return flowerGroup;
+        }
+        
+        const obstacles = createObstacles();
+        
+        // Terrain height calculations
+        function getTerrainHeight(x, z) {
+            // Function must match the terrain generation algorithm
+            const hillHeight = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 4;
+            const mediumNoise = Math.sin(x * 0.2) * Math.cos(z * 0.2) * 1.5;
+            const smallNoise = (Math.sin(x * 0.8) + Math.sin(z * 0.8)) * 0.3;
+            return hillHeight + mediumNoise + smallNoise;
+        }
+        
+        // Input handling
+        document.addEventListener('keydown', (event) => {
+            gameState.keyStates[event.code] = true;
+        });
+        
+        document.addEventListener('keyup', (event) => {
+            gameState.keyStates[event.code] = false;
+        });
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Game physics and movement
+        function updatePlayerPosition(deltaTime) {
+            if (gameState.goalReached) return;
+            
+            const speed = 5.0;
+            const jumpForce = 8.0;
+            const gravity = 20.0;
+            
+            // Ground check
+            const playerPos = player.position.clone();
+            const groundHeight = getTerrainHeight(playerPos.x, playerPos.z);
+            gameState.playerOnGround = playerPos.y <= groundHeight + 0.5;
+            
+            // Apply gravity
+            if (!gameState.playerOnGround) {
+                gameState.playerVelocity.y -= gravity * deltaTime;
+            } else {
+                gameState.playerVelocity.y = Math.max(0, gameState.playerVelocity.y);
+                
+                // Snap to ground if on ground
+                if (playerPos.y < groundHeight + 0.5) {
+                    player.position.y = groundHeight + 0.5;
+                }
+            }
+            
+            // Handle jumping
+            if (gameState.keyStates['Space'] && gameState.playerOnGround) {
+                gameState.playerVelocity.y = jumpForce;
+            }
+            
+            // Movement direction (in camera space)
+            const moveDirection = new THREE.Vector3(0, 0, 0);
+            
+            if (gameState.keyStates['KeyW']) moveDirection.z = 1;
+            if (gameState.keyStates['KeyS']) moveDirection.z = -1;
+            if (gameState.keyStates['KeyA']) moveDirection.x = 1;
+            if (gameState.keyStates['KeyD']) moveDirection.x = -1;
+            
+            moveDirection.normalize();
+            
+            // Convert movement from camera space to world space
+            const cameraDirection = new THREE.Vector3();
+            camera.getWorldDirection(cameraDirection);
+            cameraDirection.y = 0;
+            cameraDirection.normalize();
+            
+            const cameraRight = new THREE.Vector3(cameraDirection.z, 0, -cameraDirection.x);
+            
+            const worldMoveDirection = new THREE.Vector3();
+            worldMoveDirection.addScaledVector(cameraRight, moveDirection.x);
+            worldMoveDirection.addScaledVector(cameraDirection, moveDirection.z);
+            
+            // Apply movement
+            if (worldMoveDirection.length() > 0) {
+                worldMoveDirection.normalize();
+                
+                // Calculate new position
+                const moveDelta = worldMoveDirection.clone().multiplyScalar(speed * deltaTime);
+                player.position.add(moveDelta);
+                
+                // Adjust player to terrain height
+                const newGroundHeight = getTerrainHeight(player.position.x, player.position.z);
+                
+                // Only adjust height if we're on the ground
+                if (gameState.playerOnGround) {
+                    player.position.y = newGroundHeight + 0.5;
+                }
+                
+                // Rotate player to face direction of movement
+                player.lookAt(player.position.clone().add(worldMoveDirection));
+            }
+            
+            // Apply vertical velocity (gravity/jumping)
+            player.position.y += gameState.playerVelocity.y * deltaTime;
+            
+            // Update camera position
+            updateCamera();
+            
+            // Check for goal (flag pole)
+            const distanceToGoal = player.position.distanceTo(flagPole.position);
+            if (distanceToGoal < 3) {
+                gameState.goalReached = true;
+                document.getElementById('goal-message').style.display = 'block';
+            }
+        }
+        
+        // Camera controls
+        let cameraAngleHorizontal = 0;
+        let cameraAngleVertical = 0;
+        const cameraDistance = 5;
+        
+        function updateCamera() {
+            // Update camera angles based on arrow key inputs
+            if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.03;
+            if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.03;
+            if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.03, -Math.PI/4);
+            if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.03, Math.PI/4);
+            
+            const playerPos = player.position.clone();
+            
+            // Calculate camera position with orbit controls
+            const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
+            const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
+            
+            const cameraX = playerPos.x + horizontalDistance * Math.sin(cameraAngleHorizontal);
+            const cameraZ = playerPos.z + horizontalDistance * Math.cos(cameraAngleHorizontal);
+            const cameraY = playerPos.y + 1.5 + verticalDistance; // 1.5 is a height offset
+            
+            camera.position.set(cameraX, cameraY, cameraZ);
+            camera.lookAt(new THREE.Vector3(playerPos.x, playerPos.y + 1, playerPos.z));
+        }
+        
+        // Collision detection
+        function checkCollisions() {
+            const playerRadius = 0.25;
+            const playerPos = player.position.clone();
+            
+            for (const obstacle of obstacles) {
+                // Simple sphere-based collision
+                const obstaclePos = new THREE.Vector3().setFromMatrixPosition(obstacle.matrixWorld);
+                const distance = playerPos.distanceTo(obstaclePos);
+                
+                // Assuming obstacle radius as 1 for simplicity
+                const minDistance = playerRadius + 1;
+                
+                if (distance < minDistance) {
+                    // Push player away from obstacle
+                    const pushDirection = playerPos.clone().sub(obstaclePos).normalize();
+                    player.position.add(pushDirection.multiplyScalar(minDistance - distance));
+                }
+            }
+        }
+        
+        function resetGame() {
+            player.position.set(0, 0.5, 0);
+            gameState.playerVelocity.set(0, 0, 0);
+            gameState.goalReached = false;
+            document.getElementById('goal-message').style.display = 'none';
+        }
+        
+        // Animation loop
+        let lastTime = 0;
+        
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+            
+            const deltaTime = (currentTime - lastTime) / 1000;
+            lastTime = currentTime;
+            
+            // Skip first frame
+            if (isNaN(deltaTime) || deltaTime > 0.1) return;
+            
+            updatePlayerPosition(deltaTime);
+            checkCollisions();
+            
+            renderer.render(scene, camera);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
