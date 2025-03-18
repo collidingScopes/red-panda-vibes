@@ -1,4 +1,4 @@
-// Level System for Red Panda Explorer
+// Level System for Red Panda Explorer with infinite levels
 class LevelSystem {
     constructor(scene, enemyManager, player, flagPole) {
         this.scene = scene;
@@ -8,45 +8,16 @@ class LevelSystem {
         
         // Level settings
         this.currentLevel = 1;
-        this.maxLevel = 5;
+        // Remove maxLevel as we now have infinite levels
         
-        // Level-specific settings
-        this.levelSettings = {
-            // Level 1: No enemies, minimal fog
-            1: { 
-                enemyCount: 0, 
-                fogDensity: 0.01, 
-                fogColor: 0xa183e0,
-                fogDistance: 100
-            },
-            // Level 2: Few enemies, light fog
-            2: { 
-                enemyCount: 5, 
-                fogDensity: 0.02, 
-                fogColor: 0x9574d4,
-                fogDistance: 70
-            },
-            // Level 3: More enemies, moderate fog
-            3: { 
-                enemyCount: 10, 
-                fogDensity: 0.03, 
-                fogColor: 0x8966c9,
-                fogDistance: 50
-            },
-            // Level 4: Many enemies, heavy fog
-            4: { 
-                enemyCount: 15, 
-                fogDensity: 0.04, 
-                fogColor: 0x7d57be,
-                fogDistance: 30
-            },
-            // Level 5: Max enemies, very heavy fog
-            5: { 
-                enemyCount: 20, 
-                fogDensity: 0.05, 
-                fogColor: 0x7148b3,
-                fogDistance: 20
-            }
+        // Base level settings - we'll calculate harder difficulties from these
+        this.baseSettings = {
+            enemyCount: 5,           // Base number of enemies
+            enemySpeedWander: 2.1,     // Base speed when wandering
+            enemySpeedChase: 4.1,      // Base speed when chasing
+            fogDensity: 0.01,        // Base fog density
+            fogDistance: 100,         // Base fog distance
+            fogColor: 0xa183e0       // Base fog color
         };
         
         // Create level indicator UI
@@ -62,16 +33,62 @@ class LevelSystem {
         this.updateLevelIndicator();
     }
     
+    // Calculate settings for the current level
+    calculateLevelSettings(level) {
+        // Level 1 is special with no enemies
+        if (level === 1) {
+            return {
+                enemyCount: 0,
+                enemySpeedWander: this.baseSettings.enemySpeedWander,
+                enemySpeedChase: this.baseSettings.enemySpeedChase,
+                fogDensity: 0.01,
+                fogColor: this.baseSettings.fogColor,
+                fogDistance: 100
+            };
+        }
+        
+        // For levels 2 and above, scale difficulty
+        const enemyCount = Math.max(0,this.baseSettings.enemyCount + (level - 2) * 5);
+        
+        // Calculate enemy speed: increases by 4% per level above level 2
+        const speedMultiplier = 1 + (level - 2) * 0.04;
+        const enemySpeedWander = this.baseSettings.enemySpeedWander * speedMultiplier;
+        const enemySpeedChase = this.baseSettings.enemySpeedChase * speedMultiplier;
+        
+        // Calculate fog: gets thicker (shorter distance) and denser with each level
+        // But let's cap the fog at a certain level so the game remains playable
+        const fogDistance = Math.max(30, this.baseSettings.fogDistance - (level - 2) * 5);
+        const fogDensity = Math.min(0.08, this.baseSettings.fogDensity + (level - 2) * 0.005);
+        
+        // Darken fog color slightly for higher levels (reduces brightness)
+        const fogColorValue = parseInt(this.baseSettings.fogColor.toString(16), 16);
+        const r = ((fogColorValue >> 16) & 255) - Math.min(50, (level - 2) * 2);
+        const g = ((fogColorValue >> 8) & 255) - Math.min(50, (level - 2) * 2);
+        const b = (fogColorValue & 255) - Math.min(50, (level - 2) * 2);
+        const fogColor = (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b);
+        
+        return {
+            enemyCount,
+            enemySpeedWander,
+            enemySpeedChase,
+            fogDensity,
+            fogColor,
+            fogDistance
+        };
+    }
+    
     // Apply settings for the current level
     applyLevelSettings(level) {
-        const settings = this.levelSettings[level];
+        const settings = this.calculateLevelSettings(level);
         
         // Update fog settings
         this.scene.fog = new THREE.Fog(settings.fogColor, 20, settings.fogDistance);
         
-        // Update enemy count
+        // Update enemy count and speed
         this.enemyManager.COUNT = settings.enemyCount;
-        this.enemyManager.reset(); // Reset and recreate enemies with new count
+        this.enemyManager.SPEED_WANDER = settings.enemySpeedWander;
+        this.enemyManager.SPEED_CHASE = settings.enemySpeedChase;
+        this.enemyManager.reset(); // Reset and recreate enemies with new count and speed
         
         // Reset player position
         this.player.position.set(0, 50, 0);
@@ -98,7 +115,7 @@ class LevelSystem {
     createLevelIndicator() {
         const levelIndicator = document.createElement('div');
         levelIndicator.id = 'level-indicator';
-        levelIndicator.innerHTML = `<span>Level ${this.currentLevel}/${this.maxLevel}</span>`;
+        levelIndicator.innerHTML = `<span>Level ${this.currentLevel}</span>`;
         document.body.appendChild(levelIndicator);
     }
     
@@ -106,7 +123,7 @@ class LevelSystem {
     updateLevelIndicator() {
         const indicator = document.getElementById('level-indicator');
         if (indicator) {
-            indicator.innerHTML = `<span>Level ${this.currentLevel}/${this.maxLevel}</span>`;
+            indicator.innerHTML = `<span>Level ${this.currentLevel}</span>`;
         }
     }
     
@@ -132,18 +149,14 @@ class LevelSystem {
     
     // Advance to next level
     advanceToNextLevel() {
-        if (this.currentLevel < this.maxLevel) {
-            this.currentLevel++;
-            this.applyLevelSettings(this.currentLevel);
-            this.updateLevelIndicator();
-            
-            // Hide level complete screen and reset goal reached state
-            document.getElementById('level-complete-screen').style.display = 'none';
-            gameState.goalReached = false;
-        } else {
-            // Game complete - show win screen
-            this.showGameWinScreen();
-        }
+        // Always advance to the next level
+        this.currentLevel++;
+        this.applyLevelSettings(this.currentLevel);
+        this.updateLevelIndicator();
+        
+        // Hide level complete screen and reset goal reached state
+        document.getElementById('level-complete-screen').style.display = 'none';
+        gameState.goalReached = false;
     }
     
     // Show level complete screen
@@ -151,46 +164,12 @@ class LevelSystem {
         // Update level status
         const statusEl = document.getElementById('level-status');
         if (statusEl) {
-            if (this.currentLevel < this.maxLevel) {
-                statusEl.innerHTML = `<p>Get ready for Level ${this.currentLevel + 1}!</p>`;
-                document.getElementById('next-level-button').textContent = 'Next Level';
-            } else {
-                statusEl.innerHTML = `<p>This is the final level!</p>`;
-                document.getElementById('next-level-button').textContent = 'Complete Game';
-            }
+            statusEl.innerHTML = `<p>Get ready for Level ${this.currentLevel + 1}!</p>`;
+            document.getElementById('next-level-button').textContent = 'Next Level';
         }
         
         // Show the level complete screen
         document.getElementById('level-complete-screen').style.display = 'flex';
-    }
-    
-    // Show game win screen
-    showGameWinScreen() {
-        // Create win screen if it doesn't exist
-        if (!document.getElementById('game-win-screen')) {
-            const gameWinScreen = document.createElement('div');
-            gameWinScreen.id = 'game-win-screen';
-            gameWinScreen.innerHTML = `
-                <div class="game-win-content">
-                    <h2>Congratulations!</h2>
-                    <p>You've completed all levels!</p>
-                    <p>You are a true Red Panda Explorer!</p>
-                    <button id="restart-game-button">Play Again</button>
-                </div>
-            `;
-            document.body.appendChild(gameWinScreen);
-            
-            // Add event listener for restart button
-            document.getElementById('restart-game-button').addEventListener('click', () => {
-                this.restartGame();
-            });
-        }
-        
-        // Hide level complete screen
-        document.getElementById('level-complete-screen').style.display = 'none';
-        
-        // Show win screen
-        document.getElementById('game-win-screen').style.display = 'flex';
     }
     
     // Restart the entire game
@@ -198,9 +177,6 @@ class LevelSystem {
         this.currentLevel = 1;
         this.applyLevelSettings(this.currentLevel);
         this.updateLevelIndicator();
-        
-        // Hide win screen
-        document.getElementById('game-win-screen').style.display = 'none';
         
         // Reset game state
         gameState.goalReached = false;
