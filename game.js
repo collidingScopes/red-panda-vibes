@@ -55,7 +55,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Soft shadows for better loo
 document.body.appendChild(renderer.domElement);
 
 // Set up a low-resolution render target for pixelated look
-const pixelRatio = 0.7; // Changed from 0.35 to 0.7 as requested
+const pixelRatio = 2.0; // Changed from 0.35 to 0.7 as requested
 renderer.setPixelRatio(pixelRatio);
 
 // Enhanced sunset lighting for more dramatic shadows
@@ -335,9 +335,6 @@ function createTerrain() {
         }
     }
     
-    // Add pastel-neon styled grass clumps
-    addPastelGrassClumps(terrainSize);
-    
     // Add the neon glow lights
     addNeonLights();
     
@@ -384,97 +381,67 @@ function getTerrainHeight(x, z) {
     return Math.max(0, (hillHeight + mediumNoise) * 0.5);
 }
 
-function addPastelGrassClumps(terrainSize) {
-    // Create simplified grass for retro look - just use small boxes
-    const grassGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.4);
-    
-    // Neon pastel palette for grass
-    const grassColors = [
-        0xffaad8, // Pink
-        0xaae6ff, // Cyan
-        0xa1ffbb, // Green
-        0xffe1aa, // Yellow
-        0xbba1ff  // Purple
-    ]; 
-    
-    const grassMaterials = grassColors.map(color => 
-        new THREE.MeshStandardMaterial({
-            color: color,
-            roughness: 0.7,
-            emissive: color,
-            emissiveIntensity: 0.2 // Soft glow
-        })
-    );
-    
-    // Grass clumps with neon effect
-    const grassCount = 500; // Increased count for more lush look
-    const halfSize = terrainSize / 2;
-    
-    for (let i = 0; i < grassCount; i++) {
-        const x = Math.random() * terrainSize - halfSize;
-        const z = Math.random() * terrainSize - halfSize;
-        
-        // Get terrain height at this point
-        const terrainHeight = getTerrainHeight(x, z);
-        
-        // Simple grass box
-        const grassMaterial = grassMaterials[Math.floor(Math.random() * grassMaterials.length)];
-        const grass = new THREE.Mesh(grassGeometry, grassMaterial);
-        
-        // Position just above terrain with slight random rotation
-        grass.position.set(x, terrainHeight + 0.4, z);
-        grass.rotation.y = Math.random() * Math.PI;
-        
-        // Random slight scaling
-        const scale = 0.6 + Math.random() * 0.8;
-        grass.scale.set(scale, scale + Math.random() * 0.5, scale);
-        
-        grass.castShadow = true;
-        grass.receiveShadow = true;
-        
-        scene.add(grass);
-    }
-}
-
 const terrain = createTerrain();
 
-// Create neon-styled flag pole
+// Create neon-styled flag pole with rainbow flag
 function createFlagPole() {
     const group = new THREE.Group();
     
-    // Pole - simpler geometry for retro look but with glow
-    const poleGeometry = new THREE.BoxGeometry(0.5, 10, 0.5); // Box instead of cylinder
+    // CHANGE: Make the pole taller (increased from 10 to 20)
+    const poleGeometry = new THREE.BoxGeometry(0.5, 20, 0.5); // Doubled height
     const poleMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xffffff, // White color
         roughness: 0.3,
         metalness: 0.8,
         emissive: 0xaaaaff, // Subtle blue glow
-        emissiveIntensity: 0.4 // Increased from 0.3
+        emissiveIntensity: 0.4
     });
     const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-    pole.position.y = 5;
+    pole.position.y = 10; // Adjusted to center the taller pole
     pole.castShadow = true;
     
-    // Flag - bright neon
-    const flagGeometry = new THREE.PlaneGeometry(3, 1.5);
+    // CHANGE: Create a rainbow gradient flag
+    // Create a canvas for the rainbow gradient
+    const canvas = document.createElement('canvas');
+    canvas.width = 300;
+    canvas.height = 150;
+    const ctx = canvas.getContext('2d');
+    
+    // Create a vibrant rainbow gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, 150);
+    gradient.addColorStop(0, '#ff1a8c'); // Hot pink
+    gradient.addColorStop(0.16, '#ff1a1a'); // Bright red
+    gradient.addColorStop(0.33, '#ffaa00'); // Orange
+    gradient.addColorStop(0.5, '#ffff00'); // Yellow
+    gradient.addColorStop(0.66, '#1aff1a'); // Green
+    gradient.addColorStop(0.83, '#00ccff'); // Cyan
+    gradient.addColorStop(1, '#cc66ff'); // Purple
+    
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, 300, 150);
+    
+    // Create a texture from the canvas
+    const flagTexture = new THREE.CanvasTexture(canvas);
+    flagTexture.needsUpdate = true;
+    
+    // Create the flag with the rainbow texture
+    const flagGeometry = new THREE.PlaneGeometry(4, 2); // Made larger for better visibility
     const flagMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xff84df, // Neon pink
+        map: flagTexture,
         side: THREE.DoubleSide,
-        emissive: 0xff84df,
-        emissiveIntensity: 1.0
+        // emissive: 0xffffff,
+        // emissiveIntensity: 0.8 // Increased glow
     });
     const flag = new THREE.Mesh(flagGeometry, flagMaterial);
-    flag.position.set(1.5, 8, 0);
+    flag.position.set(2, 18, 0); // Position higher on the taller pole
     flag.castShadow = true;
     
     group.add(pole);
     group.add(flag);
     
-    // Keep one point light for the flag since it's an important gameplay element
-    // but use a less intensive shadow setting
-    const flagLight = new THREE.PointLight(0xff84df, 1, 10);
-    flagLight.position.set(1.5, 8, 0);
-    // Don't cast shadows from this light to save on performance
+    // Add a brighter light for the flag to make it more visible from a distance
+    const flagLight = new THREE.PointLight(0xffffff, 2, 15); // Brighter white light
+    flagLight.position.set(2, 16, 0); // Position at the flag
     flagLight.castShadow = false;
     group.add(flagLight);
     
@@ -568,7 +535,7 @@ function createObstacles() {
     }
     
     // Create glowing flowers
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 500; i++) {
         const flowerGroup = createNeonFlowerPatch();
         
         const angle = Math.random() * Math.PI * 2;
@@ -704,7 +671,6 @@ document.addEventListener('keyup', (event) => {
 });
 
 // Add event listener for closing the instructions
-
 document.getElementById('close-instructions').addEventListener('click', () => {
     document.getElementById('instructions').style.display = 'none';
 });
@@ -813,13 +779,17 @@ function updatePlayerPosition(deltaTime) {
 let cameraAngleHorizontal = 0;
 let cameraAngleVertical = 0;
 const cameraDistance = 5;
+// Add min and max for vertical camera angle to prevent looking below ground
+const MIN_VERTICAL_ANGLE = -Math.PI/8; // Minimum (looking up)
+const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
 
 function updateCamera() {
     // Update camera angles based on arrow key inputs
     if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.03;
     if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.03;
-    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.03, -Math.PI/4);
-    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.03, Math.PI/4);
+    // Apply the min/max vertical angle limits
+    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.03, MIN_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.03, MAX_VERTICAL_ANGLE);
     
     const playerPos = player.position.clone();
     
@@ -881,28 +851,13 @@ function animate(currentTime) {
     // Add subtle continuous animation to glowing elements
     const time = currentTime * 0.001; // Convert to seconds
     
-    // Gently pulse the neon elements
-    scene.traverse(function(object) {
-        if (object.isMesh && object.material && object.material.emissiveIntensity) {
-            // Exclude certain elements from pulsing like player body, etc.
-            const shouldPulse = !(object.parent === player);
-            
-            if (shouldPulse) {
-                // Calculate a unique subtle pulse for each object
-                const uniqueOffset = (object.position.x * 0.1 + object.position.z * 0.1) % (Math.PI * 2);
-                const pulseIntensity = Math.sin(time * 2 + uniqueOffset) * 0.2 + 0.8;
-                
-                // Apply pulse to emissive intensity
-                const originalIntensity = object.material.userData.originalEmissiveIntensity || 0.3;
-                object.material.emissiveIntensity = originalIntensity * pulseIntensity;
-                
-                // Store original intensity if not already stored
-                if (!object.material.userData.originalEmissiveIntensity) {
-                    object.material.userData.originalEmissiveIntensity = object.material.emissiveIntensity;
-                }
-            }
-        }
-    });
+    // Add special animation for the rainbow flag
+    // Make the flag wave gently
+    const flagMesh = flagPole.children[1]; // The flag is the second child of the flagPole group
+    if (flagMesh) {
+        flagMesh.rotation.y = Math.sin(time * 4.0) * 0.1;
+        flagMesh.position.z = Math.sin(time * 4.0) * 0.2; // Add some subtle z-movement
+    }
     
     renderer.render(scene, camera);
 }
