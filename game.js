@@ -1,3 +1,12 @@
+// Color palette - consolidated repeated color definitions
+const COLORS = {
+    neon: [0xff84f0, 0x84ffef, 0xb3ff84, 0xffee84, 0xff84a1],
+    pastel: [0xaae6ff, 0xbba1ff, 0xffaad5, 0xa1ffbb, 0xffe1aa],
+    crystal: [0xff9ee6, 0x9eecff, 0xccff9e, 0xffe79e, 0xce9eff],
+    foliage: [0xa1ffcc, 0xe2a1ff, 0xf9a1ff, 0xffa1a1, 0xa1f9ff],
+    flower: [0xff84d9, 0x84ffee, 0xa2ff84, 0xffee84, 0xd084ff]
+};
+
 // Game state
 const gameState = {
     playerVelocity: new THREE.Vector3(),
@@ -13,13 +22,19 @@ const scene = new THREE.Scene();
 let frameCount = 0;
 let lastFpsUpdate = 0;
 let fps = 0;
+const fpsCounter = document.getElementById('fps-counter');
+
+// Helper function to create canvas elements
+function getCanvas(width, height) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    return canvas;
+}
 
 // Create a gradient background for sunset effect
 const createSunsetBackground = () => {
-    // Create a gradient texture
-    const canvas = document.createElement('canvas');
-    canvas.width = 2;
-    canvas.height = 512;
+    const canvas = getCanvas(2, 512);
     const context = canvas.getContext('2d');
     
     // Create a beautiful sunset gradient (top to bottom)
@@ -35,8 +50,6 @@ const createSunsetBackground = () => {
     
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
-    
-    // Adjust repeat setting to stretch the texture properly
     texture.repeat.set(1, 1);
     
     return texture;
@@ -89,19 +102,19 @@ const secondaryLight = new THREE.DirectionalLight(0x84b9ff, 0.6); // Bluish ligh
 secondaryLight.position.set(50, 30, -30);
 scene.add(secondaryLight);
 
+// Simplified terrain height function
+function getTerrainHeight(x, z) {
+    return Math.max(0, (
+        Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
+        Math.sin(x * 0.07 + z * 0.05) * 4 +
+        Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
+    ) * 0.5);
+}
+
 // Add some neon glow point lights scattered around
 function addNeonLights() {
-    // Neon colors from the reference image
-    const neonColors = [
-        0xff84f0, // Pink
-        0x84ffef, // Cyan
-        0xb3ff84, // Green
-        0xffee84, // Yellow
-        0xff84a1  // Red-pink
-    ];
-    
     for (let i = 0; i < 15; i++) {
-        const color = neonColors[Math.floor(Math.random() * neonColors.length)];
+        const color = COLORS.neon[Math.floor(Math.random() * COLORS.neon.length)];
         const intensity = 0.6 + Math.random() * 0.8;
         const radius = 2 + Math.random() * 3;
         
@@ -292,15 +305,6 @@ function createTerrain() {
     const hillsGroup = new THREE.Group();
     scene.add(hillsGroup);
     
-    // Pastel neon colors from the reference image
-    const pastelColors = [
-        0xaae6ff, // Light blue
-        0xbba1ff, // Lavender
-        0xffaad5, // Pink
-        0xa1ffbb, // Mint green
-        0xffe1aa  // Peach
-    ];
-    
     // Generate terrain segments - with more flowing height variation
     for (let x = 0; x < segments; x++) {
         for (let z = 0; z < segments; z++) {
@@ -315,7 +319,7 @@ function createTerrain() {
                 const hillGeometry = new THREE.BoxGeometry(segmentSize, height, segmentSize);
                 
                 // Choose a pastel color with slight randomization
-                const baseColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+                const baseColor = COLORS.pastel[Math.floor(Math.random() * COLORS.pastel.length)];
                 
                 // Create a subtle color variation
                 const color = new THREE.Color(baseColor);
@@ -348,9 +352,7 @@ function createTerrain() {
 
 // Create a gradient texture for the terrain base
 function createTerrainBaseTexture() {
-    const canvas = document.createElement('canvas');
-    canvas.width = 512;
-    canvas.height = 512;
+    const canvas = getCanvas(512, 512);
     const context = canvas.getContext('2d');
     
     // Create a radial gradient
@@ -371,19 +373,6 @@ function createTerrainBaseTexture() {
     texture.needsUpdate = true;
     
     return texture;
-}
-
-// Enhanced terrain height function with more flowing hills
-function getTerrainHeight(x, z) {
-    // More flowing rolling hills using sine waves with different frequencies
-    const hillHeight = Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
-                     Math.sin(x * 0.07 + z * 0.05) * 4;
-    
-    // Add medium terrain variations
-    const mediumNoise = Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5;
-    
-    // Combine all variations and ensure we have positive heights
-    return Math.max(0, (hillHeight + mediumNoise) * 0.5);
 }
 
 const terrain = createTerrain();
@@ -407,9 +396,7 @@ function createFlagPole() {
     
     // CHANGE: Create a rainbow gradient flag
     // Create a canvas for the rainbow gradient
-    const canvas = document.createElement('canvas');
-    canvas.width = 300;
-    canvas.height = 150;
+    const canvas = getCanvas(300, 150);
     const ctx = canvas.getContext('2d');
     
     // Create a vibrant rainbow gradient
@@ -434,8 +421,6 @@ function createFlagPole() {
     const flagMaterial = new THREE.MeshBasicMaterial({ 
         map: flagTexture,
         side: THREE.DoubleSide,
-        // emissive: 0xffffff,
-        // emissiveIntensity: 0.8 // Increased glow
     });
     const flag = new THREE.Mesh(flagGeometry, flagMaterial);
     flag.position.set(2, 18, 0); // Position higher on the taller pole
@@ -461,26 +446,21 @@ function createFlagPole() {
 }
 
 const flagPole = createFlagPole();
+const flagMesh = flagPole.children[1]; // Cache flag reference for animation
 
 // Create pastel neon styled obstacles
 function createObstacles() {
     const obstacles = [];
     
-    // Create crystals instead of rocks (reduced count and removed individual lights to stay within WebGL limits)
-    for (let i = 0; i < 20; i++) { // Reduced from 40 to 20
+    // Create reusable geometries
+    const baseCrystalGeometry = new THREE.ConeGeometry(0.6, 1.5, 4, 1);
+    const stemGeometry = new THREE.BoxGeometry(0.1, 0.4, 0.1);
+    const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+    
+    // Create crystals instead of rocks
+    for (let i = 0; i < 20; i++) {
         const crystalSize = Math.random() * 1.5 + 0.8;
-        // Use pyramid/cones for crystal look
-        const crystalGeometry = new THREE.ConeGeometry(crystalSize * 0.6, crystalSize * 1.5, 4, 1);
-        
-        // Neon pastel colors from the image
-        const crystalColors = [
-            0xff9ee6, // Pink
-            0x9eecff, // Cyan
-            0xccff9e, // Green
-            0xffe79e, // Yellow
-            0xce9eff  // Purple
-        ];
-        const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
+        const crystalColor = COLORS.crystal[Math.floor(Math.random() * COLORS.crystal.length)];
         
         const crystalMaterial = new THREE.MeshStandardMaterial({ 
             color: crystalColor,
@@ -489,10 +469,11 @@ function createObstacles() {
             transparent: true,
             opacity: 0.8,
             emissive: crystalColor,
-            emissiveIntensity: 0.5 // Increased from 0.3 to 0.5 for brighter glow
+            emissiveIntensity: 0.5
         });
         
-        const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
+        const crystal = new THREE.Mesh(baseCrystalGeometry, crystalMaterial);
+        crystal.scale.set(crystalSize, crystalSize, crystalSize);
         
         // Position crystals randomly around the map
         const angle = Math.random() * Math.PI * 2;
@@ -512,9 +493,6 @@ function createObstacles() {
         
         crystal.castShadow = true;
         crystal.receiveShadow = true;
-        
-        // Removed individual point lights inside crystal to reduce uniform count
-        // Using stronger emissive instead
         
         scene.add(crystal);
         obstacles.push(crystal);
@@ -540,8 +518,14 @@ function createObstacles() {
     }
     
     // Create glowing flowers
+    const stemMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x84ffa2,
+        emissive: 0x84ffa2,
+        emissiveIntensity: 0.4
+    });
+    
     for (let i = 0; i < 500; i++) {
-        const flowerGroup = createNeonFlowerPatch();
+        const flowerGroup = createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial);
         
         const angle = Math.random() * Math.PI * 2;
         const distance = Math.random() * 90 + 5;
@@ -575,14 +559,7 @@ function createPastelTree() {
     trunk.castShadow = true;
     
     // Choose from pastel colors for the foliage
-    const foliageColors = [
-        0xa1ffcc, // Mint
-        0xe2a1ff, // Lavender
-        0xf9a1ff, // Pink
-        0xffa1a1, // Peach
-        0xa1f9ff  // Cyan
-    ];
-    const foliageColor = foliageColors[Math.floor(Math.random() * foliageColors.length)];
+    const foliageColor = COLORS.foliage[Math.floor(Math.random() * COLORS.foliage.length)];
     
     // Tree foliage - rounded cone for soft look
     const foliageGeometry = new THREE.ConeGeometry(2, 4, 8); // More sides for smoother look
@@ -591,14 +568,11 @@ function createPastelTree() {
         roughness: 0.7,
         metalness: 0.1,
         emissive: foliageColor,
-        emissiveIntensity: 0.6 // Increased from 0.2 to 0.6 for stronger glow
+        emissiveIntensity: 0.6
     });
     const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
     foliage.position.y = 3;
     foliage.castShadow = true;
-    
-    // Removed point light to reduce uniform count
-    // Using stronger emissive instead
     
     treeGroup.add(trunk);
     treeGroup.add(foliage);
@@ -606,47 +580,27 @@ function createPastelTree() {
     return treeGroup;
 }
 
-function createNeonFlowerPatch() {
+function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
     const flowerGroup = new THREE.Group();
     
     // Create 2-4 flowers in a small patch
     const flowerCount = Math.floor(Math.random() * 3) + 2;
     
-    // Bright neon colors matching the image
-    const colors = [
-        0xff84d9, // Pink
-        0x84ffee, // Cyan
-        0xa2ff84, // Green
-        0xffee84, // Yellow
-        0xd084ff  // Purple
-    ];
-    
     for (let i = 0; i < flowerCount; i++) {
-        // Simple boxes for stem and flower but with glow
-        const stemGeometry = new THREE.BoxGeometry(0.1, 0.4, 0.1);
-        const stemMaterial = new THREE.MeshStandardMaterial({ 
-            color: 0x84ffa2,
-            emissive: 0x84ffa2,
-            emissiveIntensity: 0.4 // Increased from 0.3
-        });
-        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
-        stem.position.y = 0.2;
-        
-        // Flower head - using sphere for softer look
-        const flowerColor = colors[Math.floor(Math.random() * colors.length)];
-        const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
+        const flowerColor = COLORS.flower[Math.floor(Math.random() * COLORS.flower.length)];
         const flowerMaterial = new THREE.MeshStandardMaterial({ 
             color: flowerColor,
             roughness: 0.6,
             metalness: 0.3,
             emissive: flowerColor,
-            emissiveIntensity: 0.8 // Increased from 0.5 for stronger glow
+            emissiveIntensity: 0.8
         });
+        
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        stem.position.y = 0.2;
+        
         const flowerHead = new THREE.Mesh(flowerGeometry, flowerMaterial);
         flowerHead.position.y = 0.5;
-        
-        // Removed point light to reduce uniform count
-        // Using stronger emissive instead
         
         const flower = new THREE.Group();
         flower.add(stem);
@@ -666,26 +620,61 @@ function createNeonFlowerPatch() {
 
 const obstacles = createObstacles();
 
-// Input handling
-document.addEventListener('keydown', (event) => {
-    gameState.keyStates[event.code] = true;
-});
+// Initialize event listeners
+function initEventListeners() {
+    // Input handling
+    document.addEventListener('keydown', (event) => {
+        gameState.keyStates[event.code] = true;
+    });
 
-document.addEventListener('keyup', (event) => {
-    gameState.keyStates[event.code] = false;
-});
+    document.addEventListener('keyup', (event) => {
+        gameState.keyStates[event.code] = false;
+    });
 
-// Add event listener for closing the instructions
-document.getElementById('close-instructions').addEventListener('click', () => {
-    document.getElementById('instructions').style.display = 'none';
-});
+    // Add event listener for closing the instructions
+    document.getElementById('close-instructions').addEventListener('click', () => {
+        document.getElementById('instructions').style.display = 'none';
+    });
 
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setPixelRatio(pixelRatio); // Maintain pixelated look on resize
-});
+    window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(pixelRatio); // Maintain pixelated look on resize
+    });
+}
+
+// Camera controls
+let cameraAngleHorizontal = 0;
+let cameraAngleVertical = 0;
+const cameraDistance = 5;
+// Add min and max for vertical camera angle to prevent looking below ground
+const MIN_VERTICAL_ANGLE = -Math.PI/8; // Minimum (looking up)
+const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
+const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
+
+function updateCamera() {
+    // Update camera angles based on arrow key inputs
+    if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.03;
+    if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.03;
+    // Apply the min/max vertical angle limits
+    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.03, MIN_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.03, MAX_VERTICAL_ANGLE);
+    
+    // Calculate camera position with orbit controls
+    const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
+    const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
+    
+    // Update camera position using player's position without cloning
+    camera.position.x = player.position.x + horizontalDistance * Math.sin(cameraAngleHorizontal);
+    camera.position.z = player.position.z + horizontalDistance * Math.cos(cameraAngleHorizontal);
+    camera.position.y = player.position.y + 1.5 + verticalDistance; // 1.5 is a height offset
+    
+    // Reuse the target vector
+    cameraTarget.copy(player.position);
+    cameraTarget.y += 1; // Look at player's head level
+    camera.lookAt(cameraTarget);
+}
 
 // Game physics and movement
 function updatePlayerPosition(deltaTime) {
@@ -696,9 +685,8 @@ function updatePlayerPosition(deltaTime) {
     const gravity = 20.0;
     
     // Ground check
-    const playerPos = player.position.clone();
-    const groundHeight = getTerrainHeight(playerPos.x, playerPos.z);
-    gameState.playerOnGround = playerPos.y <= groundHeight + 0.5;
+    const groundHeight = getTerrainHeight(player.position.x, player.position.z);
+    gameState.playerOnGround = player.position.y <= groundHeight + 0.5;
     
     // Apply gravity
     if (!gameState.playerOnGround) {
@@ -707,7 +695,7 @@ function updatePlayerPosition(deltaTime) {
         gameState.playerVelocity.y = Math.max(0, gameState.playerVelocity.y);
         
         // Snap to ground if on ground - improved to prevent sinking
-        if (playerPos.y < groundHeight + 0.5) {
+        if (player.position.y < groundHeight + 0.5) {
             player.position.y = groundHeight + 0.5;
         }
     }
@@ -780,53 +768,21 @@ function updatePlayerPosition(deltaTime) {
     }
 }
 
-// Camera controls
-let cameraAngleHorizontal = 0;
-let cameraAngleVertical = 0;
-const cameraDistance = 5;
-// Add min and max for vertical camera angle to prevent looking below ground
-const MIN_VERTICAL_ANGLE = -Math.PI/8; // Minimum (looking up)
-const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
-
-function updateCamera() {
-    // Update camera angles based on arrow key inputs
-    if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.03;
-    if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.03;
-    // Apply the min/max vertical angle limits
-    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.03, MIN_VERTICAL_ANGLE);
-    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.03, MAX_VERTICAL_ANGLE);
-    
-    const playerPos = player.position.clone();
-    
-    // Calculate camera position with orbit controls
-    const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
-    const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
-    
-    const cameraX = playerPos.x + horizontalDistance * Math.sin(cameraAngleHorizontal);
-    const cameraZ = playerPos.z + horizontalDistance * Math.cos(cameraAngleHorizontal);
-    const cameraY = playerPos.y + 1.5 + verticalDistance; // 1.5 is a height offset
-    
-    camera.position.set(cameraX, cameraY, cameraZ);
-    camera.lookAt(new THREE.Vector3(playerPos.x, playerPos.y + 1, playerPos.z));
-}
-
-// Collision detection
+// Optimized collision detection
 function checkCollisions() {
     const playerRadius = 0.25;
-    const playerPos = player.position.clone();
+    const obstacleRadius = 1; // Define this once
+    const minDistance = playerRadius + obstacleRadius;
+    const obstaclePos = new THREE.Vector3(); // Reuse this vector
+    const pushDirection = new THREE.Vector3(); // Reuse this vector
     
     for (const obstacle of obstacles) {
-        // Simple sphere-based collision
-        const obstaclePos = new THREE.Vector3().setFromMatrixPosition(obstacle.matrixWorld);
-        const distance = playerPos.distanceTo(obstaclePos);
-        
-        // Assuming obstacle radius as 1 for simplicity
-        const minDistance = playerRadius + 1;
+        obstaclePos.setFromMatrixPosition(obstacle.matrixWorld);
+        const distance = player.position.distanceTo(obstaclePos);
         
         if (distance < minDistance) {
-            // Push player away from obstacle
-            const pushDirection = playerPos.clone().sub(obstaclePos).normalize();
-            player.position.add(pushDirection.multiplyScalar(minDistance - distance));
+            pushDirection.subVectors(player.position, obstaclePos).normalize();
+            player.position.addScaledVector(pushDirection, minDistance - distance);
         }
     }
 }
@@ -838,6 +794,35 @@ function resetGame() {
     document.getElementById('goal-message').style.display = 'none';
 }
 
+// Helper function to dispose of THREE.js objects properly
+function disposeObject(obj) {
+    if (obj.geometry) {
+        obj.geometry.dispose();
+    }
+    
+    if (obj.material) {
+        if (Array.isArray(obj.material)) {
+            obj.material.forEach(material => disposeMaterial(material));
+        } else {
+            disposeMaterial(obj.material);
+        }
+    }
+    
+    if (obj.children) {
+        obj.children.forEach(child => disposeObject(child));
+    }
+}
+
+function disposeMaterial(material) {
+    if (material.map) material.map.dispose();
+    if (material.lightMap) material.lightMap.dispose();
+    if (material.bumpMap) material.bumpMap.dispose();
+    if (material.normalMap) material.normalMap.dispose();
+    if (material.specularMap) material.specularMap.dispose();
+    if (material.envMap) material.envMap.dispose();
+    material.dispose();
+}
+
 // Animation loop
 let lastTime = 0;
 
@@ -847,33 +832,39 @@ function animate(currentTime) {
     const deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
     
-    // Skip first frame
+    // Skip first frame or if too much time passed (e.g., browser tab was inactive)
     if (isNaN(deltaTime) || deltaTime > 0.1) return;
 
-    // Update FPS counter
+    // Update FPS counter less frequently
     frameCount++;
-    if (currentTime >= lastFpsUpdate + 1000) {
+    if (currentTime >= lastFpsUpdate + 500) {
         fps = Math.round(frameCount * 1000 / (currentTime - lastFpsUpdate));
-        document.getElementById('fps-counter').textContent = `FPS: ${fps}`;
+        fpsCounter.textContent = `FPS: ${fps}`;
         frameCount = 0;
         lastFpsUpdate = currentTime;
     }
     
+    // Game logic updates
     updatePlayerPosition(deltaTime);
     checkCollisions();
     
-    // Add subtle continuous animation to glowing elements
-    const time = currentTime * 0.001; // Convert to seconds
-    
-    // Add special animation for the rainbow flag
-    // Make the flag wave gently
-    const flagMesh = flagPole.children[1]; // The flag is the second child of the flagPole group
-    if (flagMesh) {
-        flagMesh.rotation.y = Math.sin(time * 4.0) * 0.1;
-        flagMesh.position.z = Math.sin(time * 4.0) * 0.2; // Add some subtle z-movement
-    }
+    // Flag animation - using a single sine calculation
+    const sineValue = Math.sin(currentTime * 0.004);
+    flagMesh.rotation.y = sineValue * 0.1;
+    flagMesh.position.z = sineValue * 0.2;
     
     renderer.render(scene, camera);
 }
 
-animate();
+// Initialize the game
+function init() {
+    // Set up event listeners
+    initEventListeners();
+    
+    // Start the animation loop with the correct timestamp
+    lastTime = performance.now();
+    requestAnimationFrame(animate);
+}
+
+// Start the game
+init();

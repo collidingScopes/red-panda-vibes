@@ -4,9 +4,11 @@ body {
     font-family: 'Courier New', monospace;
     background-color: #000;
 }
+
 canvas {
     display: block;
 }
+
 #instructions {
     position: absolute;
     top: 10px;
@@ -23,6 +25,19 @@ canvas {
     box-shadow: 0 0 15px rgba(255, 132, 223, 0.5); /* Pink glow */
     backdrop-filter: blur(5px);
 }
+
+/* Added class for close button instead of inline styles */
+.close-button {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #00ff00;
+}
+
 #goal-message {
     position: absolute;
     top: 50%;
@@ -41,6 +56,7 @@ canvas {
     box-shadow: 0 0 20px rgba(132, 255, 239, 0.6); /* Cyan glow */
     backdrop-filter: blur(5px);
 }
+
 button {
     background-color: rgba(0, 0, 0, 0.5);
     color: #a2ff84; /* Neon green */
@@ -54,16 +70,19 @@ button {
     border-radius: 3px;
     transition: all 0.3s ease;
 }
+
 button:hover {
     background-color: rgba(162, 255, 132, 0.2); /* Slightly green tint */
     color: #ffffff;
     box-shadow: 0 0 10px rgba(162, 255, 132, 0.6); /* Green glow */
 }
+
 h2, h3 {
     color: #ffee84; /* Neon yellow */
     text-shadow: 0 0 5px rgba(255, 238, 132, 0.5); /* Yellow glow */
     margin-top: 0;
 }
+
 #fps-counter {
     position: absolute;
     bottom: 10px;

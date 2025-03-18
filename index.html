@@ -8,7 +8,7 @@
 </head>
 <body>
     <div id="instructions">
-        <button id="close-instructions" style="position: absolute; top: 5px; right: 5px; background: none; border: none; font-size: 16px; cursor: pointer; color: #00ff00;">&times;</button>
+        <button id="close-instructions" class="close-button">&times;</button>
         <h3>Red Panda Explorer</h3>
         <p>Move: WASD Keys | Jump: Spacebar</p>
         <p>Camera: Arrow Keys</p>
@@ -20,9 +20,9 @@
         <button onclick="resetGame()">Play Again</button>
     </div>
     <div id="fps-counter">FPS: </div>
-</body>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="game.js"></script>
-
+    <!-- Scripts with defer to improve page load time -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
+    <script src="game.js" defer></script>
+</body>
 </html>
