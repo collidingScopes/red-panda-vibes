@@ -1,0 +1,53 @@
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    background-color: #000;
+}
+canvas {
+    display: block;
+}
+#instructions {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: #00ff00;
+    padding: 10px;
+    border: 2px solid #00ff00;
+    border-radius: 0px;
+    z-index: 100;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+#goal-message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #00ff00;
+    padding: 20px;
+    border: 2px solid #00ff00;
+    border-radius: 0px;
+    text-align: center;
+    display: none;
+    z-index: 100;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+}
+button {
+    background-color: #000;
+    color: #00ff00;
+    border: 1px solid #00ff00;
+    padding: 5px 10px;
+    margin-top: 10px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+}
+button:hover {
+    background-color: #00ff00;
+    color: #000;
+}
