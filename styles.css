@@ -29,11 +29,12 @@ canvas {
 /* Added class for close button instead of inline styles */
 .close-button {
     position: absolute;
-    top: 5px;
+    top: -9px;
     right: 5px;
+    padding: 0px 5px;
     background: none;
-    border: none;
-    font-size: 16px;
+    border: 1;
+    font-size: 32px;
     cursor: pointer;
     color: #00ff00;
 }
@@ -148,4 +149,146 @@ h2, h3 {
     background-color: rgba(132, 255, 239, 0.2); /* Cyan tint */
     color: #ffffff;
     box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); /* Cyan glow */
+}
+
+/* Level Indicator */
+#level-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: #ffee84; /* Neon yellow */
+    padding: 10px 15px;
+    border: 2px solid #84ffef; /* Neon cyan */
+    border-radius: 5px;
+    z-index: 100;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 16px;
+    box-shadow: 0 0 15px rgba(132, 255, 239, 0.5); /* Cyan glow */
+    backdrop-filter: blur(5px);
+}
+
+#level-indicator span {
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(255, 238, 132, 0.7); /* Yellow glow */
+}
+
+/* Level Complete Screen */
+#level-complete-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    backdrop-filter: blur(5px);
+}
+
+.level-complete-content {
+    background-color: rgba(10, 10, 30, 0.7);
+    padding: 30px;
+    border: 2px solid #ffee84; /* Neon yellow */
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(255, 238, 132, 0.7); /* Yellow glow */
+    max-width: 400px;
+    color: #84ffef; /* Neon cyan */
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+}
+
+.level-complete-content h2 {
+    color: #ffee84; /* Neon yellow */
+    text-shadow: 0 0 5px rgba(255, 238, 132, 0.7); /* Yellow glow */
+    font-size: 28px;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+#level-status {
+    margin: 15px 0;
+}
+
+#next-level-button {
+    background-color: rgba(10, 10, 30, 0.7);
+    color: #a2ff84; /* Neon green */
+    border: 1px solid #a2ff84;
+    padding: 10px 20px;
+    margin-top: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+#next-level-button:hover {
+    background-color: rgba(162, 255, 132, 0.2); /* Green tint */
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(162, 255, 132, 0.6); /* Green glow */
+}
+
+/* Game Win Screen */
+#game-win-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    backdrop-filter: blur(5px);
+}
+
+.game-win-content {
+    background-color: rgba(10, 10, 30, 0.7);
+    padding: 30px;
+    border: 2px solid #ff84f0; /* Neon pink */
+    border-radius: 5px;
+    text-align: center;
+    box-shadow: 0 0 25px rgba(255, 132, 240, 0.7); /* Pink glow */
+    max-width: 400px;
+    color: #84ffef; /* Neon cyan */
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+}
+
+.game-win-content h2 {
+    color: #ff84f0; /* Neon pink */
+    text-shadow: 0 0 5px rgba(255, 132, 240, 0.7); /* Pink glow */
+    font-size: 28px;
+    margin-top: 0;
+    margin-bottom: 20px;
+}
+
+#restart-game-button {
+    background-color: rgba(10, 10, 30, 0.7);
+    color: #a2ff84; /* Neon green */
+    border: 1px solid #a2ff84;
+    padding: 10px 20px;
+    margin-top: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+#restart-game-button:hover {
+    background-color: rgba(162, 255, 132, 0.2); /* Green tint */
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(162, 255, 132, 0.6); /* Green glow */
 }

@@ -268,6 +268,9 @@ class EnemyManager {
     
     // Check if any enemy has caught the player
     checkPlayerCaught() {
+        // Skip enemy collision check if we're on level 1 (no enemies)
+        if (gameState.levelSystem && gameState.levelSystem.currentLevel === 1) return;
+        
         for (const enemy of this.enemies) {
             const distanceToPlayer = enemy.position.distanceTo(this.player.position);
             

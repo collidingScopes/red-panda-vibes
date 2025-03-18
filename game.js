@@ -14,6 +14,7 @@ const gameState = {
     keyStates: {},
     goalReached: false,
     enemyManager: null,
+    levelSystem: null, // Add the level system reference
 };
 
 // Scene setup with pastel sunset background
@@ -103,14 +104,14 @@ const secondaryLight = new THREE.DirectionalLight(0x84b9ff, 0.6); // Bluish ligh
 secondaryLight.position.set(50, 30, -30);
 scene.add(secondaryLight);
 
-// Simplified terrain height function
-function getTerrainHeight(x, z) {
+// Make getTerrainHeight function globally accessible
+window.getTerrainHeight = function(x, z) {
     return Math.max(0, (
         Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
         Math.sin(x * 0.07 + z * 0.05) * 4 +
         Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
     ) * 0.5);
-}
+};
 
 // Add some neon glow point lights scattered around
 function addNeonLights() {
@@ -763,9 +764,16 @@ function updatePlayerPosition(deltaTime) {
     
     // Check for goal (flag pole)
     const distanceToGoal = player.position.distanceTo(flagPole.position);
-    if (distanceToGoal < 3) {
+    if (distanceToGoal < 3 && !gameState.goalReached) {
         gameState.goalReached = true;
-        document.getElementById('goal-message').style.display = 'block';
+        
+        // Use level system instead of showing the simple goal message
+        if (gameState.levelSystem) {
+            gameState.levelSystem.showLevelComplete();
+        } else {
+            // Fallback to original message if level system isn't initialized
+            document.getElementById('goal-message').style.display = 'block';
+        }
     }
 }
 
@@ -792,8 +800,15 @@ function resetGame() {
     player.position.set(0, 50, 0);
     gameState.playerVelocity.set(0, 0, 0);
     gameState.goalReached = false;
+    
+    // Hide all UI messages
     document.getElementById('goal-message').style.display = 'none';
-
+    
+    // If level system exists, reset current level
+    if (gameState.levelSystem) {
+        gameState.levelSystem.applyLevelSettings(gameState.levelSystem.currentLevel);
+    }
+    
     // Reset enemy manager
     if (gameState.enemyManager) {
         gameState.enemyManager.reset();
@@ -875,6 +890,10 @@ function init() {
     // Initialize enemy manager
     gameState.enemyManager = new EnemyManager(scene, player, getTerrainHeight);
     gameState.enemyManager.initialize();
+    
+    // Initialize level system
+    gameState.levelSystem = new LevelSystem(scene, gameState.enemyManager, player, flagPole);
+    gameState.levelSystem.initialize();
     
     // Start the animation loop with the correct timestamp
     lastTime = performance.now();
