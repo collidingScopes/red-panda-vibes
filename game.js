@@ -6,12 +6,42 @@ const gameState = {
     goalReached: false
 };
 
-// Scene setup
+// Scene setup with pastel sunset background
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x181818); // Dark background for higher contrast
 
-// Reduced fog for higher contrast
-scene.fog = new THREE.Fog(0x181818, 150, 300);
+// Create a gradient background for sunset effect
+const createSunsetBackground = () => {
+    // Create a gradient texture
+    const canvas = document.createElement('canvas');
+    canvas.width = 2;
+    canvas.height = 512;
+    const context = canvas.getContext('2d');
+    
+    // Create a beautiful sunset gradient (top to bottom)
+    const gradient = context.createLinearGradient(0, 0, 0, 512);
+    gradient.addColorStop(0, '#6b88ff');    // Top: Soft blue
+    gradient.addColorStop(0.3, '#a183e0');  // Upper middle: Soft purple
+    gradient.addColorStop(0.5, '#e18ad4');  // Middle: Pink purple
+    gradient.addColorStop(0.7, '#ffa7a7');  // Lower middle: Light pink
+    gradient.addColorStop(1, '#ffcbb6');    // Bottom: Soft peach
+    
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 2, 512);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    
+    // Adjust repeat setting to stretch the texture properly
+    texture.repeat.set(1, 1);
+    
+    return texture;
+};
+
+// Apply sunset background
+scene.background = createSunsetBackground();
+
+// Softer pastel fog to match the scene
+scene.fog = new THREE.Fog(0xa183e0, 150, 350);
 
 // Camera setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -28,14 +58,14 @@ document.body.appendChild(renderer.domElement);
 const pixelRatio = 0.7; // Changed from 0.35 to 0.7 as requested
 renderer.setPixelRatio(pixelRatio);
 
-// Enhanced lighting for more dramatic shadows
-// Dim ambient light for deeper shadows
-const ambientLight = new THREE.AmbientLight(0xffffff, 0.3);
+// Enhanced sunset lighting for more dramatic shadows
+// Warm ambient light for sunset feel
+const ambientLight = new THREE.AmbientLight(0xffe0c0, 0.4); // Warm amber glow
 scene.add(ambientLight);
 
-// Strong directional light for harsh shadows
-const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
-directionalLight.position.set(30, 100, 50);
+// Strong directional light with warm sunset color
+const directionalLight = new THREE.DirectionalLight(0xff9966, 1.2); // Warm orange sunset
+directionalLight.position.set(-30, 20, 30); // Position to create dramatic shadows
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.width = 2048;
 directionalLight.shadow.mapSize.height = 2048;
@@ -49,33 +79,67 @@ directionalLight.shadow.camera.bottom = -100;
 directionalLight.shadow.bias = -0.001;
 scene.add(directionalLight);
 
-// Add a secondary light for dramatic effect
-const secondaryLight = new THREE.DirectionalLight(0x6666ff, 0.5); // Bluish light
-secondaryLight.position.set(-50, 30, -30);
+// Add a secondary light for dramatic effect - cool blue to complement warm light
+const secondaryLight = new THREE.DirectionalLight(0x84b9ff, 0.6); // Bluish light
+secondaryLight.position.set(50, 30, -30);
 scene.add(secondaryLight);
+
+// Add some neon glow point lights scattered around
+function addNeonLights() {
+    // Neon colors from the reference image
+    const neonColors = [
+        0xff84f0, // Pink
+        0x84ffef, // Cyan
+        0xb3ff84, // Green
+        0xffee84, // Yellow
+        0xff84a1  // Red-pink
+    ];
+    
+    for (let i = 0; i < 15; i++) {
+        const color = neonColors[Math.floor(Math.random() * neonColors.length)];
+        const intensity = 0.6 + Math.random() * 0.8;
+        const radius = 2 + Math.random() * 3;
+        
+        const light = new THREE.PointLight(color, intensity, radius * 8);
+        
+        // Random position
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 80 + 10;
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        const y = getTerrainHeight(x, z) + (Math.random() * 4) + 0.5;
+        
+        light.position.set(x, y, z);
+        scene.add(light);
+    }
+}
 
 // Create player as a red panda using stacked boxes
 function createRedPandaPlayer() {
     const playerGroup = new THREE.Group();
     
-    // Body - reddish brown
+    // Body - pastel orange for the red panda
     const bodyGeometry = new THREE.BoxGeometry(0.6, 0.5, 0.5);
     const bodyMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xC04000, // Reddish brown color
+        color: 0xff9966, // Pastel orange
         roughness: 0.5,
-        metalness: 0.2
+        metalness: 0.3,
+        emissive: 0x331100, // Slight emissive glow
+        emissiveIntensity: 0.2
     });
     const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
     body.position.y = 0.25;
     body.castShadow = true;
     playerGroup.add(body);
     
-    // Head - reddish brown with white features
+    // Head - pastel orange with white features
     const headGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.4);
     const headMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xC04000, // Same reddish brown
+        color: 0xff9966, // Same pastel orange
         roughness: 0.5,
-        metalness: 0.2
+        metalness: 0.3,
+        emissive: 0x331100, // Slight emissive glow
+        emissiveIntensity: 0.2
     });
     const head = new THREE.Mesh(headGeometry, headMaterial);
     head.position.y = 0.75;
@@ -86,9 +150,11 @@ function createRedPandaPlayer() {
     // White face patches
     const faceGeometry = new THREE.BoxGeometry(0.4, 0.3, 0.1);
     const whiteMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xFFFFFF, // White
-        roughness: 0.5,
-        metalness: 0.1
+        color: 0xfff4e0, // Warm white
+        roughness: 0.4,
+        metalness: 0.2,
+        emissive: 0x333333, // Slight emissive glow
+        emissiveIntensity: 0.1
     });
     const face = new THREE.Mesh(faceGeometry, whiteMaterial);
     face.position.y = 0.75;
@@ -99,9 +165,9 @@ function createRedPandaPlayer() {
     // Black ears
     const earGeometry = new THREE.BoxGeometry(0.15, 0.15, 0.15);
     const blackMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x222222, // Black
+        color: 0x444444, // Dark gray
         roughness: 0.5,
-        metalness: 0.1
+        metalness: 0.2
     });
     
     // Left ear
@@ -126,9 +192,11 @@ function createRedPandaPlayer() {
     // Tail - reddish with striped pattern
     const tailGeometry = new THREE.BoxGeometry(0.3, 0.3, 0.7);
     const tailMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xC04000, // Reddish
+        color: 0xff9966, // Pastel orange
         roughness: 0.5,
-        metalness: 0.2
+        metalness: 0.3,
+        emissive: 0x331100, // Slight emissive glow
+        emissiveIntensity: 0.2
     });
     const tail = new THREE.Mesh(tailGeometry, tailMaterial);
     tail.position.set(0, 0.4, -0.6);
@@ -138,9 +206,9 @@ function createRedPandaPlayer() {
     // Add stripes to tail (small boxes)
     const stripeGeometry = new THREE.BoxGeometry(0.32, 0.1, 0.2);
     const stripeMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x663300, // Darker brown
+        color: 0xcc6633, // Darker orange
         roughness: 0.5,
-        metalness: 0.1
+        metalness: 0.2
     });
     
     // Add 3 stripes
@@ -154,7 +222,7 @@ function createRedPandaPlayer() {
     // Legs
     const legGeometry = new THREE.BoxGeometry(0.15, 0.25, 0.15);
     const legMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x663300, // Dark brown
+        color: 0xcc6633, // Dark orange
         roughness: 0.5,
         metalness: 0.2
     });
@@ -192,13 +260,15 @@ player.position.set(0, 2, 0);
 player.receiveShadow = true;
 scene.add(player);
 
-// RETRO STYLED TERRAIN SYSTEM
+// PASTEL NEON STYLED TERRAIN SYSTEM
 function createTerrain() {
-    // Create a large flat base with a box
+    // Create a large flat base with soft gradient
     const baseGeometry = new THREE.BoxGeometry(400, 1, 400);
+    // Create a gradient material for the base
+    const baseTexture = createTerrainBaseTexture();
     const baseMaterial = new THREE.MeshStandardMaterial({
-        color: 0x006600, // Darker green for base
-        roughness: 0.9,
+        map: baseTexture,
+        roughness: 0.7,
         metalness: 0.1
     });
     
@@ -217,27 +287,43 @@ function createTerrain() {
     const hillsGroup = new THREE.Group();
     scene.add(hillsGroup);
     
-    // Generate terrain segments - with more dramatic height variation
+    // Pastel neon colors from the reference image
+    const pastelColors = [
+        0xaae6ff, // Light blue
+        0xbba1ff, // Lavender
+        0xffaad5, // Pink
+        0xa1ffbb, // Mint green
+        0xffe1aa  // Peach
+    ];
+    
+    // Generate terrain segments - with more flowing height variation
     for (let x = 0; x < segments; x++) {
         for (let z = 0; z < segments; z++) {
             const posX = (x * segmentSize) - halfTerrainSize + segmentSize/2;
             const posZ = (z * segmentSize) - halfTerrainSize + segmentSize/2;
             
-            // Generate height variation with more extreme values
+            // Generate height variation with more flowing values
             const height = getTerrainHeight(posX, posZ);
             
             // Only create visible hills (if height > 0.2)
             if (height > 0.2) {
                 const hillGeometry = new THREE.BoxGeometry(segmentSize, height, segmentSize);
                 
-                // Use a limited retro color palette - just a few shades of green
-                const greenShades = [0x00ff00, 0x00cc00, 0x009900, 0x006600];
-                const hillColor = greenShades[Math.floor(Math.random() * greenShades.length)];
+                // Choose a pastel color with slight randomization
+                const baseColor = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+                
+                // Create a subtle color variation
+                const color = new THREE.Color(baseColor);
+                color.r += (Math.random() * 0.1 - 0.05);
+                color.g += (Math.random() * 0.1 - 0.05);
+                color.b += (Math.random() * 0.1 - 0.05);
                 
                 const hillMaterial = new THREE.MeshStandardMaterial({
-                    color: hillColor,
-                    roughness: 0.9,
-                    metalness: 0.0
+                    color: color,
+                    roughness: 0.7,
+                    metalness: 0.1,
+                    emissive: baseColor,
+                    emissiveIntensity: 0.05 // Subtle glow
                 });
                 
                 const hill = new THREE.Mesh(hillGeometry, hillMaterial);
@@ -249,39 +335,79 @@ function createTerrain() {
         }
     }
     
-    // Add retro-styled grass clumps (reduced number)
-    addRetroGrassClumps(terrainSize);
+    // Add pastel-neon styled grass clumps
+    addPastelGrassClumps(terrainSize);
+    
+    // Add the neon glow lights
+    addNeonLights();
     
     return hillsGroup;
 }
 
-// Enhanced terrain height function with more dramatic hills
-function getTerrainHeight(x, z) {
-    // More dramatic rolling hills
-    const hillHeight = Math.sin(x * 0.05) * Math.cos(z * 0.05) * 12; 
+// Create a gradient texture for the terrain base
+function createTerrainBaseTexture() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512;
+    canvas.height = 512;
+    const context = canvas.getContext('2d');
     
-    // Add medium terrain variations with higher amplitude
-    const mediumNoise = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 6;
+    // Create a radial gradient
+    const gradient = context.createRadialGradient(
+        256, 256, 0,
+        256, 256, 384
+    );
+    
+    gradient.addColorStop(0, '#a1e6ff'); // Center: Light blue
+    gradient.addColorStop(0.3, '#c4a1ff'); // Middle: Light purple
+    gradient.addColorStop(0.6, '#ffa1e6'); // Outer middle: Pink
+    gradient.addColorStop(1, '#84ffbb'); // Edge: Mint green
+    
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 512, 512);
+    
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.needsUpdate = true;
+    
+    return texture;
+}
+
+// Enhanced terrain height function with more flowing hills
+function getTerrainHeight(x, z) {
+    // More flowing rolling hills using sine waves with different frequencies
+    const hillHeight = Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
+                     Math.sin(x * 0.07 + z * 0.05) * 4;
+    
+    // Add medium terrain variations
+    const mediumNoise = Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5;
     
     // Combine all variations and ensure we have positive heights
     return Math.max(0, (hillHeight + mediumNoise) * 0.5);
 }
 
-function addRetroGrassClumps(terrainSize) {
+function addPastelGrassClumps(terrainSize) {
     // Create simplified grass for retro look - just use small boxes
     const grassGeometry = new THREE.BoxGeometry(0.4, 0.8, 0.4);
     
-    // Limited palette for retro look
-    const grassColors = [0x00ff00, 0x00dd00, 0x00bb00]; 
+    // Neon pastel palette for grass
+    const grassColors = [
+        0xffaad8, // Pink
+        0xaae6ff, // Cyan
+        0xa1ffbb, // Green
+        0xffe1aa, // Yellow
+        0xbba1ff  // Purple
+    ]; 
+    
     const grassMaterials = grassColors.map(color => 
         new THREE.MeshStandardMaterial({
             color: color,
-            roughness: 0.8
+            roughness: 0.7,
+            emissive: color,
+            emissiveIntensity: 0.2 // Soft glow
         })
     );
     
-    // Reduced number of grass clumps as requested
-    const grassCount = 400; // Reduced from 1000
+    // Grass clumps with neon effect
+    const grassCount = 500; // Increased count for more lush look
     const halfSize = terrainSize / 2;
     
     for (let i = 0; i < grassCount; i++) {
@@ -300,8 +426,8 @@ function addRetroGrassClumps(terrainSize) {
         grass.rotation.y = Math.random() * Math.PI;
         
         // Random slight scaling
-        const scale = 0.7 + Math.random() * 0.6;
-        grass.scale.set(scale, scale, scale);
+        const scale = 0.6 + Math.random() * 0.8;
+        grass.scale.set(scale, scale + Math.random() * 0.5, scale);
         
         grass.castShadow = true;
         grass.receiveShadow = true;
@@ -312,26 +438,30 @@ function addRetroGrassClumps(terrainSize) {
 
 const terrain = createTerrain();
 
-// Create retro-styled flag pole
+// Create neon-styled flag pole
 function createFlagPole() {
     const group = new THREE.Group();
     
-    // Pole - simpler geometry for retro look
+    // Pole - simpler geometry for retro look but with glow
     const poleGeometry = new THREE.BoxGeometry(0.5, 10, 0.5); // Box instead of cylinder
     const poleMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xaaaaaa, // Silver color
-        roughness: 0.4,
-        metalness: 0.8
+        color: 0xffffff, // White color
+        roughness: 0.3,
+        metalness: 0.8,
+        emissive: 0xaaaaff, // Subtle blue glow
+        emissiveIntensity: 0.4 // Increased from 0.3
     });
     const pole = new THREE.Mesh(poleGeometry, poleMaterial);
     pole.position.y = 5;
     pole.castShadow = true;
     
-    // Flag - bright red for high visibility
+    // Flag - bright neon
     const flagGeometry = new THREE.PlaneGeometry(3, 1.5);
     const flagMaterial = new THREE.MeshBasicMaterial({ 
-        color: 0xff0000, // Bright red
-        side: THREE.DoubleSide
+        color: 0xff84df, // Neon pink
+        side: THREE.DoubleSide,
+        emissive: 0xff84df,
+        emissiveIntensity: 1.0
     });
     const flag = new THREE.Mesh(flagGeometry, flagMaterial);
     flag.position.set(1.5, 8, 0);
@@ -339,6 +469,14 @@ function createFlagPole() {
     
     group.add(pole);
     group.add(flag);
+    
+    // Keep one point light for the flag since it's an important gameplay element
+    // but use a less intensive shadow setting
+    const flagLight = new THREE.PointLight(0xff84df, 1, 10);
+    flagLight.position.set(1.5, 8, 0);
+    // Don't cast shadows from this light to save on performance
+    flagLight.castShadow = false;
+    group.add(flagLight);
     
     // Position the flag pole far away from the starting point
     const x = 50;
@@ -352,55 +490,67 @@ function createFlagPole() {
 
 const flagPole = createFlagPole();
 
-// Create retro-styled obstacles
+// Create pastel neon styled obstacles
 function createObstacles() {
     const obstacles = [];
     
-    // Create blocky rocks for retro look
-    for (let i = 0; i < 40; i++) {
-        const rockSize = Math.random() * 1.5 + 0.8;
-        // Use cube or octahedron for blockier look
-        const rockGeometry = Math.random() > 0.5 ? 
-            new THREE.BoxGeometry(rockSize, rockSize, rockSize) : 
-            new THREE.OctahedronGeometry(rockSize, 0);
+    // Create crystals instead of rocks (reduced count and removed individual lights to stay within WebGL limits)
+    for (let i = 0; i < 20; i++) { // Reduced from 40 to 20
+        const crystalSize = Math.random() * 1.5 + 0.8;
+        // Use pyramid/cones for crystal look
+        const crystalGeometry = new THREE.ConeGeometry(crystalSize * 0.6, crystalSize * 1.5, 4, 1);
         
-        // Limited gray palette
-        const grayShades = [0x666666, 0x888888, 0xaaaaaa];
-        const rockColor = grayShades[Math.floor(Math.random() * grayShades.length)];
+        // Neon pastel colors from the image
+        const crystalColors = [
+            0xff9ee6, // Pink
+            0x9eecff, // Cyan
+            0xccff9e, // Green
+            0xffe79e, // Yellow
+            0xce9eff  // Purple
+        ];
+        const crystalColor = crystalColors[Math.floor(Math.random() * crystalColors.length)];
         
-        const rockMaterial = new THREE.MeshStandardMaterial({ 
-            color: rockColor,
-            roughness: 0.9
+        const crystalMaterial = new THREE.MeshStandardMaterial({ 
+            color: crystalColor,
+            roughness: 0.2,
+            metalness: 0.3,
+            transparent: true,
+            opacity: 0.8,
+            emissive: crystalColor,
+            emissiveIntensity: 0.5 // Increased from 0.3 to 0.5 for brighter glow
         });
         
-        const rock = new THREE.Mesh(rockGeometry, rockMaterial);
+        const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
         
-        // Position rocks randomly around the map
+        // Position crystals randomly around the map
         const angle = Math.random() * Math.PI * 2;
         const distance = Math.random() * 80 + 10;
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
         
-        // Make sure rocks are on the terrain
+        // Make sure crystals are on the terrain
         const terrainHeight = getTerrainHeight(x, z);
-        rock.position.set(x, terrainHeight + rockSize * 0.5, z);
+        crystal.position.set(x, terrainHeight + crystalSize * 0.5, z);
         
         // Add random rotation for variety
-        rock.rotation.x = Math.random() * Math.PI;
-        rock.rotation.y = Math.random() * Math.PI;
-        rock.rotation.z = Math.random() * Math.PI;
+        crystal.rotation.x = (Math.random() - 0.5) * 0.2;
+        crystal.rotation.y = Math.random() * Math.PI;
+        crystal.rotation.z = (Math.random() - 0.5) * 0.2;
         
-        rock.castShadow = true;
-        rock.receiveShadow = true;
+        crystal.castShadow = true;
+        crystal.receiveShadow = true;
         
-        scene.add(rock);
-        obstacles.push(rock);
+        // Removed individual point lights inside crystal to reduce uniform count
+        // Using stronger emissive instead
+        
+        scene.add(crystal);
+        obstacles.push(crystal);
     }
     
-    // Create retro-styled trees
+    // Create pastel-styled trees
     for (let i = 0; i < 30; i++) {
-        const tree = createRetroTree();
+        const tree = createPastelTree();
         
         // Position trees randomly around the map
         const angle = Math.random() * Math.PI * 2;
@@ -417,9 +567,9 @@ function createObstacles() {
         obstacles.push(tree);
     }
     
-    // Create retro flowers (simple colored boxes) - Increased count as requested
-    for (let i = 0; i < 200; i++) { // Increased from 80
-        const flowerGroup = createRetroFlowerPatch();
+    // Create glowing flowers
+    for (let i = 0; i < 200; i++) {
+        const flowerGroup = createNeonFlowerPatch();
         
         const angle = Math.random() * Math.PI * 2;
         const distance = Math.random() * 90 + 5;
@@ -436,25 +586,47 @@ function createObstacles() {
     return obstacles;
 }
 
-function createRetroTree() {
+function createPastelTree() {
     const treeGroup = new THREE.Group();
     
-    // Tree trunk - box for retro blockiness
+    // Tree trunk - box for retro blockiness with warm color
     const trunkGeometry = new THREE.BoxGeometry(0.6, 2, 0.6);
-    const trunkMaterial = new THREE.MeshStandardMaterial({ color: 0x8B4513 });
+    const trunkMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xd9a066,
+        roughness: 0.8,
+        metalness: 0.1,
+        emissive: 0x331100,
+        emissiveIntensity: 0.1
+    });
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
     trunk.position.y = 1;
     trunk.castShadow = true;
     
-    // Tree foliage - pyramid for retro look
-    const foliageGeometry = new THREE.ConeGeometry(2, 4, 4); // 4-sided pyramid
+    // Choose from pastel colors for the foliage
+    const foliageColors = [
+        0xa1ffcc, // Mint
+        0xe2a1ff, // Lavender
+        0xf9a1ff, // Pink
+        0xffa1a1, // Peach
+        0xa1f9ff  // Cyan
+    ];
+    const foliageColor = foliageColors[Math.floor(Math.random() * foliageColors.length)];
+    
+    // Tree foliage - rounded cone for soft look
+    const foliageGeometry = new THREE.ConeGeometry(2, 4, 8); // More sides for smoother look
     const foliageMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x00aa00, 
-        roughness: 0.8 
+        color: foliageColor,
+        roughness: 0.7,
+        metalness: 0.1,
+        emissive: foliageColor,
+        emissiveIntensity: 0.6 // Increased from 0.2 to 0.6 for stronger glow
     });
     const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
     foliage.position.y = 3;
     foliage.castShadow = true;
+    
+    // Removed point light to reduce uniform count
+    // Using stronger emissive instead
     
     treeGroup.add(trunk);
     treeGroup.add(foliage);
@@ -462,28 +634,47 @@ function createRetroTree() {
     return treeGroup;
 }
 
-function createRetroFlowerPatch() {
+function createNeonFlowerPatch() {
     const flowerGroup = new THREE.Group();
     
     // Create 2-4 flowers in a small patch
     const flowerCount = Math.floor(Math.random() * 3) + 2;
-    const colors = [0xff0000, 0xff00ff, 0xffff00, 0x0000ff, 0xffffff]; // Bright primary colors
+    
+    // Bright neon colors matching the image
+    const colors = [
+        0xff84d9, // Pink
+        0x84ffee, // Cyan
+        0xa2ff84, // Green
+        0xffee84, // Yellow
+        0xd084ff  // Purple
+    ];
     
     for (let i = 0; i < flowerCount; i++) {
-        // Simple boxes for stem and flower
+        // Simple boxes for stem and flower but with glow
         const stemGeometry = new THREE.BoxGeometry(0.1, 0.4, 0.1);
-        const stemMaterial = new THREE.MeshStandardMaterial({ color: 0x00ff00 });
+        const stemMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x84ffa2,
+            emissive: 0x84ffa2,
+            emissiveIntensity: 0.4 // Increased from 0.3
+        });
         const stem = new THREE.Mesh(stemGeometry, stemMaterial);
         stem.position.y = 0.2;
         
-        // Flower head - just a cube
-        const flowerGeometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+        // Flower head - using sphere for softer look
+        const flowerColor = colors[Math.floor(Math.random() * colors.length)];
+        const flowerGeometry = new THREE.SphereGeometry(0.15, 8, 8);
         const flowerMaterial = new THREE.MeshStandardMaterial({ 
-            color: colors[Math.floor(Math.random() * colors.length)],
-            emissive: 0x111111 // Slight glow
+            color: flowerColor,
+            roughness: 0.6,
+            metalness: 0.3,
+            emissive: flowerColor,
+            emissiveIntensity: 0.8 // Increased from 0.5 for stronger glow
         });
         const flowerHead = new THREE.Mesh(flowerGeometry, flowerMaterial);
         flowerHead.position.y = 0.5;
+        
+        // Removed point light to reduce uniform count
+        // Using stronger emissive instead
         
         const flower = new THREE.Group();
         flower.add(stem);
@@ -513,6 +704,7 @@ document.addEventListener('keyup', (event) => {
 });
 
 // Add event listener for closing the instructions
+
 document.getElementById('close-instructions').addEventListener('click', () => {
     document.getElementById('instructions').style.display = 'none';
 });
@@ -686,8 +878,32 @@ function animate(currentTime) {
     updatePlayerPosition(deltaTime);
     checkCollisions();
     
-    // Simple dithering implementation using the standard renderer
-    // Full shader-based dithering would require more setup
+    // Add subtle continuous animation to glowing elements
+    const time = currentTime * 0.001; // Convert to seconds
+    
+    // Gently pulse the neon elements
+    scene.traverse(function(object) {
+        if (object.isMesh && object.material && object.material.emissiveIntensity) {
+            // Exclude certain elements from pulsing like player body, etc.
+            const shouldPulse = !(object.parent === player);
+            
+            if (shouldPulse) {
+                // Calculate a unique subtle pulse for each object
+                const uniqueOffset = (object.position.x * 0.1 + object.position.z * 0.1) % (Math.PI * 2);
+                const pulseIntensity = Math.sin(time * 2 + uniqueOffset) * 0.2 + 0.8;
+                
+                // Apply pulse to emissive intensity
+                const originalIntensity = object.material.userData.originalEmissiveIntensity || 0.3;
+                object.material.emissiveIntensity = originalIntensity * pulseIntensity;
+                
+                // Store original intensity if not already stored
+                if (!object.material.userData.originalEmissiveIntensity) {
+                    object.material.userData.originalEmissiveIntensity = object.material.emissiveIntensity;
+                }
+            }
+        }
+    });
+    
     renderer.render(scene, camera);
 }
 
