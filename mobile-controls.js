@@ -146,9 +146,13 @@ class MobileControls {
             this.jumpButtonPressed = true;
         });
         
-        jumpButton.addEventListener('touchend', () => {
+        jumpButton.addEventListener('touchend', (event) => {
+            event.preventDefault();
             this.jumpButtonPressed = false;
         });
+        
+        // Fix for game UI buttons
+        this.fixGameButtonsForTouch();
     }
     
     // Handle touch start event
@@ -311,12 +315,71 @@ class MobileControls {
         this.camera.lookAt(lookAtPoint);
     }
     
+    // Fix touch events for game UI buttons
+    fixGameButtonsForTouch() {
+        // Add this method to fix all buttons in the game
+        const fixButtonTouch = (buttonId) => {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                // Remove existing click listeners (if we can)
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+                
+                // Add touch event listener
+                newButton.addEventListener('touchstart', (event) => {
+                    event.preventDefault();
+                    // Simulate the Enter key press for level navigation
+                    const enterKeyEvent = new KeyboardEvent('keydown', {
+                        code: 'Enter',
+                        key: 'Enter',
+                        bubbles: true
+                    });
+                    document.dispatchEvent(enterKeyEvent);
+                    
+                    // Also trigger click for direct button handlers
+                    newButton.click();
+                });
+            }
+        };
+        
+        // Fix all game UI buttons
+        const buttonIds = [
+            'next-level-button',
+            'retry-button',
+            'close-instructions'
+        ];
+        
+        // Add a slight delay to ensure all buttons are loaded
+        setTimeout(() => {
+            buttonIds.forEach(fixButtonTouch);
+            console.log("Fixed touch events for game UI buttons");
+        }, 1000);
+        
+        // Add mutation observer to fix any new buttons that appear
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.id && buttonIds.includes(node.id)) {
+                            fixButtonTouch(node.id);
+                        }
+                    });
+                }
+            });
+        });
+        
+        // Start observing the document body for added nodes
+        observer.observe(document.body, { childList: true, subtree: true });
+    }
+    
     // Update method to be called in the game loop
     update() {
         if (!this.isMobile || !this.initialized) return;
         
         // Apply jump if jump button is pressed and player is on ground
-        if (this.jumpButtonPressed && this.gameState.playerOnGround) {
+        if (this.jumpButtonPressed) {
+            // Set Space key state to true regardless of ground state
+            // This allows the game's jump logic to handle the ground check
             this.gameState.keyStates['Space'] = true;
         } else {
             this.gameState.keyStates['Space'] = false;
