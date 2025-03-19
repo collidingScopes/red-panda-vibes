@@ -8,12 +8,11 @@ Be a red panda, explore the world, find the bamboo.
 
 ## Features
 
-- Infinite level progression with increasing difficulty
+- Mobile and desktop controls
 - Procedurally generated terrain and enemies
 - Hostile "oil slick" enemies that chase the player
-- Neon-styled environment with dynamic lighting
+- Infinite level progression with increasing difficulty
 - Local high score tracking
-- Mobile and desktop controls
 
 ## Technical Details
 
