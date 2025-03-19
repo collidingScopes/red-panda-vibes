@@ -9,12 +9,10 @@ class MobileControls {
 
         console.log("Initializing mobile controls");
 
-        // Game object references
         this.player = null;
         this.camera = null;
         this.gameState = null;
 
-        // Touch control state
         this.moveTouchId = null;
         this.moveStartX = 0;
         this.moveStartY = 0;
@@ -22,7 +20,6 @@ class MobileControls {
         this.moveCurrentY = 0;
         this.jumpTriggered = false;
 
-        // Movement parameters
         this.movementDeadzone = 20;
         this.movementScale = 0.015;
         this.cameraLocked = true;
@@ -30,7 +27,7 @@ class MobileControls {
         this.initMobileUI();
         this.addEventListeners();
         this.initialized = false;
-        this.connectToGameTimer = setInterval(() => this.connectToGame(), 500);
+        this.connectToGameTimer = setInterval(() => this.connectToGame(), 100);
         this.cameraUpdateModified = false;
     }
 
@@ -78,15 +75,15 @@ class MobileControls {
     }
 
     handleTouchStart(event) {
+        console.log("Touch start event received", event.touches.length);
+        
         if (!this.initialized) {
-            console.log("Touch start ignored - not initialized");
+            console.log("Touch start ignored - not initialized yet");
             return;
         }
 
-        console.log("Touch start detected", event.touches.length);
-        
         if (this.isUIElement(event.target)) {
-            console.log("Touch on UI element, ignoring");
+            console.log("Touch on UI element:", event.target);
             return;
         }
 
@@ -95,8 +92,10 @@ class MobileControls {
             this.moveTouchId = touch.identifier;
             this.moveStartX = this.moveCurrentX = touch.clientX;
             this.moveStartY = this.moveCurrentY = touch.clientY;
-            console.log(`Movement started at (${this.moveStartX}, ${this.moveStartY})`);
+            console.log(`Movement started at (${this.moveStartX}, ${this.moveStartY}) with ID: ${this.moveTouchId}`);
             event.preventDefault();
+        } else {
+            console.log("Touch start ignored - movement already active");
         }
     }
 
@@ -107,7 +106,10 @@ class MobileControls {
         }
 
         const touch = Array.from(event.touches).find(t => t.identifier === this.moveTouchId);
-        if (!touch) return;
+        if (!touch) {
+            console.log("Touch move ignored - no matching touch ID found");
+            return;
+        }
 
         this.moveCurrentX = touch.clientX;
         this.moveCurrentY = touch.clientY;
@@ -208,7 +210,7 @@ class MobileControls {
                 player: !!this.player
             });
             
-            setTimeout(() => this.overrideCameraUpdate(), 2000);
+            setTimeout(() => this.overrideCameraUpdate(), 1000); // Reduced to 1000ms
             clearInterval(this.connectToGameTimer);
         } else {
             console.log("Waiting for game objects...", {

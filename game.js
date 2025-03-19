@@ -410,3 +410,4 @@ function init() {
 // Start the game
 init();
 window.camera = camera;
+window.player = player;
