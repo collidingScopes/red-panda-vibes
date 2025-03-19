@@ -1,246 +1,738 @@
-// Redesigned Mobile Controls for Red Panda Explorer
-// This version implements an auto-runner style gameplay for mobile devices
-// where the panda moves forward automatically and touch controls steering
-
-// Immediately detect if the user is on a mobile device
-const isMobileDevice = (function() {
-    // Test with multiple methods for better compatibility
-    const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-    const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
-    const isAndroid = /Android/.test(userAgent);
-    const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-    const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-    
-    // Return true if any condition matches
-    return isIOS || isAndroid || isMobileUA || isTouchDevice;
-})();
-
-// Add body class immediately based on detection
-if (isMobileDevice) {
-    document.body.classList.add('mobile-device');
-    
-    // Add iOS specific class if needed
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
-        document.body.classList.add('ios-device');
+// Mobile Controls for Red Panda Explorer
+class MobileControls {
+    constructor() {
+        this.initialized = false;
+        this.isMobile = this.detectMobile();
+        
+        if (!this.isMobile) return;
+        
+        // References to game objects
+        this.player = null;
+        this.camera = null;
+        this.gameState = null;
+        
+        // Movement joystick state
+        this.moveJoystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            deltaX: 0,
+            deltaY: 0,
+            angle: 0,
+            intensity: 0,
+            maxRadius: 60, // Maximum joystick movement radius
+            containerEl: null,
+            stickEl: null
+        };
+        
+        // Camera joystick state
+        this.cameraJoystick = {
+            active: false,
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            deltaX: 0,
+            deltaY: 0,
+            angle: 0,
+            intensity: 0,
+            maxRadius: 60,
+            containerEl: null,
+            stickEl: null
+        };
+        
+        // Camera state tracking
+        this.cameraState = {
+            horizontalAngle: 0,
+            verticalAngle: 0,
+            MIN_VERTICAL_ANGLE: -Math.PI/8,
+            MAX_VERTICAL_ANGLE: Math.PI/6
+        };
+        
+        // Jump button state
+        this.jumpButton = {
+            active: false,
+            element: null,
+            cooldown: false,
+            cooldownTime: 500 // ms
+        };
+        
+        // Vector objects for calculations (reused to reduce garbage collection)
+        this.moveVector = new THREE.Vector3();
+        this.cameraForward = new THREE.Vector3();
+        this.cameraRight = new THREE.Vector3();
+        
+        // Settings
+        this.settings = {
+            moveSensitivity: 5.0,
+            cameraSensitivity: 1.5,
+            jumpHeight: 8.0,
+            deadzone: 0.1 // Percentage of joystick movement to ignore
+        };
+        
+        // Initialize after DOM is fully loaded
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => this.init());
+        } else {
+            this.init();
+        }
     }
     
-    console.log("Mobile device detected, enabling auto-runner mobile controls");
-}
-
-// Add mobile styles to document head immediately
-(function addMobileStyles() {
-    if (!isMobileDevice) return;
+    // Detect if user is on a mobile device
+    detectMobile() {
+        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+        const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
+        const isAndroid = /Android/.test(userAgent);
+        const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+        
+        return isIOS || isAndroid || isMobileUA || isTouchDevice;
+    }
     
-    const styleElement = document.createElement('style');
-    styleElement.textContent = `
-        /* Fixed styles for iOS/mobile devices */
-        html, body {
-            position: fixed;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            -webkit-overflow-scrolling: none;
-            overscroll-behavior: none;
-            touch-action: none;
+    // Initialize mobile controls
+    init() {
+        // Add mobile class to body
+        document.body.classList.add('mobile-device');
+        
+        // Add iOS specific class if needed
+        if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+            document.body.classList.add('ios-device');
+            this.optimizeForIOS();
         }
         
-        /* Mobile control styles with z-index higher than other elements */
-        #mobile-control-area {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1500; 
-            touch-action: none;
-            background-color: transparent;
-        }
+        // Create mobile UI
+        this.createMobileUI();
         
-        #mobile-jump-button {
-            position: fixed;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background-color: rgba(162, 255, 132, 0.3);
-            border: 3px solid #a2ff84;
-            color: #a2ff84;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            line-height: 90px;
-            z-index: 2000;
-            touch-action: none;
-            box-shadow: 0 0 15px rgba(162, 255, 132, 0.5);
-            pointer-events: all;
-            right: 20px;
-            bottom: 20px;
-        }
+        // Set up event listeners
+        this.setupEventListeners();
         
-        #mobile-jump-button.active {
-            background-color: rgba(162, 255, 132, 0.5);
-            transform: scale(0.95);
-        }
+        // Try to find game objects
+        this.findGameObjects();
         
-        #mobile-speed-toggle {
-            position: fixed;
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background-color: rgba(255, 132, 223, 0.3);
-            border: 3px solid #ff84df;
-            color: #ff84df;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            line-height: 90px;
-            z-index: 2000;
-            touch-action: none;
-            box-shadow: 0 0 15px rgba(255, 132, 223, 0.5);
-            pointer-events: all;
-            left: 20px;
-            bottom: 20px;
-        }
+        // Override movement functions
+        this.overrideGameFunctions();
         
-        #mobile-speed-toggle.active {
-            background-color: rgba(255, 132, 223, 0.5);
-        }
+        this.initialized = true;
+        console.log("Mobile controls initialized");
+    }
+    
+    // Create mobile UI elements
+    createMobileUI() {
+        // Add styles
+        this.addMobileStyles();
         
-        #touch-indicator {
-            position: fixed;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background-color: rgba(132, 255, 239, 0.6);
-            pointer-events: none;
-            z-index: 2500;
-            transform: translate(-50%, -50%);
-            box-shadow: 0 0 10px rgba(132, 255, 239, 0.5);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+        // Create movement joystick
+        this.moveJoystick.containerEl = document.createElement('div');
+        this.moveJoystick.containerEl.id = 'move-joystick-container';
+        this.moveJoystick.containerEl.className = 'joystick-container';
         
-        /* Speed meter */
-        #speed-meter {
-            position: fixed;
-            top: 45px;
-            left: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: #84ffef;
-            padding: 5px 10px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-family: 'Courier New', monospace;
-            z-index: 1000;
-        }
+        this.moveJoystick.stickEl = document.createElement('div');
+        this.moveJoystick.stickEl.id = 'move-joystick-stick';
+        this.moveJoystick.stickEl.className = 'joystick-stick';
+        this.moveJoystick.stickEl.innerHTML = '<div class="joystick-icon">⬆</div>';
         
-        /* Mobile instructions styles */
-        #mobile-instructions {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            max-width: 80%;
-            background-color: rgba(0, 0, 0, 0.8);
-            color: #ff84df;
-            padding: 20px;
-            border: 3px solid #84ffef;
-            border-radius: 5px;
-            z-index: 3000;
-            font-family: 'Courier New', monospace;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
-            box-shadow: 0 0 20px rgba(255, 132, 223, 0.6);
-            backdrop-filter: blur(5px);
-        }
+        this.moveJoystick.containerEl.appendChild(this.moveJoystick.stickEl);
+        document.body.appendChild(this.moveJoystick.containerEl);
         
-        #mobile-instructions h3 {
-            color: #ffee84;
-            margin-top: 10px;
-            margin-bottom: 20px;
-            font-size: 24px;
-        }
+        // Create camera joystick
+        this.cameraJoystick.containerEl = document.createElement('div');
+        this.cameraJoystick.containerEl.id = 'camera-joystick-container';
+        this.cameraJoystick.containerEl.className = 'joystick-container';
         
-        #mobile-instructions p {
-            margin: 10px 0;
-            font-size: 16px;
-        }
+        this.cameraJoystick.stickEl = document.createElement('div');
+        this.cameraJoystick.stickEl.id = 'camera-joystick-stick';
+        this.cameraJoystick.stickEl.className = 'joystick-stick';
+        this.cameraJoystick.stickEl.innerHTML = '<div class="joystick-icon">👁️</div>';
         
-        .start-button {
-            background-color: rgba(162, 255, 132, 0.2);
-            color: #a2ff84;
-            border: 2px solid #a2ff84;
-            padding: 15px 30px;
-            margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
-            letter-spacing: 2px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
+        this.cameraJoystick.containerEl.appendChild(this.cameraJoystick.stickEl);
+        document.body.appendChild(this.cameraJoystick.containerEl);
         
-        .start-button:hover, .start-button:active {
-            background-color: rgba(162, 255, 132, 0.4);
-            box-shadow: 0 0 15px rgba(162, 255, 132, 0.7);
-        }
+        // Create jump button
+        this.jumpButton.element = document.createElement('div');
+        this.jumpButton.element.id = 'jump-button';
+        this.jumpButton.element.innerHTML = 'JUMP';
+        document.body.appendChild(this.jumpButton.element);
         
-        /* iOS specific fixes */
-        .ios-device .mobile-control-element,
-        .ios-device #mobile-instructions {
-            -webkit-transform: translateZ(0);
-            transform: translateZ(0);
-            -webkit-backface-visibility: hidden;
-            backface-visibility: hidden;
-        }
-        
-        /* Disable text selection on mobile */
-        .mobile-device * {
-            -webkit-touch-callout: none;
-            -webkit-user-select: none;
-            -khtml-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-            -webkit-tap-highlight-color: rgba(0,0,0,0);
-        }
-        
-        /* Responsive adjustments for mobile */
-        @media (max-width: 768px) {
-            #instructions {
+        // Create mobile instructions
+        this.createMobileInstructions();
+    }
+    
+    // Add mobile-specific styles
+    addMobileStyles() {
+        const styleEl = document.createElement('style');
+        styleEl.textContent = `
+            /* Mobile control styles */
+            body.mobile-device {
+                touch-action: none;
+                -webkit-touch-callout: none;
+                -webkit-user-select: none;
+                user-select: none;
+                overflow: hidden;
+                position: fixed;
+                width: 100%;
+                height: 100%;
+            }
+            
+            /* Joystick styles */
+            .joystick-container {
+                position: fixed;
+                width: 120px;
+                height: 120px;
+                background-color: rgba(255, 255, 255, 0.1);
+                border: 2px solid rgba(132, 255, 239, 0.5);
+                border-radius: 50%;
+                touch-action: none;
+                z-index: 1000;
+            }
+            
+            #move-joystick-container {
+                left: 70px;
+                bottom: 70px;
+            }
+            
+            #camera-joystick-container {
+                right: 70px;
+                bottom: 70px;
+            }
+            
+            .joystick-stick {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 60px;
+                height: 60px;
+                background-color: rgba(255, 132, 223, 0.3);
+                border: 2px solid rgba(255, 132, 223, 0.8);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 0 10px rgba(255, 132, 223, 0.6);
+            }
+            
+            .joystick-icon {
+                color: rgba(255, 255, 255, 0.9);
+                font-size: 24px;
+                text-shadow: 0 0 8px rgba(255, 132, 223, 0.8);
+            }
+            
+            /* Jump button */
+            #jump-button {
+                position: fixed;
+                right: 70px;
+                bottom: 200px;
+                width: 80px;
+                height: 80px;
+                background-color: rgba(162, 255, 132, 0.3);
+                border: 3px solid rgba(162, 255, 132, 0.8);
+                border-radius: 50%;
+                color: rgba(255, 255, 255, 0.9);
+                font-family: 'Courier New', monospace;
+                font-size: 18px;
+                font-weight: bold;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+                text-shadow: 0 0 8px rgba(162, 255, 132, 0.8);
+                box-shadow: 0 0 15px rgba(162, 255, 132, 0.5);
+            }
+            
+            #jump-button.active {
+                background-color: rgba(162, 255, 132, 0.6);
+                transform: scale(0.95);
+            }
+            
+            /* Mobile instructions */
+            #mobile-instructions {
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                background-color: rgba(0, 0, 0, 0.8);
+                color: #ff84df;
+                padding: 20px;
+                border: 3px solid #84ffef;
+                border-radius: 5px;
+                z-index: 3000;
+                font-family: 'Courier New', monospace;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                text-align: center;
+                box-shadow: 0 0 20px rgba(255, 132, 223, 0.6);
+                backdrop-filter: blur(5px);
+                max-width: 80%;
+            }
+            
+            #mobile-instructions h3 {
+                color: #ffee84;
+                margin-top: 10px;
+                margin-bottom: 20px;
+                font-size: 24px;
+            }
+            
+            #mobile-instructions .control-diagram {
+                display: flex;
+                justify-content: space-around;
+                margin: 15px 0;
+            }
+            
+            #mobile-instructions .control-item {
+                text-align: center;
+                padding: 10px;
+            }
+            
+            #mobile-instructions .control-icon {
+                font-size: 30px;
+                margin-bottom: 5px;
+                color: #84ffef;
+            }
+            
+            #start-mobile-game {
+                background-color: rgba(162, 255, 132, 0.2);
+                color: #a2ff84;
+                border: 2px solid #a2ff84;
+                padding: 15px 30px;
+                margin-top: 20px;
+                font-size: 18px;
+                font-weight: bold;
+                letter-spacing: 2px;
+                border-radius: 5px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            /* Hide desktop instructions on mobile */
+            body.mobile-device #instructions {
                 display: none !important;
             }
             
-            #fps-counter {
-                font-size: 10px;
-                padding: 3px;
-                bottom: 3px;
-                left: 3px;
+            /* Button cooldown effect */
+            @keyframes cooldown {
+                from { opacity: 0.5; }
+                to { opacity: 1; }
             }
             
-            .game-overlay-screen {
-                max-width: 90%;
-                padding: 15px;
+            .cooldown {
+                animation: cooldown 0.5s ease-out;
             }
+        `;
+        
+        document.head.appendChild(styleEl);
+    }
+    
+    // Create mobile instructions dialog
+    createMobileInstructions() {
+        const instructions = document.createElement('div');
+        instructions.id = 'mobile-instructions';
+        instructions.className = 'game-overlay-screen';
+        
+        instructions.innerHTML = `
+            <button id="close-mobile-instructions" class="close-button">&times;</button>
+            <h3>Red Panda Explorer 🐼</h3>
+            <div class="control-diagram">
+                <div class="control-item">
+                    <div class="control-icon">👈</div>
+                    <p>LEFT: Move Panda</p>
+                </div>
+                <div class="control-item">
+                    <div class="control-icon">👉</div>
+                    <p>RIGHT: Look Around</p>
+                </div>
+            </div>
+            <div class="control-item">
+                <div class="control-icon">👆</div>
+                <p>Press JUMP button to jump</p>
+            </div>
+            <p>🏁 Find the rainbow flag!</p>
+            <p>Avoid the dark monsters!</p>
+            <button id="start-mobile-game" class="start-button">START GAME</button>
+        `;
+        
+        document.body.appendChild(instructions);
+        
+        // Add event listeners
+        document.getElementById('close-mobile-instructions').addEventListener('click', () => {
+            instructions.classList.add('hidden');
+        });
+        
+        document.getElementById('start-mobile-game').addEventListener('click', () => {
+            instructions.classList.add('hidden');
+        });
+    }
+    
+    // Set up event listeners for touch controls
+    setupEventListeners() {
+        // Movement joystick events
+        this.setupJoystickEvents(this.moveJoystick);
+        
+        // Camera joystick events
+        this.setupJoystickEvents(this.cameraJoystick);
+        
+        // Jump button events
+        this.jumpButton.element.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!this.jumpButton.cooldown) {
+                this.jumpButton.active = true;
+                this.jumpButton.element.classList.add('active');
+                this.handleJump();
+                
+                // Apply cooldown
+                this.jumpButton.cooldown = true;
+                setTimeout(() => {
+                    this.jumpButton.cooldown = false;
+                    this.jumpButton.element.classList.add('cooldown');
+                    setTimeout(() => {
+                        this.jumpButton.element.classList.remove('cooldown');
+                    }, 500);
+                }, this.jumpButton.cooldownTime);
+            }
+        });
+        
+        this.jumpButton.element.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            this.jumpButton.active = false;
+            this.jumpButton.element.classList.remove('active');
+        });
+        
+        // Prevent default browser behaviors
+        document.addEventListener('touchmove', (e) => {
+            if (e.target.tagName !== 'BUTTON' && 
+                !e.target.classList.contains('close-button') && 
+                e.target.id !== 'start-mobile-game') {
+                e.preventDefault();
+            }
+        }, { passive: false });
+    }
+    
+    // Set up joystick event handlers
+    setupJoystickEvents(joystick) {
+        const container = joystick.containerEl;
+        const stick = joystick.stickEl;
+        
+        // Touch start - initialize joystick position
+        container.addEventListener('touchstart', (e) => {
+            e.preventDefault();
             
-            #level-indicator {
-                font-size: 14px;
-                padding: 5px 10px;
-                right: 5px;
-                top: 5px;
+            // Get touch position relative to container
+            const touch = e.touches[0];
+            const rect = container.getBoundingClientRect();
+            
+            joystick.active = true;
+            joystick.startX = rect.left + rect.width / 2;
+            joystick.startY = rect.top + rect.height / 2;
+            joystick.currentX = touch.clientX;
+            joystick.currentY = touch.clientY;
+            
+            // Calculate delta from center
+            this.updateJoystickDelta(joystick);
+            
+            // Update visual position of stick
+            this.updateJoystickVisuals(joystick);
+        });
+        
+        // Touch move - update joystick position
+        container.addEventListener('touchmove', (e) => {
+            if (!joystick.active) return;
+            e.preventDefault();
+            
+            // Update current position
+            joystick.currentX = e.touches[0].clientX;
+            joystick.currentY = e.touches[0].clientY;
+            
+            // Calculate delta from center
+            this.updateJoystickDelta(joystick);
+            
+            // Update visual position of stick
+            this.updateJoystickVisuals(joystick);
+        });
+        
+        // Touch end - reset joystick
+        container.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            joystick.active = false;
+            joystick.deltaX = 0;
+            joystick.deltaY = 0;
+            joystick.angle = 0;
+            joystick.intensity = 0;
+            
+            // Center the stick
+            stick.style.transform = 'translate(-50%, -50%)';
+        });
+        
+        // Touch cancel - same as touch end
+        container.addEventListener('touchcancel', (e) => {
+            e.preventDefault();
+            joystick.active = false;
+            joystick.deltaX = 0;
+            joystick.deltaY = 0;
+            joystick.angle = 0;
+            joystick.intensity = 0;
+            
+            // Center the stick
+            stick.style.transform = 'translate(-50%, -50%)';
+        });
+    }
+    
+    // Update joystick delta values
+    updateJoystickDelta(joystick) {
+        // Calculate raw delta
+        joystick.deltaX = joystick.currentX - joystick.startX;
+        joystick.deltaY = joystick.currentY - joystick.startY;
+        
+        // Calculate distance from center
+        const distance = Math.sqrt(joystick.deltaX * joystick.deltaX + joystick.deltaY * joystick.deltaY);
+        
+        // If beyond max radius, normalize
+        if (distance > joystick.maxRadius) {
+            const scale = joystick.maxRadius / distance;
+            joystick.deltaX *= scale;
+            joystick.deltaY *= scale;
+        }
+        
+        // Calculate angle and intensity
+        joystick.angle = Math.atan2(joystick.deltaY, joystick.deltaX);
+        joystick.intensity = Math.min(distance / joystick.maxRadius, 1.0);
+        
+        // Apply deadzone
+        if (joystick.intensity < this.settings.deadzone) {
+            joystick.intensity = 0;
+            joystick.deltaX = 0;
+            joystick.deltaY = 0;
+        }
+    }
+    
+    // Update joystick visual position
+    updateJoystickVisuals(joystick) {
+        const offsetX = joystick.deltaX;
+        const offsetY = joystick.deltaY;
+        
+        joystick.stickEl.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+    }
+    
+    // Handle jump button press
+    handleJump() {
+        if (!this.gameState) return;
+        
+        // Trigger jump if on ground
+        if (this.gameState.playerOnGround) {
+            this.gameState.playerVelocity.y = this.settings.jumpHeight;
+            
+            // Also set space key state for compatibility with original code
+            if (this.gameState.keyStates) {
+                this.gameState.keyStates['Space'] = true;
+                
+                // Reset after a brief period
+                setTimeout(() => {
+                    if (this.gameState.keyStates) {
+                        this.gameState.keyStates['Space'] = false;
+                    }
+                }, 100);
             }
         }
-    `;
+    }
     
-    document.head.appendChild(styleElement);
-})();
-
-// Only initialize the AutoRunnerControls class if we're on a mobile device
-if (isMobileDevice) {
-    // Configure iOS-specific settings immediately
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
+    // Find game objects
+    findGameObjects() {
+        // Try to get references to game objects
+        if (window.player) {
+            this.player = window.player;
+        }
+        
+        if (window.camera) {
+            this.camera = window.camera;
+        }
+        
+        if (window.gameState) {
+            this.gameState = window.gameState;
+        }
+        
+        // If we couldn't find all objects, retry after a delay
+        if (!this.player || !this.camera || !this.gameState) {
+            setTimeout(() => this.findGameObjects(), 500);
+        } else {
+            console.log("Found all required game objects");
+            
+            // Initialize camera angles
+            if (window.cameraAngleHorizontal !== undefined) {
+                this.cameraState.horizontalAngle = window.cameraAngleHorizontal;
+            }
+            
+            if (window.cameraAngleVertical !== undefined) {
+                this.cameraState.verticalAngle = window.cameraAngleVertical;
+            }
+        }
+    }
+    
+    // Override game functions for mobile
+    overrideGameFunctions() {
+        const self = this;
+        
+        // Store original update function if it exists
+        if (window.updatePlayerPosition && typeof window.updatePlayerPosition === 'function') {
+            window.updatePlayerPositionOriginal = window.updatePlayerPosition;
+            
+            // Override with our mobile-aware function
+            window.updatePlayerPosition = function(deltaTime) {
+                if (self.initialized && self.isMobile) {
+                    self.updatePlayerMovement(deltaTime);
+                } else {
+                    window.updatePlayerPositionOriginal(deltaTime);
+                }
+            };
+        }
+        
+        // Store original camera update function if it exists
+        if (window.updateCamera && typeof window.updateCamera === 'function') {
+            window.updateCameraOriginal = window.updateCamera;
+            
+            // Override with our mobile-aware function
+            window.updateCamera = function() {
+                if (self.initialized && self.isMobile) {
+                    self.updateCamera();
+                } else {
+                    window.updateCameraOriginal();
+                }
+            };
+        }
+    }
+    
+    // Update player movement based on joystick input
+    updatePlayerMovement(deltaTime) {
+        // Skip if game over or goal reached or missing required objects
+        if (!this.player || !this.gameState || !this.camera || 
+            this.gameState.goalReached || this.gameState.gameOver) {
+            return;
+        }
+        
+        const speed = this.settings.moveSensitivity;
+        const gravity = 10.0;
+        
+        // Ground check
+        const groundHeight = window.getTerrainHeight(this.player.position.x, this.player.position.z);
+        this.gameState.playerOnGround = this.player.position.y <= groundHeight + 0.5;
+        
+        // Apply gravity
+        if (!this.gameState.playerOnGround) {
+            this.gameState.playerVelocity.y -= gravity * deltaTime;
+        } else {
+            this.gameState.playerVelocity.y = Math.max(0, this.gameState.playerVelocity.y);
+            
+            // Snap to ground if on ground
+            if (this.player.position.y < groundHeight + 0.5) {
+                this.player.position.y = groundHeight + 0.5;
+            }
+        }
+        
+        // Only apply movement if joystick is active
+        if (this.moveJoystick.active && this.moveJoystick.intensity > 0) {
+            // Get camera direction (forward and right vectors)
+            this.camera.getWorldDirection(this.cameraForward);
+            this.cameraForward.y = 0;
+            this.cameraForward.normalize();
+            
+            this.cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), this.cameraForward);
+            this.cameraRight.normalize();
+            
+            // Convert joystick input to world movement
+            // Note: joystick deltaY is inverted because screen Y is inverted
+            this.moveVector.set(0, 0, 0);
+            this.moveVector.addScaledVector(this.cameraForward, -this.moveJoystick.deltaY / this.moveJoystick.maxRadius);
+            this.moveVector.addScaledVector(this.cameraRight, this.moveJoystick.deltaX / this.moveJoystick.maxRadius);
+            
+            if (this.moveVector.length() > 0.1) {
+                this.moveVector.normalize();
+                
+                // Apply movement with speed and intensity
+                const moveDelta = this.moveVector.clone().multiplyScalar(speed * this.moveJoystick.intensity * deltaTime);
+                this.player.position.add(moveDelta);
+                
+                // Rotate player to face direction of movement
+                this.player.lookAt(this.player.position.clone().add(this.moveVector));
+                
+                // Adjust player to terrain height if on ground
+                if (this.gameState.playerOnGround) {
+                    const newGroundHeight = window.getTerrainHeight(this.player.position.x, this.player.position.z);
+                    this.player.position.y = newGroundHeight + 0.5;
+                }
+            }
+        }
+        
+        // Apply vertical velocity (gravity/jumping)
+        this.player.position.y += this.gameState.playerVelocity.y * deltaTime;
+        
+        // Prevent player from sinking
+        const currentGroundHeight = window.getTerrainHeight(this.player.position.x, this.player.position.z);
+        if (this.player.position.y < currentGroundHeight + 0.5 && this.gameState.playerVelocity.y <= 0) {
+            this.player.position.y = currentGroundHeight + 0.5;
+            this.gameState.playerVelocity.y = 0;
+        }
+        
+        // Update global values for integration with other code
+        if (typeof window.cameraAngleHorizontal !== 'undefined') {
+            window.cameraAngleHorizontal = this.cameraState.horizontalAngle;
+        }
+        
+        if (typeof window.cameraAngleVertical !== 'undefined') {
+            window.cameraAngleVertical = this.cameraState.verticalAngle;
+        }
+        
+        // Check for goal (flagpole) - copy from original code
+        if (window.flagPole) {
+            const dx = this.player.position.x - window.flagPole.position.x;
+            const dz = this.player.position.z - window.flagPole.position.z;
+            const horizontalDistanceToGoal = Math.sqrt(dx * dx + dz * dz);
+            
+            if (horizontalDistanceToGoal < 1 && !this.gameState.goalReached) {
+                this.gameState.goalReached = true;
+                
+                if (this.gameState.levelSystem) {
+                    this.gameState.levelSystem.showLevelComplete();
+                } else {
+                    document.getElementById('goal-message').style.display = 'block';
+                }
+            }
+        }
+    }
+    
+    // Update camera based on camera joystick input
+    updateCamera() {
+        if (!this.camera || !this.player) return;
+        
+        // Update camera angles based on joystick input
+        if (this.cameraJoystick.active && this.cameraJoystick.intensity > 0) {
+            // Horizontal movement (left/right) affects horizontal angle
+            this.cameraState.horizontalAngle += this.cameraJoystick.deltaX * 0.0003 * this.settings.cameraSensitivity;
+            
+            // Vertical movement (up/down) affects vertical angle
+            // Note: deltaY is negative when moving up (since screen Y is inverted)
+            const verticalChange = this.cameraJoystick.deltaY * 0.0003 * this.settings.cameraSensitivity;
+            this.cameraState.verticalAngle = Math.max(
+                this.cameraState.MIN_VERTICAL_ANGLE,
+                Math.min(this.cameraState.MAX_VERTICAL_ANGLE, this.cameraState.verticalAngle + verticalChange)
+            );
+        }
+        
+        // Calculate camera position with orbit controls
+        const cameraDistance = 5; // Same as desktop
+        const horizontalDistance = cameraDistance * Math.cos(this.cameraState.verticalAngle);
+        const verticalDistance = cameraDistance * Math.sin(this.cameraState.verticalAngle);
+        
+        // Update camera position
+        this.camera.position.x = this.player.position.x + horizontalDistance * Math.sin(this.cameraState.horizontalAngle);
+        this.camera.position.z = this.player.position.z + horizontalDistance * Math.cos(this.cameraState.horizontalAngle);
+        this.camera.position.y = this.player.position.y + 1.5 + verticalDistance; // 1.5 is height offset
+        
+        // Look at player's head level
+        const target = this.player.position.clone();
+        target.y += 1;
+        this.camera.lookAt(target);
+    }
+    
+    optimizeForIOS() {
         // Add iOS-specific viewport meta tag
         let metaViewport = document.querySelector('meta[name=viewport]');
         if (metaViewport) {
@@ -254,590 +746,270 @@ if (isMobileDevice) {
         
         // Prevent scrolling on iOS
         document.addEventListener('touchmove', function(e) {
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA' && 
-                e.target.tagName !== 'BUTTON') {
+            if (e.target.tagName !== 'BUTTON' && 
+                e.target.tagName !== 'INPUT' && 
+                e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
             }
         }, { passive: false });
+        
+        // Add CSS with iOS-specific fixes
+        const iosStyleEl = document.createElement('style');
+        iosStyleEl.textContent = `
+            /* iOS-specific fixes */
+            .ios-device * {
+                -webkit-tap-highlight-color: rgba(0,0,0,0);
+            }
+            
+            .ios-device .joystick-container,
+            .ios-device .joystick-stick,
+            .ios-device #jump-button {
+                -webkit-transform: translateZ(0);
+                transform: translateZ(0);
+                -webkit-backface-visibility: hidden;
+                backface-visibility: hidden;
+            }
+            
+            /* Fix for iOS Safari 100vh issue */
+            .ios-device {
+                height: 100%;
+                position: fixed;
+                overflow: hidden;
+                width: 100%;
+            }
+        `;
+        document.head.appendChild(iosStyleEl);
     }
     
-    // Auto-Runner Mobile Controls class
-    class AutoRunnerControls {
-        constructor() {
-            // Auto-runner settings
-            this.autoRunEnabled = true;
-            this.baseRunSpeed = 4.0; // Base forward speed
-            this.currentRunSpeed = this.baseRunSpeed;
-            this.maxRunSpeed = 8.0; // Maximum forward speed
-            this.steeringEnabled = true;
-            
-            // Touch control variables
-            this.touchStartX = 0;
-            this.touchStartY = 0;
-            this.currentTouchX = 0;
-            this.currentTouchY = 0;
-            this.isTouching = false;
-            this.touchTime = 0;
-            this.lastTapTime = 0;
-            
-            // Steering control variables
-            this.steeringDirection = 0; // -1 to 1, where 0 is straight ahead
-            this.steeringSensitivity = 0.7; // How responsive steering is
-            this.steeringDeadzone = 0.1; // Minimum steering input needed
-            
-            // Movement state
-            this.isJumping = false;
-            this.forwardVector = new THREE.Vector3(0, 0, 1); // Initial forward direction
-            this.targetDirection = new THREE.Vector3(0, 0, 1); // Direction to steer towards
-            
-            // Wait briefly to make sure game engine has initialized
-            setTimeout(() => {
-                this.createMobileControls();
-                this.initTouchListeners();
-                this.setupGameStatePatching();
-                console.log("Auto-runner mobile controls fully initialized");
-                
-                // Make sure the gameState is globally accessible
-                if (window.gameState) {
-                    console.log("gameState found in window object");
-                } else {
-                    console.log("WARNING: gameState not found in window object - attempting to expose it");
-                    window.gameState = gameState; // This makes gameState accessible globally
-                }
-            }, 500);
+    // Method to reset controls when game resets
+    reset() {
+        // Reset joystick states
+        this.moveJoystick.active = false;
+        this.moveJoystick.deltaX = 0;
+        this.moveJoystick.deltaY = 0;
+        this.moveJoystick.angle = 0;
+        this.moveJoystick.intensity = 0;
+        
+        this.cameraJoystick.active = false;
+        this.cameraJoystick.deltaX = 0;
+        this.cameraJoystick.deltaY = 0;
+        this.cameraJoystick.angle = 0;
+        this.cameraJoystick.intensity = 0;
+        
+        // Reset joystick visuals
+        if (this.moveJoystick.stickEl) {
+            this.moveJoystick.stickEl.style.transform = 'translate(-50%, -50%)';
         }
         
-        createMobileControls() {
-            // Create mobile instructions if not already there
-            if (!document.getElementById('mobile-instructions')) {
-                const mobileInstructions = document.createElement('div');
-                mobileInstructions.id = 'mobile-instructions';
-                mobileInstructions.className = 'game-overlay-screen';
-                
-                mobileInstructions.innerHTML = `
-                    <button id="close-mobile-instructions" class="close-button">&times;</button>
-                    <h3>Red Panda Explorer 🐼</h3>
-                    <p>🏃‍♂️ Your panda runs automatically</p>
-                    <p>👆 Touch & drag to steer</p>
-                    <p>👇 Tap screen to jump</p>
-                    <p>🔘 Use jump button for precise jumps</p>
-                    <p>🔄 Use speed button to toggle speed</p>
-                    <p>🏁 Goal: Find the rainbow flag!</p>
-                    <p class="instruction-last-para">Avoid the dark oil monsters!</p>
-                    <button id="start-mobile-game" class="start-button">START GAME</button>
-                `;
-                
-                document.body.appendChild(mobileInstructions);
-                
-                // Add event listeners
-                const closeButton = document.getElementById('close-mobile-instructions');
-                if (closeButton) {
-                    closeButton.addEventListener('click', () => {
-                        mobileInstructions.classList.add('hidden');
-                    });
-                }
-                
-                const startButton = document.getElementById('start-mobile-game');
-                if (startButton) {
-                    startButton.addEventListener('click', () => {
-                        mobileInstructions.classList.add('hidden');
-                    });
-                }
-            }
-            
-            // Create full-screen touch area
-            if (!document.getElementById('mobile-control-area')) {
-                const touchArea = document.createElement('div');
-                touchArea.id = 'mobile-control-area';
-                document.body.appendChild(touchArea);
-            }
-            
-            // Create touch indicator
-            if (!document.getElementById('touch-indicator')) {
-                const touchIndicator = document.createElement('div');
-                touchIndicator.id = 'touch-indicator';
-                document.body.appendChild(touchIndicator);
-            }
-            
-            // Create jump button if not already there
-            if (!document.getElementById('mobile-jump-button')) {
-                const jumpButton = document.createElement('div');
-                jumpButton.id = 'mobile-jump-button';
-                jumpButton.className = 'mobile-control-element';
-                jumpButton.innerText = 'JUMP';
-                
-                document.body.appendChild(jumpButton);
-                
-                // Set up jump button handler
-                jumpButton.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    this.jump();
-                    jumpButton.classList.add('active');
-                    return false;
-                }, { passive: false });
-                
-                jumpButton.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    jumpButton.classList.remove('active');
-                    return false;
-                }, { passive: false });
-            }
-            
-            // Create speed toggle button
-            if (!document.getElementById('mobile-speed-toggle')) {
-                const speedToggle = document.createElement('div');
-                speedToggle.id = 'mobile-speed-toggle';
-                speedToggle.className = 'mobile-control-element';
-                speedToggle.innerText = 'SPEED';
-                
-                document.body.appendChild(speedToggle);
-                
-                // Set up speed toggle handler
-                speedToggle.addEventListener('touchstart', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    this.toggleRunSpeed();
-                    speedToggle.classList.add('active');
-                    return false;
-                }, { passive: false });
-                
-                speedToggle.addEventListener('touchend', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    
-                    speedToggle.classList.remove('active');
-                    return false;
-                }, { passive: false });
-            }
-            
-            // Create speed meter
-            if (!document.getElementById('speed-meter')) {
-                const speedMeter = document.createElement('div');
-                speedMeter.id = 'speed-meter';
-                speedMeter.innerText = 'SPEED: NORMAL';
-                document.body.appendChild(speedMeter);
-            }
-            
-            // Hide standard instructions and show mobile instructions
-            const standardInstructions = document.getElementById('instructions');
-            if (standardInstructions) {
-                standardInstructions.classList.add('hidden');
-            }
+        if (this.cameraJoystick.stickEl) {
+            this.cameraJoystick.stickEl.style.transform = 'translate(-50%, -50%)';
         }
         
-        initTouchListeners() {
-            // Touch start - initial contact
-            document.addEventListener('touchstart', (e) => {
-                const target = e.target;
-                
-                // Allow button touches to work normally
-                if (target.tagName === 'BUTTON' || 
-                    target.id === 'close-mobile-instructions' || 
-                    target.id === 'start-mobile-game' ||
-                    target.id === 'mobile-jump-button' ||
-                    target.id === 'mobile-speed-toggle' ||
-                    target.id === 'retry-button' ||
-                    target.id === 'next-level-button') {
-                    return;
-                }
-                
-                // Check if instructions are visible
-                const mobileInstructions = document.getElementById('mobile-instructions');
-                if (mobileInstructions && !mobileInstructions.classList.contains('hidden')) {
-                    return;
-                }
-                
-                // Prevent default for game steering
-                e.preventDefault();
-                
-                // Is this a quick double tap? (for jumping)
-                const now = Date.now();
-                if (now - this.lastTapTime < 300) {
-                    this.jump();
-                    this.lastTapTime = 0; // Reset to prevent triple-tap
-                    return;
-                }
-                this.lastTapTime = now;
-                
-                // Store starting position for steering calculation
-                this.touchStartX = e.touches[0].clientX;
-                this.touchStartY = e.touches[0].clientY;
-                this.currentTouchX = this.touchStartX;
-                this.currentTouchY = this.touchStartY;
-                this.isTouching = true;
-                this.touchTime = now;
-                
-                // Show touch indicator at touch point
-                const touchIndicator = document.getElementById('touch-indicator');
-                if (touchIndicator) {
-                    touchIndicator.style.left = `${this.touchStartX}px`;
-                    touchIndicator.style.top = `${this.touchStartY}px`;
-                    touchIndicator.style.opacity = '1';
-                }
-                
-            }, { passive: false });
-            
-            // Touch move - steering
-            document.addEventListener('touchmove', (e) => {
-                if (!this.isTouching || !this.steeringEnabled) return;
-                
-                try {
-                    e.preventDefault(); // Prevent scrolling
-                    
-                    const touchX = e.touches[0].clientX;
-                    const touchY = e.touches[0].clientY;
-                    
-                    this.currentTouchX = touchX;
-                    this.currentTouchY = touchY;
-                    
-                    // Calculate horizontal movement for steering
-                    // Positive = right, Negative = left
-                    const screenWidth = window.innerWidth;
-                    const horizontalDelta = touchX - this.touchStartX;
-                    
-                    // Calculate steering input (normalized from -1 to 1)
-                    // Use a percentage of screen width for consistent feel across devices
-                    const steeringInput = Math.max(-1, Math.min(1, horizontalDelta / (screenWidth * 0.3)));
-                    
-                    // Apply deadzone to prevent tiny movements
-                    if (Math.abs(steeringInput) < this.steeringDeadzone) {
-                        this.steeringDirection = 0;
-                    } else {
-                        this.steeringDirection = steeringInput * this.steeringSensitivity;
-                    }
-                    
-                    // Move touch indicator
-                    const touchIndicator = document.getElementById('touch-indicator');
-                    if (touchIndicator) {
-                        touchIndicator.style.left = `${touchX}px`;
-                        touchIndicator.style.top = `${touchY}px`;
-                    }
-                    
-                } catch (error) {
-                    console.error("Mobile controls: Error during touch movement", error);
-                }
-            }, { passive: false });
-            
-            // Touch end - release touch
-            document.addEventListener('touchend', (e) => {
-                try {
-                    // Only prevent default if we were actually touching
-                    if (this.isTouching) {
-                        e.preventDefault();
-                    }
-                    
-                    // Check if this was a tap (short duration, little movement)
-                    if (this.isTouching) {
-                        const touchDuration = Date.now() - this.touchTime;
-                        const moveDistance = Math.sqrt(
-                            Math.pow(this.currentTouchX - this.touchStartX, 2) + 
-                            Math.pow(this.currentTouchY - this.touchStartY, 2)
-                        );
-                        
-                        if (touchDuration < 200 && moveDistance < 20) {
-                            // This is a quick tap, trigger jump
-                            this.jump();
-                        }
-                    }
-                    
-                    // Reset steering
-                    this.steeringDirection = 0;
-                    this.isTouching = false;
-                    
-                    // Hide touch indicator
-                    const touchIndicator = document.getElementById('touch-indicator');
-                    if (touchIndicator) {
-                        touchIndicator.style.opacity = '0';
-                    }
-                    
-                } catch (error) {
-                    console.error("Mobile controls: Error during touch end", error);
-                }
-            }, { passive: false });
+        // Reset jump button
+        this.jumpButton.active = false;
+        this.jumpButton.cooldown = false;
+        if (this.jumpButton.element) {
+            this.jumpButton.element.classList.remove('active');
+            this.jumpButton.element.classList.remove('cooldown');
         }
+    }
+    
+    // Handle screen orientation changes
+    handleOrientationChange() {
+        // Repositioning controls based on new screen dimensions
+        const width = window.innerWidth;
+        const height = window.innerHeight;
         
-        setupGameStatePatching() {
-            // Patch into the game's update loop
-            const self = this;
-            
-            // Save references to key game objects
-            this.findGameObjects();
-            
-            // Create a new update method to plug into the game engine
-            window.updatePlayerPositionMobile = function(deltaTime) {
-                self.updateAutoRunnerMovement(deltaTime);
-            };
-            
-            // Override the original update function when on mobile
-            if (window.updatePlayerPosition && typeof window.updatePlayerPosition === 'function') {
-                // Store the original function
-                window.updatePlayerPositionOriginal = window.updatePlayerPosition;
-                
-                // Replace with our mobile version
-                window.updatePlayerPosition = function(deltaTime) {
-                    window.updatePlayerPositionMobile(deltaTime);
-                };
-                
-                console.log("Successfully overrode player movement for auto-running");
+        // Only make adjustments if elements exist
+        if (this.moveJoystick.containerEl && this.cameraJoystick.containerEl && this.jumpButton.element) {
+            // If in portrait mode (height > width)
+            if (height > width) {
+                // Move controls closer to bottom for better thumb reach
+                this.moveJoystick.containerEl.style.bottom = '40px';
+                this.cameraJoystick.containerEl.style.bottom = '40px';
+                this.jumpButton.element.style.bottom = '130px';
             } else {
-                console.warn("Could not find updatePlayerPosition function to override");
+                // In landscape, use default positions
+                this.moveJoystick.containerEl.style.bottom = '70px';
+                this.cameraJoystick.containerEl.style.bottom = '70px';
+                this.jumpButton.element.style.bottom = '200px';
             }
+            
+            // Reset joystick states to prevent stuck inputs
+            this.reset();
         }
-        
-        findGameObjects() {
-            // Try to get references to game objects and camera
-            this.player = window.player;
-            this.camera = window.camera;
-            this.gameState = window.gameState;
-            
-            if (!this.player || !this.gameState) {
-                console.warn("Could not find all required game objects - will retry");
-                
-                // Retry after a short delay
-                setTimeout(() => this.findGameObjects(), 500);
-            } else {
-                console.log("Found all required game objects for auto-runner");
-            }
-        }
-        
-        updateAutoRunnerMovement(deltaTime) {
-            // Skip if game over or goal reached
-            if (!this.gameState || this.gameState.goalReached || this.gameState.gameOver) return;
-            
-            // Get player reference
-            const player = this.player;
-            if (!player) return;
-            
-            // Physics constants
-            const jumpForce = 8.0;
-            const gravity = 10.0;
-            
-            // Ground check
-            const groundHeight = window.getTerrainHeight(player.position.x, player.position.z);
-            this.gameState.playerOnGround = player.position.y <= groundHeight + 0.5;
-            
-            // Apply gravity
-            if (!this.gameState.playerOnGround) {
-                this.gameState.playerVelocity.y -= gravity * deltaTime;
-            } else {
-                this.gameState.playerVelocity.y = Math.max(0, this.gameState.playerVelocity.y);
-                
-                // Snap to ground if on ground
-                if (player.position.y < groundHeight + 0.5) {
-                    player.position.y = groundHeight + 0.5;
-                }
-            }
-            
-            // Handle jumping
-            if (this.isJumping && this.gameState.playerOnGround) {
-                this.gameState.playerVelocity.y = jumpForce;
-                this.isJumping = false; // Reset jump flag once applied
-            }
-            
-            // Calculate movement direction based on current forward direction and steering
-            const cameraDirection = new THREE.Vector3();
-            if (this.camera) {
-                this.camera.getWorldDirection(cameraDirection);
-                cameraDirection.y = 0;
-                cameraDirection.normalize();
-            } else {
-                // Fallback if camera not available
-                cameraDirection.set(0, 0, -1);
-            }
-            
-            // Calculate steering vector - rotate cameraDirection by steeringDirection
-            const steeringAngle = this.steeringDirection * Math.PI * 0.5 * deltaTime; // Convert to radians, scaled by time
-            const rotatedDirection = cameraDirection.clone();
-            rotatedDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), steeringAngle);
-            
-            // Update forward vector with steering
-            this.forwardVector.copy(rotatedDirection);
-            
-            // Apply auto-running movement
-            if (this.autoRunEnabled) {
-                const moveDelta = this.forwardVector.clone().multiplyScalar(this.currentRunSpeed * deltaTime);
-                player.position.add(moveDelta);
-                
-                // Rotate player to face direction of movement
-                player.lookAt(player.position.clone().add(this.forwardVector));
-                
-                // Adjust player to terrain height
-                const newGroundHeight = window.getTerrainHeight(player.position.x, player.position.z);
-                
-                // Only adjust height if we're on the ground
-                if (this.gameState.playerOnGround) {
-                    player.position.y = newGroundHeight + 0.5;
-                }
-                
-                // Apply vertical velocity (gravity/jumping)
-                player.position.y += this.gameState.playerVelocity.y * deltaTime;
-                
-                // Prevent player from sinking
-                const currentGroundHeight = window.getTerrainHeight(player.position.x, player.position.z);
-                if (player.position.y < currentGroundHeight + 0.5 && this.gameState.playerVelocity.y <= 0) {
-                    player.position.y = currentGroundHeight + 0.5;
-                    this.gameState.playerVelocity.y = 0;
-                }
-            }
-        }
-        
-        jump() {
-            if (!this.gameState || this.gameState.goalReached || this.gameState.gameOver) return;
-            
-            // Set jump flag - will be applied in next update if on ground
-            this.isJumping = true;
-            
-            // For immediate feedback, also try direct key simulation
-            if (window.gameState) {
-                window.gameState.keyStates['Space'] = true;
-                
-                // Reset space key after a short delay
-                setTimeout(() => {
-                    if (window.gameState) {
-                        window.gameState.keyStates['Space'] = false;
-                    }
-                }, 100);
-            }
-        }
-        
-        toggleRunSpeed() {
-            if (!this.gameState || this.gameState.goalReached || this.gameState.gameOver) return;
-            
-            // Toggle between normal and fast speed
-            if (this.currentRunSpeed === this.baseRunSpeed) {
-                this.currentRunSpeed = this.maxRunSpeed;
-                document.getElementById('speed-meter').innerText = 'SPEED: FAST';
-            } else {
-                this.currentRunSpeed = this.baseRunSpeed;
-                document.getElementById('speed-meter').innerText = 'SPEED: NORMAL';
+    }
+    
+    // Helper method to smoothly apply joystick input
+    smoothInput(current, target, smoothFactor) {
+        return current + (target - current) * Math.min(1.0, smoothFactor);
+    }
+    
+    // Vibrate device for haptic feedback (if supported)
+    vibrateDevice(pattern) {
+        if ('vibrate' in navigator) {
+            try {
+                navigator.vibrate(pattern);
+            } catch (e) {
+                // Vibration API not supported or not allowed
             }
         }
     }
-
-    // Initialize auto-runner controls when DOM is loaded
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            window.autoRunnerControls = new AutoRunnerControls();
+    
+    // Display a temporary hint overlay to guide new users
+    showControlHints() {
+        const hintsShown = localStorage.getItem('controlHintsShown');
+        if (hintsShown) return;
+        
+        // Create hints overlay
+        const hintsOverlay = document.createElement('div');
+        hintsOverlay.className = 'control-hints-overlay';
+        hintsOverlay.innerHTML = `
+            <div class="hint-container left">
+                <div class="hint-arrow">↔️</div>
+                <div class="hint-text">Move</div>
+            </div>
+            <div class="hint-container right">
+                <div class="hint-arrow">↔️</div>
+                <div class="hint-text">Look</div>
+            </div>
+            <div class="hint-container jump">
+                <div class="hint-arrow">⬆️</div>
+                <div class="hint-text">Jump</div>
+            </div>
+            <div class="hint-dismiss">Tap to dismiss</div>
+        `;
+        
+        document.body.appendChild(hintsOverlay);
+        
+        // Add styles for hints
+        const hintsStyle = document.createElement('style');
+        hintsStyle.textContent = `
+            .control-hints-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.7);
+                z-index: 5000;
+                color: white;
+                font-family: 'Courier New', monospace;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+            }
+            
+            .hint-container {
+                position: absolute;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                animation: pulse 2s infinite;
+            }
+            
+            .hint-container.left {
+                bottom: 100px;
+                left: 70px;
+            }
+            
+            .hint-container.right {
+                bottom: 100px;
+                right: 70px;
+            }
+            
+            .hint-container.jump {
+                bottom: 230px;
+                right: 70px;
+            }
+            
+            .hint-arrow {
+                font-size: 40px;
+                margin-bottom: 10px;
+            }
+            
+            .hint-text {
+                color: #84ffef;
+                font-size: 18px;
+                text-shadow: 0 0 10px rgba(132, 255, 239, 0.8);
+            }
+            
+            .hint-dismiss {
+                position: absolute;
+                bottom: 50px;
+                width: 100%;
+                text-align: center;
+                color: rgba(255,255,255,0.8);
+                font-size: 16px;
+            }
+            
+            @keyframes pulse {
+                0% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.1); opacity: 0.8; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+        `;
+        
+        document.head.appendChild(hintsStyle);
+        
+        // Dismiss on tap
+        hintsOverlay.addEventListener('click', () => {
+            hintsOverlay.remove();
+            localStorage.setItem('controlHintsShown', 'true');
         });
-    } else {
-        // DOM already loaded, initialize now
-        window.autoRunnerControls = new AutoRunnerControls();
-    }
-    
-    // Initialize camera controls for auto-runner
-    // We don't need the original mobile-camera-controls.js as we'll handle this differently
-    window.addEventListener('load', function() {
-        // Ensure camera follows player direction in auto-runner mode
-        function initAutoRunnerCamera() {
-            // Try to get camera
-            if (!window.camera) {
-                setTimeout(initAutoRunnerCamera, 500);
-                return;
-            }
-            
-            // Override the original camera update if it exists
-            if (typeof window.updateCamera === 'function') {
-                const originalUpdateCamera = window.updateCamera;
-                
-                window.updateCamera = function() {
-                    if (window.autoRunnerControls) {
-                        // In mobile auto-runner mode, camera follows player direction automatically
-                        updateAutoRunnerCamera();
-                    } else {
-                        // On desktop, use original camera controls
-                        originalUpdateCamera();
-                    }
-                };
-                
-                console.log("Camera controls configured for auto-runner mode");
-            }
-            
-            function updateAutoRunnerCamera() {
-                // Skip if required objects aren't available
-                if (!window.player || !window.camera || !window.autoRunnerControls) return;
-                
-                // Skip camera update during special game states
-                if (window.gameState && (window.gameState.goalReached || window.gameState.gameOver)) {
-                    return;
-                }
-                
-                const player = window.player;
-                const camera = window.camera;
-                const controls = window.autoRunnerControls;
-                
-                // Use player's forward direction for camera positioning
-                const forwardDir = controls.forwardVector.clone();
-                
-                // Camera settings
-                const cameraHeight = 4;
-                const cameraDistance = 6;
-                const lookAheadDistance = 3;
-                
-                // Position camera behind player
-                camera.position.copy(player.position)
-                    .sub(forwardDir.clone().multiplyScalar(cameraDistance));
-                
-                // Add height offset
-                camera.position.y = player.position.y + cameraHeight;
-                
-                // Look ahead of player
-                const lookTarget = player.position.clone()
-                    .add(forwardDir.clone().multiplyScalar(lookAheadDistance));
-                lookTarget.y = player.position.y + 1; // Look at head level
-                
-                camera.lookAt(lookTarget);
-            }
-        }
         
-        // Start camera initialization
-        initAutoRunnerCamera();
-    });
+        // Auto dismiss after 8 seconds
+        setTimeout(() => {
+            if (document.body.contains(hintsOverlay)) {
+                hintsOverlay.remove();
+                localStorage.setItem('controlHintsShown', 'true');
+            }
+        }, 8000);
+    }
 }
 
-// Make resetGame function available globally so that mobile controls can access it
-window.resetGame = function() {
-    if (window.gameState) {
-        // Reset game over state
-        window.gameState.gameOver = false;
+// Initialize mobile controls
+window.addEventListener('load', function() {
+    // Create global instance
+    window.mobileControls = new MobileControls();
+    
+    // Patch the resetGame function to also reset mobile controls
+    const originalResetGame = window.resetGame || function() {};
+    window.resetGame = function() {
+        // Call original resetGame
+        originalResetGame();
         
-        // Reset player position
-        if (window.player) {
-            window.player.position.set(0, 50, 0);
+        // Reset mobile controls
+        if (window.mobileControls) {
+            window.mobileControls.reset();
         }
-        window.gameState.playerVelocity.set(0, 0, 0);
-        window.gameState.goalReached = false;
-        
-        // Hide all UI messages
-        document.getElementById('goal-message').style.display = 'none';
-        
-        // If level system exists, reset current level
-        if (window.gameState.levelSystem) {
-            window.gameState.levelSystem.applyLevelSettings(window.gameState.levelSystem.currentLevel);
+    };
+    
+    // Listen for orientation changes
+    window.addEventListener('orientationchange', function() {
+        if (window.mobileControls) {
+            // Small delay to let browser finish orientation change
+            setTimeout(() => window.mobileControls.handleOrientationChange(), 300);
         }
-        
-        // Reset enemy manager
-        if (window.gameState.enemyManager) {
-            window.gameState.enemyManager.reset();
+    });
+    
+    // Also handle resize events
+    window.addEventListener('resize', function() {
+        if (window.mobileControls) {
+            // Small delay to prevent excessive calls during resize
+            if (window.mobileControls.resizeTimer) {
+                clearTimeout(window.mobileControls.resizeTimer);
+            }
+            window.mobileControls.resizeTimer = setTimeout(() => {
+                window.mobileControls.handleOrientationChange();
+            }, 250);
         }
-        
-        // Reset auto-runner controls if they exist
-        if (window.autoRunnerControls) {
-            window.autoRunnerControls.steeringDirection = 0;
-            window.autoRunnerControls.isJumping = false;
-            window.autoRunnerControls.forwardVector.set(0, 0, 1);
-            window.autoRunnerControls.currentRunSpeed = window.autoRunnerControls.baseRunSpeed;
-            document.getElementById('speed-meter').innerText = 'SPEED: NORMAL';
+    });
+    
+    // Show control hints after short delay
+    setTimeout(() => {
+        if (window.mobileControls && window.mobileControls.isMobile) {
+            window.mobileControls.showControlHints();
         }
-        
-        // Restart animation loop if it was cancelled
-        if (!window.gameState.animationId) {
-            window.lastTime = performance.now();
-            window.gameState.animationId = requestAnimationFrame(window.animate);
-        }
-    }
-};
+    }, 2000);
+});
