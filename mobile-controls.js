@@ -1,5 +1,6 @@
-// Improved Mobile Controls for Red Panda Explorer
-// This script detects mobile devices first, then only initializes mobile controls when needed
+// Redesigned Mobile Controls for Red Panda Explorer
+// This version implements an auto-runner style gameplay for mobile devices
+// where the panda moves forward automatically and touch controls steering
 
 // Immediately detect if the user is on a mobile device
 const isMobileDevice = (function() {
@@ -23,7 +24,7 @@ if (isMobileDevice) {
         document.body.classList.add('ios-device');
     }
     
-    console.log("Mobile device detected, enabling mobile controls");
+    console.log("Mobile device detected, enabling auto-runner mobile controls");
 }
 
 // Add mobile styles to document head immediately
@@ -44,30 +45,15 @@ if (isMobileDevice) {
         }
         
         /* Mobile control styles with z-index higher than other elements */
-        #mobile-joystick-container {
+        #mobile-control-area {
             position: fixed;
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            background-color: rgba(132, 255, 239, 0.3);
-            border: 3px solid #84ffef;
-            z-index: 2000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1500; 
             touch-action: none;
-            box-shadow: 0 0 15px rgba(132, 255, 239, 0.5);
-            pointer-events: all;
-        }
-        
-        #mobile-joystick-inner {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            background-color: rgba(255, 132, 223, 0.7);
-            border-radius: 50%;
-            top: 50%;
-            left: 50%;
-            transform: translate(-20px, -20px);
-            transform-origin: center center;
-            box-shadow: 0 0 10px rgba(255, 132, 223, 0.7);
+            background-color: transparent;
         }
         
         #mobile-jump-button {
@@ -94,6 +80,59 @@ if (isMobileDevice) {
         #mobile-jump-button.active {
             background-color: rgba(162, 255, 132, 0.5);
             transform: scale(0.95);
+        }
+        
+        #mobile-speed-toggle {
+            position: fixed;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background-color: rgba(255, 132, 223, 0.3);
+            border: 3px solid #ff84df;
+            color: #ff84df;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 90px;
+            z-index: 2000;
+            touch-action: none;
+            box-shadow: 0 0 15px rgba(255, 132, 223, 0.5);
+            pointer-events: all;
+            left: 20px;
+            bottom: 20px;
+        }
+        
+        #mobile-speed-toggle.active {
+            background-color: rgba(255, 132, 223, 0.5);
+        }
+        
+        #touch-indicator {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: rgba(132, 255, 239, 0.6);
+            pointer-events: none;
+            z-index: 2500;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 0 10px rgba(132, 255, 239, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        /* Speed meter */
+        #speed-meter {
+            position: fixed;
+            top: 45px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.5);
+            color: #84ffef;
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-family: 'Courier New', monospace;
+            z-index: 1000;
         }
         
         /* Mobile instructions styles */
@@ -198,7 +237,7 @@ if (isMobileDevice) {
     document.head.appendChild(styleElement);
 })();
 
-// Only initialize the MobileControls class if we're on a mobile device
+// Only initialize the AutoRunnerControls class if we're on a mobile device
 if (isMobileDevice) {
     // Configure iOS-specific settings immediately
     if (/iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream) {
@@ -222,31 +261,46 @@ if (isMobileDevice) {
         }, { passive: false });
     }
     
-    // Mobile Controls class - only used on mobile devices
-    class MobileControls {
+    // Auto-Runner Mobile Controls class
+    class AutoRunnerControls {
         constructor() {
+            // Auto-runner settings
+            this.autoRunEnabled = true;
+            this.baseRunSpeed = 4.0; // Base forward speed
+            this.currentRunSpeed = this.baseRunSpeed;
+            this.maxRunSpeed = 8.0; // Maximum forward speed
+            this.steeringEnabled = true;
+            
+            // Touch control variables
             this.touchStartX = 0;
             this.touchStartY = 0;
+            this.currentTouchX = 0;
+            this.currentTouchY = 0;
             this.isTouching = false;
             this.touchTime = 0;
             this.lastTapTime = 0;
             
-            // Movement control variables
-            this.moveDirection = { x: 0, z: 0 };
-            this.dragThreshold = 20; // Minimum pixel distance to register as a drag
-            this.maxDragDistance = 100; // Maximum drag distance for full speed
+            // Steering control variables
+            this.steeringDirection = 0; // -1 to 1, where 0 is straight ahead
+            this.steeringSensitivity = 0.7; // How responsive steering is
+            this.steeringDeadzone = 0.1; // Minimum steering input needed
+            
+            // Movement state
+            this.isJumping = false;
+            this.forwardVector = new THREE.Vector3(0, 0, 1); // Initial forward direction
+            this.targetDirection = new THREE.Vector3(0, 0, 1); // Direction to steer towards
             
             // Wait briefly to make sure game engine has initialized
             setTimeout(() => {
                 this.createMobileControls();
                 this.initTouchListeners();
-                console.log("Mobile controls fully initialized");
+                this.setupGameStatePatching();
+                console.log("Auto-runner mobile controls fully initialized");
                 
-                // Make sure the gameState is globally accessible for later use
+                // Make sure the gameState is globally accessible
                 if (window.gameState) {
                     console.log("gameState found in window object");
                 } else {
-                    // Try to get it from the global scope
                     console.log("WARNING: gameState not found in window object - attempting to expose it");
                     window.gameState = gameState; // This makes gameState accessible globally
                 }
@@ -263,9 +317,11 @@ if (isMobileDevice) {
                 mobileInstructions.innerHTML = `
                     <button id="close-mobile-instructions" class="close-button">&times;</button>
                     <h3>Red Panda Explorer 🐼</h3>
-                    <p>👆 Drag anywhere to move your panda</p>
+                    <p>🏃‍♂️ Your panda runs automatically</p>
+                    <p>👆 Touch & drag to steer</p>
                     <p>👇 Tap screen to jump</p>
                     <p>🔘 Use jump button for precise jumps</p>
+                    <p>🔄 Use speed button to toggle speed</p>
                     <p>🏁 Goal: Find the rainbow flag!</p>
                     <p class="instruction-last-para">Avoid the dark oil monsters!</p>
                     <button id="start-mobile-game" class="start-button">START GAME</button>
@@ -289,31 +345,27 @@ if (isMobileDevice) {
                 }
             }
             
-            // Create joystick UI if not already there
-            if (!document.getElementById('mobile-joystick-container')) {
-                // Outer container
-                const joystickContainer = document.createElement('div');
-                joystickContainer.id = 'mobile-joystick-container';
-                joystickContainer.className = 'mobile-control-element hidden';
-                
-                // Inner joystick that will move
-                const joystickInner = document.createElement('div');
-                joystickInner.id = 'mobile-joystick-inner';
-                
-                // Add to DOM
-                joystickContainer.appendChild(joystickInner);
-                document.body.appendChild(joystickContainer);
+            // Create full-screen touch area
+            if (!document.getElementById('mobile-control-area')) {
+                const touchArea = document.createElement('div');
+                touchArea.id = 'mobile-control-area';
+                document.body.appendChild(touchArea);
+            }
+            
+            // Create touch indicator
+            if (!document.getElementById('touch-indicator')) {
+                const touchIndicator = document.createElement('div');
+                touchIndicator.id = 'touch-indicator';
+                document.body.appendChild(touchIndicator);
             }
             
             // Create jump button if not already there
             if (!document.getElementById('mobile-jump-button')) {
-                // Jump button
                 const jumpButton = document.createElement('div');
                 jumpButton.id = 'mobile-jump-button';
                 jumpButton.className = 'mobile-control-element';
                 jumpButton.innerText = 'JUMP';
                 
-                // Add to DOM
                 document.body.appendChild(jumpButton);
                 
                 // Set up jump button handler
@@ -335,6 +387,42 @@ if (isMobileDevice) {
                 }, { passive: false });
             }
             
+            // Create speed toggle button
+            if (!document.getElementById('mobile-speed-toggle')) {
+                const speedToggle = document.createElement('div');
+                speedToggle.id = 'mobile-speed-toggle';
+                speedToggle.className = 'mobile-control-element';
+                speedToggle.innerText = 'SPEED';
+                
+                document.body.appendChild(speedToggle);
+                
+                // Set up speed toggle handler
+                speedToggle.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    this.toggleRunSpeed();
+                    speedToggle.classList.add('active');
+                    return false;
+                }, { passive: false });
+                
+                speedToggle.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    
+                    speedToggle.classList.remove('active');
+                    return false;
+                }, { passive: false });
+            }
+            
+            // Create speed meter
+            if (!document.getElementById('speed-meter')) {
+                const speedMeter = document.createElement('div');
+                speedMeter.id = 'speed-meter';
+                speedMeter.innerText = 'SPEED: NORMAL';
+                document.body.appendChild(speedMeter);
+            }
+            
             // Hide standard instructions and show mobile instructions
             const standardInstructions = document.getElementById('instructions');
             if (standardInstructions) {
@@ -352,6 +440,7 @@ if (isMobileDevice) {
                     target.id === 'close-mobile-instructions' || 
                     target.id === 'start-mobile-game' ||
                     target.id === 'mobile-jump-button' ||
+                    target.id === 'mobile-speed-toggle' ||
                     target.id === 'retry-button' ||
                     target.id === 'next-level-button') {
                     return;
@@ -363,7 +452,7 @@ if (isMobileDevice) {
                     return;
                 }
                 
-                // Prevent default for game movement
+                // Prevent default for game steering
                 e.preventDefault();
                 
                 // Is this a quick double tap? (for jumping)
@@ -375,101 +464,60 @@ if (isMobileDevice) {
                 }
                 this.lastTapTime = now;
                 
-                // Store starting position for drag calculation
+                // Store starting position for steering calculation
                 this.touchStartX = e.touches[0].clientX;
                 this.touchStartY = e.touches[0].clientY;
+                this.currentTouchX = this.touchStartX;
+                this.currentTouchY = this.touchStartY;
                 this.isTouching = true;
                 this.touchTime = now;
                 
-                // Position the joystick at the touch point
-                const joystickContainer = document.getElementById('mobile-joystick-container');
-                if (joystickContainer) {
-                    joystickContainer.style.left = `${this.touchStartX - 50}px`; // 50 is half the joystick width
-                    joystickContainer.style.top = `${this.touchStartY - 50}px`;  // 50 is half the joystick height
-                    joystickContainer.classList.remove('hidden');
-                    
-                    // Reset the inner joystick position
-                    const joystickInner = document.getElementById('mobile-joystick-inner');
-                    if (joystickInner) {
-                        joystickInner.style.transform = 'translate(-20px, -20px)';
-                    }
+                // Show touch indicator at touch point
+                const touchIndicator = document.getElementById('touch-indicator');
+                if (touchIndicator) {
+                    touchIndicator.style.left = `${this.touchStartX}px`;
+                    touchIndicator.style.top = `${this.touchStartY}px`;
+                    touchIndicator.style.opacity = '1';
                 }
+                
             }, { passive: false });
             
-            // Touch move - dragging motion
+            // Touch move - steering
             document.addEventListener('touchmove', (e) => {
-                if (!this.isTouching) return;
+                if (!this.isTouching || !this.steeringEnabled) return;
                 
                 try {
-                    e.preventDefault(); // This is needed for drag to work
+                    e.preventDefault(); // Prevent scrolling
                     
                     const touchX = e.touches[0].clientX;
                     const touchY = e.touches[0].clientY;
                     
-                    // Calculate the drag distance
-                    const dragX = touchX - this.touchStartX;
-                    const dragY = touchY - this.touchStartY;
-                    const dragDistance = Math.sqrt(dragX * dragX + dragY * dragY);
+                    this.currentTouchX = touchX;
+                    this.currentTouchY = touchY;
                     
-                    // Only register as a drag if it's beyond the threshold
-                    if (dragDistance >= this.dragThreshold) {
-                        // Calculate the normalized direction
-                        const dragDirection = {
-                            x: dragX / dragDistance,
-                            y: dragY / dragDistance
-                        };
-                        
-                        // Calculate movement speed based on drag distance
-                        const speed = Math.min(dragDistance / this.maxDragDistance, 1.0);
-                        
-                        // Log drag information for debugging
-                        if (Math.random() < 0.05) { // Log occasionally
-                            console.log(`Drag: dist=${dragDistance.toFixed(0)}, dir=(${dragDirection.x.toFixed(2)},${dragDirection.y.toFixed(2)}), speed=${speed.toFixed(2)}`);
-                        }
-                        
-                        // Map drag direction to WASD controls
-                        // Note: Z is forward/backward, X is left/right
-                        this.moveDirection.z = -dragDirection.y * speed; // Invert Y since positive Y is down on screen
-                        this.moveDirection.x = -dragDirection.x * speed; // Invert X to match WASD mapping
-                        
-                        // Update the gameState keys to simulate keyboard input
-                        // Access gameState through multiple possible paths to ensure it works
-                        if (window.gameState) {
-                            console.log("Mobile move: x=" + this.moveDirection.x.toFixed(2) + ", z=" + this.moveDirection.z.toFixed(2));
-                            
-                            window.gameState.keyStates['KeyW'] = this.moveDirection.z > 0;
-                            window.gameState.keyStates['KeyS'] = this.moveDirection.z < 0;
-                            window.gameState.keyStates['KeyA'] = this.moveDirection.x > 0;
-                            window.gameState.keyStates['KeyD'] = this.moveDirection.x < 0;
-                            
-                            // Force direct access to the keyStates object as well
-                            // This ensures both access patterns work
-                            if (typeof gameState !== 'undefined' && gameState.keyStates) {
-                                gameState.keyStates['KeyW'] = this.moveDirection.z > 0;
-                                gameState.keyStates['KeyS'] = this.moveDirection.z < 0;
-                                gameState.keyStates['KeyA'] = this.moveDirection.x > 0;
-                                gameState.keyStates['KeyD'] = this.moveDirection.x < 0;
-                            }
-                        } else if (typeof gameState !== 'undefined' && gameState.keyStates) {
-                            console.log("Using direct gameState access");
-                            gameState.keyStates['KeyW'] = this.moveDirection.z > 0;
-                            gameState.keyStates['KeyS'] = this.moveDirection.z < 0;
-                            gameState.keyStates['KeyA'] = this.moveDirection.x > 0;
-                            gameState.keyStates['KeyD'] = this.moveDirection.x < 0;
-                        } else {
-                            console.error("No gameState access available!");
-                        }
-                        
-                        // Visual feedback - move joystick inner component
-                        const joystickInner = document.getElementById('mobile-joystick-inner');
-                        if (joystickInner) {
-                            // Limit the visual movement to the joystick bounds
-                            const maxVisualMove = 35; // radius of joystick is 50, inner is 30, so 50-30/2 = 35 max
-                            const visualX = dragDirection.x * Math.min(dragDistance, maxVisualMove);
-                            const visualY = dragDirection.y * Math.min(dragDistance, maxVisualMove);
-                            joystickInner.style.transform = `translate(${visualX - 20}px, ${visualY - 20}px)`;
-                        }
+                    // Calculate horizontal movement for steering
+                    // Positive = right, Negative = left
+                    const screenWidth = window.innerWidth;
+                    const horizontalDelta = touchX - this.touchStartX;
+                    
+                    // Calculate steering input (normalized from -1 to 1)
+                    // Use a percentage of screen width for consistent feel across devices
+                    const steeringInput = Math.max(-1, Math.min(1, horizontalDelta / (screenWidth * 0.3)));
+                    
+                    // Apply deadzone to prevent tiny movements
+                    if (Math.abs(steeringInput) < this.steeringDeadzone) {
+                        this.steeringDirection = 0;
+                    } else {
+                        this.steeringDirection = steeringInput * this.steeringSensitivity;
                     }
+                    
+                    // Move touch indicator
+                    const touchIndicator = document.getElementById('touch-indicator');
+                    if (touchIndicator) {
+                        touchIndicator.style.left = `${touchX}px`;
+                        touchIndicator.style.top = `${touchY}px`;
+                    }
+                    
                 } catch (error) {
                     console.error("Mobile controls: Error during touch movement", error);
                 }
@@ -478,7 +526,7 @@ if (isMobileDevice) {
             // Touch end - release touch
             document.addEventListener('touchend', (e) => {
                 try {
-                    // Only prevent default if we were actually dragging
+                    // Only prevent default if we were actually touching
                     if (this.isTouching) {
                         e.preventDefault();
                     }
@@ -486,104 +534,270 @@ if (isMobileDevice) {
                     // Check if this was a tap (short duration, little movement)
                     if (this.isTouching) {
                         const touchDuration = Date.now() - this.touchTime;
-                        if (touchDuration < 200) {
+                        const moveDistance = Math.sqrt(
+                            Math.pow(this.currentTouchX - this.touchStartX, 2) + 
+                            Math.pow(this.currentTouchY - this.touchStartY, 2)
+                        );
+                        
+                        if (touchDuration < 200 && moveDistance < 20) {
                             // This is a quick tap, trigger jump
                             this.jump();
                         }
                     }
                     
-                    // Reset all states
+                    // Reset steering
+                    this.steeringDirection = 0;
                     this.isTouching = false;
-                    this.moveDirection.x = 0;
-                    this.moveDirection.z = 0;
                     
-                    // Reset the keyboard simulation
-                    if (window.gameState) {
-                        window.gameState.keyStates['KeyW'] = false;
-                        window.gameState.keyStates['KeyS'] = false;
-                        window.gameState.keyStates['KeyA'] = false;
-                        window.gameState.keyStates['KeyD'] = false;
+                    // Hide touch indicator
+                    const touchIndicator = document.getElementById('touch-indicator');
+                    if (touchIndicator) {
+                        touchIndicator.style.opacity = '0';
                     }
                     
-                    // Hide the joystick
-                    const joystickContainer = document.getElementById('mobile-joystick-container');
-                    if (joystickContainer) {
-                        joystickContainer.classList.add('hidden');
-                    }
                 } catch (error) {
                     console.error("Mobile controls: Error during touch end", error);
                 }
             }, { passive: false });
         }
         
-        jump() {
-            try {
-                if (window.gameState) {
-                    window.gameState.keyStates['Space'] = true;
-                    
-                    // Reset the space key after a short delay
-                    setTimeout(() => {
-                        if (window.gameState) {
-                            window.gameState.keyStates['Space'] = false;
-                        }
-                    }, 100);
+        setupGameStatePatching() {
+            // Patch into the game's update loop
+            const self = this;
+            
+            // Save references to key game objects
+            this.findGameObjects();
+            
+            // Create a new update method to plug into the game engine
+            window.updatePlayerPositionMobile = function(deltaTime) {
+                self.updateAutoRunnerMovement(deltaTime);
+            };
+            
+            // Override the original update function when on mobile
+            if (window.updatePlayerPosition && typeof window.updatePlayerPosition === 'function') {
+                // Store the original function
+                window.updatePlayerPositionOriginal = window.updatePlayerPosition;
+                
+                // Replace with our mobile version
+                window.updatePlayerPosition = function(deltaTime) {
+                    window.updatePlayerPositionMobile(deltaTime);
+                };
+                
+                console.log("Successfully overrode player movement for auto-running");
+            } else {
+                console.warn("Could not find updatePlayerPosition function to override");
+            }
+        }
+        
+        findGameObjects() {
+            // Try to get references to game objects and camera
+            this.player = window.player;
+            this.camera = window.camera;
+            this.gameState = window.gameState;
+            
+            if (!this.player || !this.gameState) {
+                console.warn("Could not find all required game objects - will retry");
+                
+                // Retry after a short delay
+                setTimeout(() => this.findGameObjects(), 500);
+            } else {
+                console.log("Found all required game objects for auto-runner");
+            }
+        }
+        
+        updateAutoRunnerMovement(deltaTime) {
+            // Skip if game over or goal reached
+            if (!this.gameState || this.gameState.goalReached || this.gameState.gameOver) return;
+            
+            // Get player reference
+            const player = this.player;
+            if (!player) return;
+            
+            // Physics constants
+            const jumpForce = 8.0;
+            const gravity = 10.0;
+            
+            // Ground check
+            const groundHeight = window.getTerrainHeight(player.position.x, player.position.z);
+            this.gameState.playerOnGround = player.position.y <= groundHeight + 0.5;
+            
+            // Apply gravity
+            if (!this.gameState.playerOnGround) {
+                this.gameState.playerVelocity.y -= gravity * deltaTime;
+            } else {
+                this.gameState.playerVelocity.y = Math.max(0, this.gameState.playerVelocity.y);
+                
+                // Snap to ground if on ground
+                if (player.position.y < groundHeight + 0.5) {
+                    player.position.y = groundHeight + 0.5;
                 }
-            } catch (error) {
-                console.error("Mobile controls: Error during jump", error);
+            }
+            
+            // Handle jumping
+            if (this.isJumping && this.gameState.playerOnGround) {
+                this.gameState.playerVelocity.y = jumpForce;
+                this.isJumping = false; // Reset jump flag once applied
+            }
+            
+            // Calculate movement direction based on current forward direction and steering
+            const cameraDirection = new THREE.Vector3();
+            if (this.camera) {
+                this.camera.getWorldDirection(cameraDirection);
+                cameraDirection.y = 0;
+                cameraDirection.normalize();
+            } else {
+                // Fallback if camera not available
+                cameraDirection.set(0, 0, -1);
+            }
+            
+            // Calculate steering vector - rotate cameraDirection by steeringDirection
+            const steeringAngle = this.steeringDirection * Math.PI * 0.5 * deltaTime; // Convert to radians, scaled by time
+            const rotatedDirection = cameraDirection.clone();
+            rotatedDirection.applyAxisAngle(new THREE.Vector3(0, 1, 0), steeringAngle);
+            
+            // Update forward vector with steering
+            this.forwardVector.copy(rotatedDirection);
+            
+            // Apply auto-running movement
+            if (this.autoRunEnabled) {
+                const moveDelta = this.forwardVector.clone().multiplyScalar(this.currentRunSpeed * deltaTime);
+                player.position.add(moveDelta);
+                
+                // Rotate player to face direction of movement
+                player.lookAt(player.position.clone().add(this.forwardVector));
+                
+                // Adjust player to terrain height
+                const newGroundHeight = window.getTerrainHeight(player.position.x, player.position.z);
+                
+                // Only adjust height if we're on the ground
+                if (this.gameState.playerOnGround) {
+                    player.position.y = newGroundHeight + 0.5;
+                }
+                
+                // Apply vertical velocity (gravity/jumping)
+                player.position.y += this.gameState.playerVelocity.y * deltaTime;
+                
+                // Prevent player from sinking
+                const currentGroundHeight = window.getTerrainHeight(player.position.x, player.position.z);
+                if (player.position.y < currentGroundHeight + 0.5 && this.gameState.playerVelocity.y <= 0) {
+                    player.position.y = currentGroundHeight + 0.5;
+                    this.gameState.playerVelocity.y = 0;
+                }
+            }
+        }
+        
+        jump() {
+            if (!this.gameState || this.gameState.goalReached || this.gameState.gameOver) return;
+            
+            // Set jump flag - will be applied in next update if on ground
+            this.isJumping = true;
+            
+            // For immediate feedback, also try direct key simulation
+            if (window.gameState) {
+                window.gameState.keyStates['Space'] = true;
+                
+                // Reset space key after a short delay
+                setTimeout(() => {
+                    if (window.gameState) {
+                        window.gameState.keyStates['Space'] = false;
+                    }
+                }, 100);
+            }
+        }
+        
+        toggleRunSpeed() {
+            if (!this.gameState || this.gameState.goalReached || this.gameState.gameOver) return;
+            
+            // Toggle between normal and fast speed
+            if (this.currentRunSpeed === this.baseRunSpeed) {
+                this.currentRunSpeed = this.maxRunSpeed;
+                document.getElementById('speed-meter').innerText = 'SPEED: FAST';
+            } else {
+                this.currentRunSpeed = this.baseRunSpeed;
+                document.getElementById('speed-meter').innerText = 'SPEED: NORMAL';
             }
         }
     }
 
-    // Try to initialize mobile controls when DOM is fully loaded
+    // Initialize auto-runner controls when DOM is loaded
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => {
-            window.mobileControls = new MobileControls();
+            window.autoRunnerControls = new AutoRunnerControls();
         });
     } else {
         // DOM already loaded, initialize now
-        window.mobileControls = new MobileControls();
+        window.autoRunnerControls = new AutoRunnerControls();
     }
-}
-
-// We need to make the game state globally accessible for mobile controls to work
-// Add a fix to ensure gameState is properly exposed to the window object
-window.addEventListener('load', function() {
-    // Wait briefly to make sure game has initialized
-    setTimeout(function() {
-        // Ensure gameState is accessible globally
-        if (typeof gameState !== 'undefined' && !window.gameState) {
-            window.gameState = gameState;
-            console.log("Exposed gameState to window object");
-        }
-        
-        // Create a hook into the game's update loop to monitor control activity
-        if (window.gameState) {
-            // Save the original updatePlayerPosition function
-            const originalUpdateFn = window.updatePlayerPosition || window.gameState.updatePlayerPosition;
+    
+    // Initialize camera controls for auto-runner
+    // We don't need the original mobile-camera-controls.js as we'll handle this differently
+    window.addEventListener('load', function() {
+        // Ensure camera follows player direction in auto-runner mode
+        function initAutoRunnerCamera() {
+            // Try to get camera
+            if (!window.camera) {
+                setTimeout(initAutoRunnerCamera, 500);
+                return;
+            }
             
-            // If we find the function, hook into it to verify mobile controls
-            if (typeof originalUpdateFn === 'function') {
-                window.updatePlayerPosition = function(deltaTime) {
-                    // Log active control keys occasionally for debugging
-                    if (Math.random() < 0.01) { // Only log ~1% of the time to avoid spam
-                        const activeKeys = [];
-                        if (window.gameState.keyStates['KeyW']) activeKeys.push('W');
-                        if (window.gameState.keyStates['KeyS']) activeKeys.push('S');
-                        if (window.gameState.keyStates['KeyA']) activeKeys.push('A');
-                        if (window.gameState.keyStates['KeyD']) activeKeys.push('D');
-                        if (activeKeys.length > 0) {
-                            console.log("Active keys: " + activeKeys.join(','));
-                        }
+            // Override the original camera update if it exists
+            if (typeof window.updateCamera === 'function') {
+                const originalUpdateCamera = window.updateCamera;
+                
+                window.updateCamera = function() {
+                    if (window.autoRunnerControls) {
+                        // In mobile auto-runner mode, camera follows player direction automatically
+                        updateAutoRunnerCamera();
+                    } else {
+                        // On desktop, use original camera controls
+                        originalUpdateCamera();
                     }
-                    
-                    // Call the original function
-                    return originalUpdateFn(deltaTime);
                 };
-                console.log("Hooked into game update function for mobile diagnostics");
+                
+                console.log("Camera controls configured for auto-runner mode");
+            }
+            
+            function updateAutoRunnerCamera() {
+                // Skip if required objects aren't available
+                if (!window.player || !window.camera || !window.autoRunnerControls) return;
+                
+                // Skip camera update during special game states
+                if (window.gameState && (window.gameState.goalReached || window.gameState.gameOver)) {
+                    return;
+                }
+                
+                const player = window.player;
+                const camera = window.camera;
+                const controls = window.autoRunnerControls;
+                
+                // Use player's forward direction for camera positioning
+                const forwardDir = controls.forwardVector.clone();
+                
+                // Camera settings
+                const cameraHeight = 4;
+                const cameraDistance = 6;
+                const lookAheadDistance = 3;
+                
+                // Position camera behind player
+                camera.position.copy(player.position)
+                    .sub(forwardDir.clone().multiplyScalar(cameraDistance));
+                
+                // Add height offset
+                camera.position.y = player.position.y + cameraHeight;
+                
+                // Look ahead of player
+                const lookTarget = player.position.clone()
+                    .add(forwardDir.clone().multiplyScalar(lookAheadDistance));
+                lookTarget.y = player.position.y + 1; // Look at head level
+                
+                camera.lookAt(lookTarget);
             }
         }
-    }, 1000);
-});
+        
+        // Start camera initialization
+        initAutoRunnerCamera();
+    });
+}
 
 // Make resetGame function available globally so that mobile controls can access it
 window.resetGame = function() {
@@ -609,6 +823,15 @@ window.resetGame = function() {
         // Reset enemy manager
         if (window.gameState.enemyManager) {
             window.gameState.enemyManager.reset();
+        }
+        
+        // Reset auto-runner controls if they exist
+        if (window.autoRunnerControls) {
+            window.autoRunnerControls.steeringDirection = 0;
+            window.autoRunnerControls.isJumping = false;
+            window.autoRunnerControls.forwardVector.set(0, 0, 1);
+            window.autoRunnerControls.currentRunSpeed = window.autoRunnerControls.baseRunSpeed;
+            document.getElementById('speed-meter').innerText = 'SPEED: NORMAL';
         }
         
         // Restart animation loop if it was cancelled
