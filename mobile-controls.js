@@ -366,31 +366,117 @@ document.addEventListener('DOMContentLoaded', () => {
         return button;
     }
     
+    // Fix and patch the mobile controls system
+    function fixMobileControls() {
+        if (!window.mobileControls || !window.mobileControls.initialized) {
+            console.log("Mobile controls not ready yet, will try again");
+            return false;
+        }
+        
+        console.log("Fixing mobile controls touch handling");
+        
+        // Preserve original touch handler functions
+        const originalTouchStart = window.mobileControls.handleTouchStart;
+        const originalTouchMove = window.mobileControls.handleTouchMove;
+        const originalTouchEnd = window.mobileControls.handleTouchEnd;
+        
+        // Replace handleTouchStart with fixed version
+        window.mobileControls.handleTouchStart = function(event) {
+            // Skip if the button is handling this touch
+            if (window.buttonTouchActive) {
+                console.log("Touch start ignored - button is active");
+                return;
+            }
+            
+            // Check if the touch is on the camera flip button
+            const touch = event.touches[0];
+            const flipButton = document.getElementById('camera-flip-button');
+            
+            if (flipButton) {
+                const buttonRect = flipButton.getBoundingClientRect();
+                if (touch.clientX >= buttonRect.left && touch.clientX <= buttonRect.right &&
+                    touch.clientY >= buttonRect.top && touch.clientY <= buttonRect.bottom) {
+                    console.log("Touch start ignored - on camera button");
+                    return;
+                }
+            }
+            
+            // Otherwise process normally
+            return originalTouchStart.call(window.mobileControls, event);
+        };
+        
+        // Replace handleTouchMove with fixed version
+        window.mobileControls.handleTouchMove = function(event) {
+            // Skip if the button is handling this touch
+            if (window.buttonTouchActive) {
+                return;
+            }
+            
+            return originalTouchMove.call(window.mobileControls, event);
+        };
+        
+        // Replace handleTouchEnd with fixed version
+        window.mobileControls.handleTouchEnd = function(event) {
+            // Skip if the button is handling this touch
+            if (window.buttonTouchActive) {
+                return;
+            }
+            
+            return originalTouchEnd.call(window.mobileControls, event);
+        };
+        
+        console.log("Mobile controls touch handling fixed");
+        return true;
+    }
+    
+    // Initialize button and controls
+    let fixedControls = false;
+    let hasButton = false;
+    
     // Wait for game elements to be ready
     const initInterval = setInterval(() => {
-        if (window.camera && window.gameState) {
-            clearInterval(initInterval);
-            
-            console.log("Game objects ready, adding camera flip button");
-            
+        // First check if mobile controls are available to fix
+        if (!fixedControls && window.mobileControls && window.mobileControls.initialized) {
+            fixedControls = fixMobileControls();
+        }
+        
+        // Then check if we can create the button
+        if (!hasButton && window.camera && window.gameState) {
             // Create the button
             const flipButton = createCameraFlipButton();
+            hasButton = true;
             
-            // Add click event
+            // Add touch event handler
             flipButton.addEventListener('touchstart', (e) => {
-                e.preventDefault();
+                // Only prevent default behavior for THIS button 
+                // and don't interfere with other touch events
                 e.stopPropagation();
                 
-                // Rotate camera angle by 180 degrees
-                window.cameraAngleHorizontal = (window.cameraAngleHorizontal + Math.PI) % (Math.PI * 2);
-                
-                console.log("Camera flipped to", window.cameraAngleHorizontal);
-                
-                // Visual feedback that button was pressed
-                flipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
-                setTimeout(() => {
-                    flipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                }, 300);
+                // Check if the touch is directly on the button
+                const touch = e.touches[0];
+                const buttonRect = flipButton.getBoundingClientRect();
+                if (touch.clientX >= buttonRect.left && touch.clientX <= buttonRect.right &&
+                    touch.clientY >= buttonRect.top && touch.clientY <= buttonRect.bottom) {
+                    
+                    // Prevent default only when directly touching the button
+                    e.preventDefault();
+                    
+                    // Mark this touch as being used by the button
+                    window.buttonTouchActive = true;
+                    
+                    // Rotate camera angle by 180 degrees
+                    window.cameraAngleHorizontal = (window.cameraAngleHorizontal + Math.PI) % (Math.PI * 2);
+                    
+                    console.log("Camera flipped to", window.cameraAngleHorizontal);
+                    
+                    // Visual feedback that button was pressed
+                    flipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
+                    setTimeout(() => {
+                        flipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                        // Reset the button touch flag after animation completes
+                        window.buttonTouchActive = false;
+                    }, 300);
+                }
             });
             
             // Handle game overlay visibility
@@ -429,8 +515,12 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Initial check for overlay visibility
             handleOverlayVisibility();
-            
-            console.log("Camera flip button setup complete");
+        }
+        
+        // If both tasks are done, clear the interval
+        if (fixedControls && hasButton) {
+            clearInterval(initInterval);
+            console.log("Camera flip button and mobile controls fully initialized");
         }
     }, 100);
     
