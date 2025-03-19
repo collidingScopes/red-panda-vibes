@@ -383,7 +383,7 @@ h2, h3 {
     border-radius: 50%;
     z-index: 150;
     cursor: pointer;
-    display: flex;
+    /* display: flex; */
     justify-content: center;
     align-items: center;
     box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); /* Cyan glow */
@@ -397,16 +397,31 @@ h2, h3 {
 }
 
 /* Only show camera flip button on mobile */
-@media (min-width: 769px) {
+/* @media (min-width: 769px) {
     #camera-flip-button {
         display: none !important;
     }
-}
+} */
 
-/* Adjust instructions position on mobile */
 @media (max-width: 768px) {
     #instructions {
-        left: 70px;
+        max-width: 90%;
+        font-size: 14px;
+        padding: 10px;
+    }
+    #instructions h3 {
+        font-size: 16px;
+        margin-bottom: 8px;
+    }
+    #instructions p:nth-child(2),
+    #instructions p:nth-child(3) {
+        display: none;
+    }
+    #instructions::after {
+        content: "👆 Drag to move, tap to jump";
+        display: block;
+        margin-top: 8px;
+        font-size: 14px;
     }
 }
 

@@ -95,6 +95,7 @@ class MobileControls {
     initMobileUI() {
         this.log("Initializing mobile UI");
         
+        /*
         // Create style element for mobile-specific CSS
         const styleElement = document.createElement('style');
         styleElement.textContent = `
@@ -120,7 +121,7 @@ class MobileControls {
                 }
             }
         `;
-        document.head.appendChild(styleElement);
+        */
         
         // Create camera flip button
         this.createCameraFlipButton();
@@ -130,32 +131,19 @@ class MobileControls {
      * Creates a camera flip button for quick camera rotation
      */
     createCameraFlipButton() {
+        /*
         const button = document.createElement('button');
         button.id = 'camera-flip-button';
         button.innerHTML = '↻';
-        button.style.cssText = `
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            width: 50px;
-            height: 50px;
-            font-size: 24px;
-            background-color: rgba(0, 0, 0, 0.5);
-            color: #84ffef;
-            border: 2px solid #84ffef;
-            border-radius: 50%;
-            z-index: 150;
-            // display: none;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 0 10px rgba(132, 255, 239, 0.6);
-        `;
         document.body.appendChild(button);
-        
+        */
+       
+        /*
         // Adjust instructions position if camera flip button exists
         if (this.instructionsElement) {
             this.instructionsElement.style.left = '70px';
         }
+        */
         
         // Add touch event for camera flip
         button.addEventListener('touchstart', (e) => {
