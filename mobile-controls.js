@@ -2,7 +2,12 @@
 class MobileControls {
     constructor() {
         this.isMobile = this.checkIfMobile();
-        if (!this.isMobile) return;
+        if (!this.isMobile) {
+            console.log("Not a mobile device, skipping mobile controls");
+            return;
+        }
+
+        console.log("Initializing mobile controls");
 
         // Game object references
         this.player = null;
@@ -27,15 +32,16 @@ class MobileControls {
         this.initialized = false;
         this.connectToGameTimer = setInterval(() => this.connectToGame(), 500);
         this.cameraUpdateModified = false;
-
-        console.log("Mobile controls initialized");
     }
 
     checkIfMobile() {
-        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        console.log("Mobile check:", isMobile);
+        return isMobile;
     }
 
     initMobileUI() {
+        console.log("Initializing mobile UI");
         const styleElement = document.createElement('style');
         styleElement.textContent = `
             @media (max-width: 768px) {
@@ -64,58 +70,69 @@ class MobileControls {
     }
 
     addEventListeners() {
+        console.log("Adding touch event listeners");
         document.addEventListener('touchstart', (e) => this.handleTouchStart(e), { passive: false });
         document.addEventListener('touchmove', (e) => this.handleTouchMove(e), { passive: false });
         document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
-
-        // Ensure UI buttons work with touch
         this.fixGameButtonsForTouch();
     }
 
     handleTouchStart(event) {
-        // Ignore if game not initialized or touch on UI element
-        if (!this.initialized || this.isUIElement(event.target)) return;
+        if (!this.initialized) {
+            console.log("Touch start ignored - not initialized");
+            return;
+        }
+
+        console.log("Touch start detected", event.touches.length);
+        
+        if (this.isUIElement(event.target)) {
+            console.log("Touch on UI element, ignoring");
+            return;
+        }
 
         const touch = event.touches[0];
-        
-        // If no movement touch is active, start movement
         if (!this.moveTouchId) {
             this.moveTouchId = touch.identifier;
             this.moveStartX = this.moveCurrentX = touch.clientX;
             this.moveStartY = this.moveCurrentY = touch.clientY;
+            console.log(`Movement started at (${this.moveStartX}, ${this.moveStartY})`);
             event.preventDefault();
         }
     }
 
     handleTouchMove(event) {
-        if (!this.initialized || !this.moveTouchId) return;
+        if (!this.initialized || !this.moveTouchId) {
+            console.log("Touch move ignored - not initialized or no active touch");
+            return;
+        }
 
         const touch = Array.from(event.touches).find(t => t.identifier === this.moveTouchId);
         if (!touch) return;
 
         this.moveCurrentX = touch.clientX;
         this.moveCurrentY = touch.clientY;
+        console.log(`Touch moved to (${this.moveCurrentX}, ${this.moveCurrentY})`);
         this.updateMovement();
         event.preventDefault();
     }
 
     handleTouchEnd(event) {
-        if (!this.initialized) return;
+        if (!this.initialized) {
+            console.log("Touch end ignored - not initialized");
+            return;
+        }
 
         const touch = event.changedTouches[0];
-        
-        // Handle movement touch ending
         if (this.moveTouchId === touch.identifier) {
             const deltaX = touch.clientX - this.moveStartX;
             const deltaY = touch.clientY - this.moveStartY;
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-            // If it was a short tap (not a drag), trigger jump
+            console.log(`Touch ended. Distance: ${distance}`);
             if (distance < this.movementDeadzone && !this.isUIElement(event.target)) {
                 this.triggerJump();
             }
 
-            // Reset movement
             this.moveTouchId = null;
             this.resetMovementKeys();
             event.preventDefault();
@@ -123,26 +140,30 @@ class MobileControls {
     }
 
     updateMovement() {
-        if (!this.gameState) return;
+        if (!this.gameState) {
+            console.log("Cannot update movement - gameState not available");
+            return;
+        }
 
         const deltaX = (this.moveCurrentX - this.moveStartX) * this.movementScale;
         const deltaY = (this.moveCurrentY - this.moveStartY) * this.movementScale;
 
-        // Reset movement keys
         this.resetMovementKeys();
 
-        // Apply movement based on drag distance
         if (Math.abs(deltaX) > this.movementDeadzone * this.movementScale) {
             this.gameState.keyStates['KeyA'] = deltaX < 0;
             this.gameState.keyStates['KeyD'] = deltaX > 0;
+            console.log(`Horizontal movement: ${deltaX < 0 ? 'Left' : 'Right'}`);
         }
         if (Math.abs(deltaY) > this.movementDeadzone * this.movementScale) {
             this.gameState.keyStates['KeyW'] = deltaY < 0;
             this.gameState.keyStates['KeyS'] = deltaY > 0;
+            console.log(`Vertical movement: ${deltaY < 0 ? 'Forward' : 'Backward'}`);
         }
     }
 
     resetMovementKeys() {
+        if (!this.gameState) return;
         this.gameState.keyStates['KeyW'] = false;
         this.gameState.keyStates['KeyA'] = false;
         this.gameState.keyStates['KeyS'] = false;
@@ -150,24 +171,28 @@ class MobileControls {
     }
 
     triggerJump() {
-        if (!this.gameState || this.jumpTriggered) return;
-        
+        if (!this.gameState || this.jumpTriggered) {
+            console.log("Jump ignored - gameState missing or already jumping");
+            return;
+        }
+
+        console.log("Jump triggered");
         this.jumpTriggered = true;
         this.gameState.keyStates['Space'] = true;
-        
-        // Reset jump after a short delay
         setTimeout(() => {
             this.gameState.keyStates['Space'] = false;
             this.jumpTriggered = false;
+            console.log("Jump reset");
         }, 100);
     }
 
     isUIElement(target) {
-        return target.tagName === 'BUTTON' || 
-               target.closest('#instructions') || 
-               target.closest('#goal-message') || 
-               target.closest('#level-complete-content') || 
-               target.closest('#game-over-screen');
+        const isUI = target.tagName === 'BUTTON' || 
+                     target.closest('#instructions') || 
+                     target.closest('#goal-message') || 
+                     target.closest('#level-complete-content') || 
+                     target.closest('#game-over-screen');
+        return isUI;
     }
 
     connectToGame() {
@@ -177,8 +202,20 @@ class MobileControls {
             this.player = window.player;
             this.initialized = true;
             
+            console.log("Connected to game objects:", {
+                gameState: !!this.gameState,
+                camera: !!this.camera,
+                player: !!this.player
+            });
+            
             setTimeout(() => this.overrideCameraUpdate(), 2000);
             clearInterval(this.connectToGameTimer);
+        } else {
+            console.log("Waiting for game objects...", {
+                gameState: !!window.gameState,
+                camera: !!window.camera,
+                player: !!window.player
+            });
         }
     }
 
@@ -194,7 +231,9 @@ class MobileControls {
                 }
             };
             this.cameraUpdateModified = true;
-            console.log("Camera update function overridden for mobile");
+            console.log("Camera update overridden");
+        } else {
+            console.warn("updateCamera function not found");
         }
     }
 
@@ -215,10 +254,12 @@ class MobileControls {
     }
 
     fixGameButtonsForTouch() {
+        console.log("Fixing game buttons for touch");
         const buttons = document.querySelectorAll('button');
         buttons.forEach(button => {
             button.addEventListener('touchstart', (e) => {
-                e.stopPropagation(); // Prevent movement/jump from triggering
+                console.log(`Button touched: ${button.id}`);
+                e.stopPropagation();
                 if (['next-level-button', 'retry-button', 'close-instructions'].includes(button.id)) {
                     setTimeout(() => {
                         const enterEvent = new KeyboardEvent('keydown', {
@@ -249,6 +290,7 @@ class MobileControls {
 
     fixButtonTouch(button) {
         button.addEventListener('touchstart', (e) => {
+            console.log(`New button touched: ${button.id}`);
             e.stopPropagation();
             if (['next-level-button', 'retry-button', 'close-instructions'].includes(button.id)) {
                 setTimeout(() => {
@@ -265,15 +307,16 @@ class MobileControls {
 
     update() {
         if (!this.isMobile || !this.initialized) return;
-        // Movement is handled in touch events, no need for continuous update here
     }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("DOM content loaded, creating mobile controls");
     window.mobileControls = new MobileControls();
 });
 
 (function() {
+    console.log("Setting up animation hook");
     const hookInterval = setInterval(() => {
         if (typeof window.animate === 'function' && window.mobileControls) {
             const originalAnimate = window.animate;
@@ -285,7 +328,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 return result;
             };
             clearInterval(hookInterval);
-            console.log("Animation loop hooked for mobile controls");
+            console.log("Animation loop hooked");
         }
     }, 500);
     setTimeout(() => clearInterval(hookInterval), 10000);
