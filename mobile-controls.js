@@ -210,7 +210,7 @@ class MobileControls {
                 player: !!this.player
             });
             
-            setTimeout(() => this.overrideCameraUpdate(), 1000); // Reduced to 1000ms
+            //setTimeout(() => this.overrideCameraUpdate(), 1000); // Reduced to 1000ms
             clearInterval(this.connectToGameTimer);
         } else {
             console.log("Waiting for game objects...", {
@@ -221,6 +221,7 @@ class MobileControls {
         }
     }
 
+    /*
     overrideCameraUpdate() {
         if (this.cameraUpdateModified) return;
 
@@ -254,6 +255,7 @@ class MobileControls {
             window.cameraAngleHorizontal += angleDiff * 0.1;
         }
     }
+    */
 
     fixGameButtonsForTouch() {
         console.log("Fixing game buttons for touch");
