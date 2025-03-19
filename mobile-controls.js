@@ -92,7 +92,7 @@ class MobileControls {
             this.moveTouchId = touch.identifier;
             this.moveStartX = this.moveCurrentX = touch.clientX;
             this.moveStartY = this.moveCurrentY = touch.clientY;
-            console.log(`Movement started at (${this.moveStartX}, ${this.moveStartY}) with ID: ${this.moveTouchId}`);
+            //console.log(`Movement started at (${this.moveStartX}, ${this.moveStartY}) with ID: ${this.moveTouchId}`);
             event.preventDefault();
         } else {
             console.log("Touch start ignored - movement already active");
