@@ -368,3 +368,49 @@ h2, h3 {
 .level-warning.fade-out {
     animation: fadeOut 1s ease-in-out forwards;
 }
+
+/* Camera flip button styles */
+#camera-flip-button {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    width: 50px;
+    height: 50px;
+    font-size: 24px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #84ffef; /* Neon cyan */
+    border: 2px solid #84ffef;
+    border-radius: 50%;
+    z-index: 150;
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); /* Cyan glow */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.2s ease;
+}
+
+#camera-flip-button:active {
+    background-color: rgba(132, 255, 239, 0.3);
+}
+
+/* Only show camera flip button on mobile */
+@media (min-width: 769px) {
+    #camera-flip-button {
+        display: none !important;
+    }
+}
+
+/* Adjust instructions position on mobile */
+@media (max-width: 768px) {
+    #instructions {
+        left: 70px;
+    }
+}
+
+/* Prevent delay on touch devices */
+button {
+    touch-action: manipulation;
+}

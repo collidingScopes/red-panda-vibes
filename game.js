@@ -147,19 +147,19 @@ const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera() {
     // Update camera angles based on arrow key inputs
-    if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.04;
-    if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.04;
+    if (gameState.keyStates['ArrowLeft']) window.cameraAngleHorizontal += 0.04;
+    if (gameState.keyStates['ArrowRight']) window.cameraAngleHorizontal -= 0.04;
     // Apply the min/max vertical angle limits
-    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
-    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowUp']) window.cameraAngleVertical = Math.max(window.cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowDown']) window.cameraAngleVertical = Math.min(window.cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
     
     // Calculate camera position with orbit controls
-    const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
-    const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
+    const horizontalDistance = cameraDistance * Math.cos(window.cameraAngleVertical);
+    const verticalDistance = cameraDistance * Math.sin(window.cameraAngleVertical);
     
     // Update camera position using player's position without cloning
-    camera.position.x = player.position.x + horizontalDistance * Math.sin(cameraAngleHorizontal);
-    camera.position.z = player.position.z + horizontalDistance * Math.cos(cameraAngleHorizontal);
+    camera.position.x = player.position.x + horizontalDistance * Math.sin(window.cameraAngleHorizontal);
+    camera.position.z = player.position.z + horizontalDistance * Math.cos(window.cameraAngleHorizontal);
     camera.position.y = player.position.y + 1.5 + verticalDistance; // 1.5 is a height offset
     
     // Reuse the target vector
@@ -414,3 +414,7 @@ function init() {
 init();
 window.camera = camera;
 window.player = player;
+
+// Expose camera angles to global scope for mobile camera flip button
+window.cameraAngleHorizontal = cameraAngleHorizontal;
+window.cameraAngleVertical = cameraAngleVertical;
