@@ -152,13 +152,18 @@ class MobileControls {
         });
         
         // Fix for game UI buttons
-        this.fixGameButtonsForTouch();
+        setTimeout(() => {
+            this.fixGameButtonsForTouch();
+        }, 1000);
     }
     
     // Handle touch start event
     handleTouchStart(event) {
-        // Ignore if it's a touch on the jump button
-        if (event.target.id === 'mobile-jump-button') return;
+        // Ignore if it's a touch on the jump button or any UI button
+        if (event.target.id === 'mobile-jump-button' || 
+            event.target.tagName.toLowerCase() === 'button') {
+            return;
+        }
         
         // Get the first touch
         const touch = event.touches[0];
@@ -169,14 +174,21 @@ class MobileControls {
         this.touchCurrentX = touch.clientX;
         this.touchCurrentY = touch.clientY;
         
-        // Prevent default scrolling behavior
-        if (event.cancelable) event.preventDefault();
+        // Prevent default scrolling behavior only if not on a button or input
+        if (event.cancelable && 
+            !['BUTTON', 'INPUT', 'A'].includes(event.target.tagName)) {
+            event.preventDefault();
+        }
     }
     
     // Handle touch move event
     handleTouchMove(event) {
-        // Ignore if touch isn't active or it's on jump button
-        if (!this.touchActive || event.target.id === 'mobile-jump-button') return;
+        // Ignore if touch isn't active or it's on jump button or UI button
+        if (!this.touchActive || 
+            event.target.id === 'mobile-jump-button' || 
+            event.target.tagName.toLowerCase() === 'button') {
+            return;
+        }
         
         // Get the first touch
         const touch = event.touches[0];
@@ -189,14 +201,20 @@ class MobileControls {
             this.updateMovementFromTouch();
         }
         
-        // Prevent default scrolling behavior
-        if (event.cancelable) event.preventDefault();
+        // Prevent default scrolling behavior only if not on a button or input
+        if (event.cancelable && 
+            !['BUTTON', 'INPUT', 'A'].includes(event.target.tagName)) {
+            event.preventDefault();
+        }
     }
     
     // Handle touch end event
     handleTouchEnd(event) {
-        // Ignore if it's a touch on the jump button
-        if (event.target.id === 'mobile-jump-button') return;
+        // Ignore if it's a touch on the jump button or UI button
+        if (event.target.id === 'mobile-jump-button' || 
+            event.target.tagName.toLowerCase() === 'button') {
+            return;
+        }
         
         this.touchActive = false;
         
@@ -259,13 +277,15 @@ class MobileControls {
             if (this.gameState && this.camera && this.player && !this.initialized) {
                 this.initialized = true;
                 
-                // Override the camera update function for mobile
-                this.overrideCameraUpdate();
+                // Wait a moment before overriding camera to ensure game is fully initialized
+                setTimeout(() => {
+                    // Override the camera update function for mobile
+                    this.overrideCameraUpdate();
+                    console.log("Mobile controls connected to game");
+                }, 2000);
                 
                 // Clear the connection timer
                 clearInterval(this.connectToGameTimer);
-                
-                console.log("Mobile controls connected to game");
             }
         }
     }
@@ -274,25 +294,34 @@ class MobileControls {
     overrideCameraUpdate() {
         if (this.cameraUpdateModified) return;
         
-        // Store reference to the original updateCamera function
+        // We'll only set up a hook for the updateCamera function,
+        // but we won't replace it entirely to ensure gravity works properly
+        
+        // Store original updateCamera reference 
         const originalUpdateCamera = window.updateCamera;
         
-        // Override the updateCamera function
-        window.updateCamera = () => {
-            // Only use our mobile camera control on mobile
-            if (this.isMobile && this.cameraLocked) {
-                this.updateMobileCamera();
-            } else {
-                // Use original camera update for desktop
+        if (typeof originalUpdateCamera === 'function') {
+            window.updateCamera = () => {
+                // Call original camera update to preserve game physics
                 originalUpdateCamera();
-            }
-        };
-        
-        this.cameraUpdateModified = true;
+                
+                // If on mobile and player has reached the ground, apply our camera adjustment
+                if (this.isMobile && this.player && this.camera && 
+                    this.gameState && this.gameState.playerOnGround) {
+                    this.adjustMobileCamera();
+                }
+            };
+            
+            this.cameraUpdateModified = true;
+            console.log("Camera update function overridden for mobile");
+        } else {
+            console.warn("Could not find updateCamera function");
+        }
     }
     
-    // Mobile-specific camera update that follows behind the player
-    updateMobileCamera() {
+    // Adjust camera position for mobile without completely replacing the original function
+    adjustMobileCamera() {
+        // Only adjust horizontal position to keep behind player
         if (!this.camera || !this.player) return;
         
         // Get player's forward direction
@@ -300,75 +329,84 @@ class MobileControls {
         playerForward.applyQuaternion(this.player.quaternion);
         playerForward.normalize();
         
-        // Set camera position behind player
-        const cameraDistance = 5; // Distance behind player
-        const cameraHeight = 2.5; // Height above player
-        
-        this.camera.position.x = this.player.position.x - playerForward.x * cameraDistance;
-        this.camera.position.z = this.player.position.z - playerForward.z * cameraDistance;
-        this.camera.position.y = this.player.position.y + cameraHeight;
-        
-        // Make camera look at player
-        const lookAtPoint = new THREE.Vector3();
-        lookAtPoint.copy(this.player.position);
-        lookAtPoint.y += 1; // Look at player's head level
-        this.camera.lookAt(lookAtPoint);
+        // Gradually rotate cameraAngleHorizontal to match player orientation
+        if (window.cameraAngleHorizontal !== undefined) {
+            // Calculate target angle based on player direction
+            const targetAngle = Math.atan2(playerForward.x, playerForward.z);
+            
+            // Smoothly interpolate current camera angle to target angle
+            const angleDiff = targetAngle - window.cameraAngleHorizontal;
+            
+            // Handle angle wrapping
+            let shortestAngleDiff = angleDiff;
+            if (angleDiff > Math.PI) shortestAngleDiff = angleDiff - 2 * Math.PI;
+            if (angleDiff < -Math.PI) shortestAngleDiff = angleDiff + 2 * Math.PI;
+            
+            // Gradually adjust camera angle
+            window.cameraAngleHorizontal += shortestAngleDiff * 0.1;
+        }
     }
     
     // Fix touch events for game UI buttons
     fixGameButtonsForTouch() {
-        // Add this method to fix all buttons in the game
-        const fixButtonTouch = (buttonId) => {
-            const button = document.getElementById(buttonId);
-            if (button) {
-                // Remove existing click listeners (if we can)
-                const newButton = button.cloneNode(true);
-                button.parentNode.replaceChild(newButton, button);
+        // Get all buttons in the game
+        const buttons = document.querySelectorAll('button');
+        
+        buttons.forEach(button => {
+            // Add touch event listener
+            button.addEventListener('touchstart', (event) => {
+                // Don't prevent default here to allow the click to go through
                 
-                // Add touch event listener
-                newButton.addEventListener('touchstart', (event) => {
-                    event.preventDefault();
-                    // Simulate the Enter key press for level navigation
-                    const enterKeyEvent = new KeyboardEvent('keydown', {
-                        code: 'Enter',
-                        key: 'Enter',
-                        bubbles: true
-                    });
-                    document.dispatchEvent(enterKeyEvent);
-                    
-                    // Also trigger click for direct button handlers
-                    newButton.click();
-                });
-            }
-        };
+                // For specific navigation buttons, also trigger the Enter key
+                if (['next-level-button', 'retry-button', 'close-instructions'].includes(button.id)) {
+                    setTimeout(() => {
+                        // Simulate the Enter key press for level navigation
+                        const enterKeyEvent = new KeyboardEvent('keydown', {
+                            code: 'Enter',
+                            key: 'Enter',
+                            bubbles: true
+                        });
+                        document.dispatchEvent(enterKeyEvent);
+                    }, 100);
+                }
+            });
+        });
         
-        // Fix all game UI buttons
-        const buttonIds = [
-            'next-level-button',
-            'retry-button',
-            'close-instructions'
-        ];
-        
-        // Add a slight delay to ensure all buttons are loaded
-        setTimeout(() => {
-            buttonIds.forEach(fixButtonTouch);
-            console.log("Fixed touch events for game UI buttons");
-        }, 1000);
-        
-        // Add mutation observer to fix any new buttons that appear
-        const observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-                if (mutation.addedNodes && mutation.addedNodes.length > 0) {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.id && buttonIds.includes(node.id)) {
-                            fixButtonTouch(node.id);
+        // Set up a mutation observer to handle dynamically added buttons
+        this.setupButtonObserver();
+    }
+    
+    // Set up mutation observer for dynamically added buttons
+    setupButtonObserver() {
+        const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+                if (mutation.type === 'childList') {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) { // ELEMENT_NODE
+                            // Check for buttons within the added node
+                            const buttons = node.querySelectorAll ? node.querySelectorAll('button') : [];
+                            buttons.forEach(button => {
+                                button.addEventListener('touchstart', (event) => {
+                                    // For specific navigation buttons
+                                    if (['next-level-button', 'retry-button', 'close-instructions'].includes(button.id)) {
+                                        setTimeout(() => {
+                                            const enterKeyEvent = new KeyboardEvent('keydown', {
+                                                code: 'Enter',
+                                                key: 'Enter',
+                                                bubbles: true
+                                            });
+                                            document.dispatchEvent(enterKeyEvent);
+                                        }, 100);
+                                    }
+                                });
+                            });
                         }
                     });
                 }
             });
         });
         
-        // Start observing the document body for added nodes
+        // Start observing the document body
         observer.observe(document.body, { childList: true, subtree: true });
     }
     
@@ -376,10 +414,8 @@ class MobileControls {
     update() {
         if (!this.isMobile || !this.initialized) return;
         
-        // Apply jump if jump button is pressed and player is on ground
+        // Apply jump if jump button is pressed
         if (this.jumpButtonPressed) {
-            // Set Space key state to true regardless of ground state
-            // This allows the game's jump logic to handle the ground check
             this.gameState.keyStates['Space'] = true;
         } else {
             this.gameState.keyStates['Space'] = false;
@@ -387,26 +423,39 @@ class MobileControls {
     }
 }
 
-// Create global instance
-window.mobileControls = new MobileControls();
+// Wait for DOM content to be loaded before initializing
+document.addEventListener('DOMContentLoaded', () => {
+    // Create global instance
+    window.mobileControls = new MobileControls();
+});
 
-// Hook into the animation loop to update mobile controls
+// Create a small, non-invasive hook into the animation loop
 (function() {
-    // Original animate function
-    const originalAnimate = window.animate;
+    // Wait for the game to initialize
+    const hookInterval = setInterval(() => {
+        // Check if animate function exists
+        if (typeof window.animate === 'function' && window.mobileControls) {
+            // Original animate function
+            const originalAnimate = window.animate;
+            
+            // Override animate to include mobile controls update
+            window.animate = function(currentTime) {
+                // Call the original animate function first to ensure game physics work
+                const result = originalAnimate(currentTime);
+                
+                // Update mobile controls if enabled
+                if (window.mobileControls.isMobile && window.mobileControls.initialized) {
+                    window.mobileControls.update();
+                }
+                
+                return result;
+            };
+            
+            clearInterval(hookInterval);
+            console.log("Animation loop hooked for mobile controls");
+        }
+    }, 500);
     
-    // Override animate to include mobile controls update
-    if (originalAnimate && window.mobileControls) {
-        window.animate = function(currentTime) {
-            // Call the original animate function
-            const result = originalAnimate(currentTime);
-            
-            // Update mobile controls if enabled
-            if (window.mobileControls.isMobile && window.mobileControls.initialized) {
-                window.mobileControls.update();
-            }
-            
-            return result;
-        };
-    }
+    // Clear interval after 10 seconds if hook fails
+    setTimeout(() => clearInterval(hookInterval), 10000);
 })();
