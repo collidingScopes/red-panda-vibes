@@ -101,9 +101,6 @@ class MobileControls {
                 setTimeout(() => cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)', 300);
             }
         }, { passive: false });
-        
-        // Store reference for later use
-        //this.cameraFlipButton = button;
     }
     
     // =============== EVENT HANDLING METHODS ===============
@@ -124,43 +121,7 @@ class MobileControls {
         
         // Fix touch handling for game buttons
         this.setupTouchForGameButtons();
-        
-        // Set up observers for overlay visibility
-        //this.setupOverlayObservers();
     }
-    
-    /**
-     * Sets up mutation observers for overlay visibility changes
-     */
-
-    /*
-    setupOverlayObservers() {
-        const overlays = [
-            this.instructionsElement,
-            this.goalMessageElement,
-            this.levelCompleteElement, 
-            this.gameOverElement
-        ];
-        
-        // Create observer for overlay visibility changes
-        const observer = new MutationObserver(() => {
-            //this.updateCameraFlipButtonVisibility();
-        });
-        
-        // Observe each overlay for attribute changes
-        overlays.forEach(el => {
-            if (el) {
-                observer.observe(el, { 
-                    attributes: true, 
-                    attributeFilter: ['style', 'class'] 
-                });
-            }
-        });
-        
-        // Initial update
-        //this.updateCameraFlipButtonVisibility();
-    }
-    */
     
     /**
      * Adds touch event handling to game buttons
@@ -450,6 +411,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.mobileControls = new MobileControls();
 });
 
+/*
 // Hook into the animation loop to enable update calls
 (function() {
     const hookInterval = setInterval(() => {
@@ -472,3 +434,4 @@ document.addEventListener('DOMContentLoaded', () => {
     // Safety timeout
     setTimeout(() => clearInterval(hookInterval), 10000);
 })();
+*/
