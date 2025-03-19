@@ -131,7 +131,7 @@ function initEventListeners() {
 // Camera controls
 let cameraAngleHorizontal = 0;
 let cameraAngleVertical = 0;
-const cameraDistance = 5;
+const cameraDistance = 7;
 // Add min and max for vertical camera angle to prevent looking below ground
 const MIN_VERTICAL_ANGLE = -Math.PI/8; // Minimum (looking up)
 const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
