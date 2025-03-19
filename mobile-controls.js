@@ -113,7 +113,7 @@ class MobileControls {
 
         this.moveCurrentX = touch.clientX;
         this.moveCurrentY = touch.clientY;
-        console.log(`Touch moved to (${this.moveCurrentX}, ${this.moveCurrentY})`);
+        //console.log(`Touch moved to (${this.moveCurrentX}, ${this.moveCurrentY})`);
         this.updateMovement();
         event.preventDefault();
     }
@@ -130,7 +130,7 @@ class MobileControls {
             const deltaY = touch.clientY - this.moveStartY;
             const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-            console.log(`Touch ended. Distance: ${distance}`);
+            //console.log(`Touch ended. Distance: ${distance}`);
             if (distance < this.movementDeadzone && !this.isUIElement(event.target)) {
                 this.triggerJump();
             }
@@ -155,12 +155,12 @@ class MobileControls {
         if (Math.abs(deltaX) > this.movementDeadzone * this.movementScale) {
             this.gameState.keyStates['KeyA'] = deltaX < 0;
             this.gameState.keyStates['KeyD'] = deltaX > 0;
-            console.log(`Horizontal movement: ${deltaX < 0 ? 'Left' : 'Right'}`);
+            //console.log(`Horizontal movement: ${deltaX < 0 ? 'Left' : 'Right'}`);
         }
         if (Math.abs(deltaY) > this.movementDeadzone * this.movementScale) {
             this.gameState.keyStates['KeyW'] = deltaY < 0;
             this.gameState.keyStates['KeyS'] = deltaY > 0;
-            console.log(`Vertical movement: ${deltaY < 0 ? 'Forward' : 'Backward'}`);
+            //console.log(`Vertical movement: ${deltaY < 0 ? 'Forward' : 'Backward'}`);
         }
     }
 
