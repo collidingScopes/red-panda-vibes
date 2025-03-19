@@ -406,7 +406,59 @@ let startGameButton = document.querySelector("#start-game-button");
 startGameButton.addEventListener("click", () => {
     gameState.gameStarted = true;
     startGameButton.classList.add("hidden");
+    
+    setTimeout(() => {
+        showTutorialMessages();
+    }, 4000);
+    
 });
+
+function showTutorialMessages() {
+    // Message IDs in order
+    let messageIds;
+    
+    if(isMobile){
+        messageIds = [
+            'instruction-message-1-mobile',
+            'instruction-message-2-mobile',
+            'instruction-message-3-mobile',
+            'instruction-message-4-mobile'
+        ];
+    } else {
+        messageIds = [
+            'instruction-message-1',
+            'instruction-message-2',
+            'instruction-message-3',
+            'instruction-message-4'
+        ];
+    }
+    
+    // Display time for each message in milliseconds
+    const displayTime = 6000; // 6 seconds
+    
+    // Break time between messages
+    const breakTime = 1500;
+    
+    // Show messages sequentially
+    messageIds.forEach((id, index) => {
+        // Calculate delay for this message
+        // Each message starts after: (display + break) * previous messages
+        const delay = index * (displayTime + breakTime);
+        
+        // Show this message after the calculated delay
+        setTimeout(() => {
+            const messageEl = document.getElementById(id);
+            if (messageEl) {
+                messageEl.classList.remove('hidden');
+                
+                // Hide this message after display time
+                setTimeout(() => {
+                    messageEl.classList.add('hidden');
+                }, displayTime);
+            }
+        }, delay);
+    });
+}
 
 // Start the game
 init();

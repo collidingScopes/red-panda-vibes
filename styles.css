@@ -372,7 +372,7 @@ h2, h3 {
     text-transform: uppercase;
     box-shadow: 0 0 25px rgba(255, 238, 132, 0.7); /* Yellow glow */
     backdrop-filter: blur(5px);
-    max-width: 400px;
+    max-width: 200px;
     animation: fadeIn 0.5s ease-in-out;
 }
 
