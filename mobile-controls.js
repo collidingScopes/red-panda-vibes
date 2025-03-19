@@ -87,8 +87,9 @@ class MobileControls {
      */
     createCameraFlipButton() {
  
+        let cameraFlipButton = document.getElementById("camera-flip-button");
         // Add touch event for camera flip
-        button.addEventListener('touchstart', (e) => {
+        cameraFlipButton.addEventListener('touchstart', (e) => {
             console.log("Camera flip button pressed");
             //e.preventDefault();
             if (window.cameraAngleHorizontal !== undefined) {
@@ -96,13 +97,13 @@ class MobileControls {
                 this.log(`Camera flipped to ${window.cameraAngleHorizontal}`);
                 
                 // Visual feedback
-                button.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
-                setTimeout(() => button.style.backgroundColor = 'rgba(0, 0, 0, 0.5)', 300);
+                cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
+                setTimeout(() => cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)', 300);
             }
         }, { passive: false });
         
         // Store reference for later use
-        this.cameraFlipButton = button;
+        //this.cameraFlipButton = button;
     }
     
     // =============== EVENT HANDLING METHODS ===============
