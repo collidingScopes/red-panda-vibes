@@ -1,7 +1,7 @@
 // Mobile Controls for Red Panda Explorer
 class MobileControls {
     // Constants for configuration
-    static DEBUG = false;                // Set to true to enable debug logging
+    static DEBUG = true;                // Set to true to enable debug logging
     static MOVEMENT_DEADZONE = 20;       // Pixels of movement to ignore
     static MOVEMENT_SCALE = 0.015;       // Scaling factor for touch movement
     static JUMP_DURATION = 100;          // Ms for jump touch duration
@@ -13,7 +13,7 @@ class MobileControls {
      */
     constructor() {
         // Check if we're on a mobile device
-        if (!this.isMobileDevice()) {
+        if (!isMobile) {
             this.log("Not a mobile device, skipping mobile controls");
             return;
         }
@@ -39,8 +39,11 @@ class MobileControls {
         this.gameOverElement = document.getElementById('game-over-screen');
         this.levelCompleteElement = document.getElementById('level-complete-content');
         
-        // Initialize UI and event listeners
-        this.initMobileUI();
+        // Initialize UI and event listeners=
+        this.log("Initializing mobile UI");
+        
+        // Create camera flip button
+        this.createCameraFlipButton();
         this.setupEventListeners();
         
         // Track initialization state
@@ -58,16 +61,6 @@ class MobileControls {
         if (MobileControls.DEBUG) {
             console.log(`[MobileControls] ${message}`);
         }
-    }
-    
-    /**
-     * Checks if the current device is a mobile device
-     * @return {boolean} True if on a mobile device
-     */
-    isMobileDevice() {
-        return ('ontouchstart' in window) || 
-               (navigator.maxTouchPoints > 0) || 
-               (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
     }
 
     /**
@@ -88,66 +81,16 @@ class MobileControls {
     }
 
     // =============== UI CREATION METHODS ===============
-    
-    /**
-     * Initializes mobile-specific UI changes
-     */
-    initMobileUI() {
-        this.log("Initializing mobile UI");
-        
-        /*
-        // Create style element for mobile-specific CSS
-        const styleElement = document.createElement('style');
-        styleElement.textContent = `
-            @media (max-width: 768px) {
-                #instructions {
-                    max-width: 90%;
-                    font-size: 14px;
-                    padding: 10px;
-                }
-                #instructions h3 {
-                    font-size: 16px;
-                    margin-bottom: 8px;
-                }
-                #instructions p:nth-child(2),
-                #instructions p:nth-child(3) {
-                    display: none;
-                }
-                #instructions::after {
-                    content: "👆 Drag to move, tap to jump";
-                    display: block;
-                    margin-top: 8px;
-                    font-size: 14px;
-                }
-            }
-        `;
-        */
-        
-        // Create camera flip button
-        this.createCameraFlipButton();
-    }
-    
+
     /**
      * Creates a camera flip button for quick camera rotation
      */
     createCameraFlipButton() {
-        /*
-        const button = document.createElement('button');
-        button.id = 'camera-flip-button';
-        button.innerHTML = '↻';
-        document.body.appendChild(button);
-        */
-       
-        /*
-        // Adjust instructions position if camera flip button exists
-        if (this.instructionsElement) {
-            this.instructionsElement.style.left = '70px';
-        }
-        */
-        
+ 
         // Add touch event for camera flip
         button.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+            console.log("Camera flip button pressed");
+            //e.preventDefault();
             if (window.cameraAngleHorizontal !== undefined) {
                 window.cameraAngleHorizontal = (window.cameraAngleHorizontal + Math.PI) % (Math.PI * 2);
                 this.log(`Camera flipped to ${window.cameraAngleHorizontal}`);
@@ -160,24 +103,6 @@ class MobileControls {
         
         // Store reference for later use
         this.cameraFlipButton = button;
-    }
-    
-    /**
-     * Updates the camera flip button visibility based on overlay presence
-     */
-    updateCameraFlipButtonVisibility() {
-        if (!this.cameraFlipButton) return;
-        
-        const overlaysVisible = [
-            this.instructionsElement,
-            this.goalMessageElement,
-            this.levelCompleteElement,
-            this.gameOverElement
-        ].some(el => {
-            return el && (el.style.display === 'block' || !el.classList.contains('hidden'));
-        });
-        
-        this.cameraFlipButton.style.display = overlaysVisible ? 'none' : 'flex';
     }
     
     // =============== EVENT HANDLING METHODS ===============
@@ -200,12 +125,14 @@ class MobileControls {
         this.setupTouchForGameButtons();
         
         // Set up observers for overlay visibility
-        this.setupOverlayObservers();
+        //this.setupOverlayObservers();
     }
     
     /**
      * Sets up mutation observers for overlay visibility changes
      */
+
+    /*
     setupOverlayObservers() {
         const overlays = [
             this.instructionsElement,
@@ -232,6 +159,7 @@ class MobileControls {
         // Initial update
         //this.updateCameraFlipButtonVisibility();
     }
+    */
     
     /**
      * Adds touch event handling to game buttons
@@ -501,12 +429,6 @@ class MobileControls {
             this.initialized = true;
             
             this.log("Connected to game objects successfully");
-            
-            // Show camera flip button once connected
-            if (this.cameraFlipButton) {
-                //this.updateCameraFlipButtonVisibility();
-            }
-            
             return true;
         }
         
