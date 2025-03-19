@@ -1,7 +1,7 @@
 // Mobile Controls for Red Panda Explorer
 class MobileControls {
     constructor() {
-        this.isMobile = this.checkIfMobile();
+        //this.isMobile = this.checkIfMobile();
         if (!this.isMobile) {
             console.log("Not a mobile device, skipping mobile controls");
             return;
@@ -273,7 +273,7 @@ class MobileControls {
     }
 
     update() {
-        if (!this.isMobile || !this.initialized) return;
+        if (!isMobile || !this.initialized) return;
     }
 }
 
@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const originalAnimate = window.animate;
             window.animate = function(currentTime) {
                 const result = originalAnimate(currentTime);
-                if (window.mobileControls.isMobile && window.mobileControls.initialized) {
+                if (isMobile && window.mobileControls.initialized) {
                     window.mobileControls.update();
                 }
                 return result;
@@ -305,7 +305,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 (function() {
     // Only run this code for mobile devices
-    if (!window.mobileControls || !window.mobileControls.isMobile) {
+    if (!isMobile) {
         console.log("Camera flip button not added - not a mobile device");
         return;
     }

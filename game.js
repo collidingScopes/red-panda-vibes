@@ -1,5 +1,5 @@
-//flag to detect mobile controls
-const isMobile = window.mobileControls && window.mobileControls.isMobile;
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+console.log("Mobile check:", isMobile);
 
 // Game state
 const gameState = {
