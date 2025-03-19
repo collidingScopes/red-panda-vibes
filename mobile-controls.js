@@ -1,638 +1,349 @@
-// FixedFollowCamera.js
-// A simplified mobile control system with camera that strictly follows behind the player
+// Mobile Controls for Red Panda Explorer
+// This script adds touch controls for mobile devices while preserving desktop gameplay
 
-class FixedFollowCamera {
+class MobileControls {
     constructor() {
-        // Only initialize on mobile devices
-        this.isMobile = this.detectMobile();
+        // Only initialize if on a mobile device
+        this.isMobile = this.checkIfMobile();
+        
         if (!this.isMobile) return;
         
-        // Debug flag - set to true to log camera positioning info
-        this.debugMode = true;
-        
-        // Core game references
+        // References to game objects (will be populated when the game initializes)
         this.player = null;
         this.camera = null;
         this.gameState = null;
         
-        // Camera settings
-        this.cameraSettings = {
-            distance: 6,      // Distance behind player
-            height: 3.5,      // Height offset from player's position
-            lookOffset: 1,    // Height offset for look target (player's head)
-            lookAhead: 2      // Look ahead distance in front of player
-        };
+        // Touch control state
+        this.touchActive = false;
+        this.touchStartX = 0;
+        this.touchStartY = 0;
+        this.touchCurrentX = 0;
+        this.touchCurrentY = 0;
         
-        // Virtual joystick
-        this.joystick = {
-            active: false,
-            startX: 0,
-            startY: 0,
-            currentX: 0,
-            currentY: 0,
-            deltaX: 0,
-            deltaY: 0,
-            maxRadius: 60,
-            containerEl: null, 
-            stickEl: null
-        };
+        // Movement and camera parameters
+        this.movementDeadzone = 20; // Minimum touch movement before registering input
+        this.movementScale = 0.015; // Scaling factor for movement sensitivity
+        this.cameraLocked = true; // Whether camera is locked behind player
         
-        // Jump button
-        this.jumpButton = {
-            active: false,
-            element: null
-        };
+        // Jump button state
+        this.jumpButtonPressed = false;
         
-        // Movement settings
-        this.settings = {
-            speed: 5.0,
-            jumpHeight: 8.0
-        };
+        // Initialize UI and event listeners
+        this.initMobileUI();
+        this.addEventListeners();
         
-        // Initialize after DOM is loaded
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => this.init());
-        } else {
-            this.init();
-        }
+        // Create a variable to track when we're ready to connect to the game
+        this.initialized = false;
+        
+        // Create a timer to check for game objects after the game loads
+        this.connectToGameTimer = setInterval(() => this.connectToGame(), 500);
+        
+        // Flag to track if we've already modified the game's camera update function
+        this.cameraUpdateModified = false;
+        
+        console.log("Mobile controls initialized");
     }
     
-    // Detect mobile device
-    detectMobile() {
-        const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
-        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-        
-        return isMobileDevice || isTouchDevice;
+    // Check if user is on a mobile device
+    checkIfMobile() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     }
     
-    // Initialize
-    init() {
-        console.log("Initializing FixedFollowCamera for mobile");
-        
-        document.body.classList.add('mobile-device');
-        
-        // Create UI elements
-        this.createControls();
-        
-        // Set up event listeners
-        this.setupEventListeners();
-        
-        // Find game objects (player, camera, etc.)
-        this.findGameObjects();
-        
-        // Override game functions for mobile
-        this.overrideGameFunctions();
-        
-        // Hide any original mobile controls
-        this.hideOriginalControls();
-    }
-    
-    // Create mobile control UI elements
-    createControls() {
-        // Add mobile styles
-        this.addMobileStyles();
-        
-        // Create joystick
-        this.createJoystick();
+    // Initialize mobile UI elements
+    initMobileUI() {
+        // Create container for mobile controls
+        const controlsContainer = document.createElement('div');
+        controlsContainer.id = 'mobile-controls-container';
+        document.body.appendChild(controlsContainer);
         
         // Create jump button
-        this.createJumpButton();
+        const jumpButton = document.createElement('div');
+        jumpButton.id = 'mobile-jump-button';
+        jumpButton.innerHTML = '↑';
+        controlsContainer.appendChild(jumpButton);
+        
+        // Add styles for mobile controls
+        this.addMobileStyles();
     }
     
-    // Add mobile-specific styles
+    // Add CSS styles for mobile controls
     addMobileStyles() {
-        const styleEl = document.createElement('style');
-        styleEl.textContent = `
-            /* Mobile control styles */
-            body.mobile-device {
-                touch-action: none;
-                user-select: none;
-                overflow: hidden;
+        const styleElement = document.createElement('style');
+        styleElement.textContent = `
+            #mobile-controls-container {
                 position: fixed;
-                width: 100%;
-                height: 100%;
-            }
-            
-            /* Joystick styles */
-            #fc-joystick-container {
-                position: fixed;
-                width: 120px;
-                height: 120px;
-                background-color: rgba(255, 255, 255, 0.2);
-                border: 2px solid rgba(132, 255, 239, 0.6);
-                border-radius: 50%;
-                touch-action: none;
+                bottom: 20px;
+                right: 20px;
                 z-index: 1000;
-                bottom: 80px;
-                left: 80px;
-                backdrop-filter: blur(2px);
             }
             
-            #fc-joystick-stick {
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
+            #mobile-jump-button {
                 width: 60px;
                 height: 60px;
-                background-color: rgba(255, 132, 223, 0.4);
-                border: 2px solid rgba(255, 132, 223, 0.8);
-                border-radius: 50%;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                box-shadow: 0 0 10px rgba(255, 132, 223, 0.6);
-            }
-            
-            /* Jump button */
-            #fc-jump-button {
-                position: fixed;
-                right: 80px;
-                bottom: 80px;
-                width: 100px;
-                height: 100px;
                 background-color: rgba(162, 255, 132, 0.4);
-                border: 3px solid rgba(162, 255, 132, 0.8);
-                border-radius: 50%;
                 color: white;
-                font-family: 'Courier New', monospace;
-                font-size: 20px;
-                font-weight: bold;
+                font-size: 36px;
+                border-radius: 50%;
                 display: flex;
-                align-items: center;
                 justify-content: center;
-                z-index: 1000;
-                text-shadow: 0 0 8px rgba(162, 255, 132, 0.8);
-                box-shadow: 0 0 15px rgba(162, 255, 132, 0.5);
-                backdrop-filter: blur(2px);
+                align-items: center;
+                border: 2px solid rgba(162, 255, 132, 0.8);
+                box-shadow: 0 0 10px rgba(162, 255, 132, 0.6);
+                user-select: none;
+                touch-action: manipulation;
             }
             
-            #fc-jump-button.active {
+            #mobile-jump-button:active {
                 background-color: rgba(162, 255, 132, 0.7);
-                transform: scale(0.95);
             }
             
-            /* Debug info */
-            #fc-debug-info {
-                position: fixed;
-                top: 50px;
-                left: 10px;
-                background-color: rgba(0, 0, 0, 0.7);
-                color: #ffffff;
-                font-family: monospace;
-                font-size: 12px;
-                padding: 10px;
-                border-radius: 5px;
-                z-index: 2000;
-                max-width: 300px;
-                overflow: hidden;
-                white-space: pre;
-                display: none;
-            }
-        `;
-        
-        document.head.appendChild(styleEl);
-        
-        // Add debug info element if in debug mode
-        if (this.debugMode) {
-            const debugEl = document.createElement('div');
-            debugEl.id = 'fc-debug-info';
-            document.body.appendChild(debugEl);
-            
-            // Make debug info visible
-            debugEl.style.display = 'block';
-        }
-    }
-    
-    // Create virtual joystick
-    createJoystick() {
-        const container = document.createElement('div');
-        container.id = 'fc-joystick-container';
-        
-        const stick = document.createElement('div');
-        stick.id = 'fc-joystick-stick';
-        
-        container.appendChild(stick);
-        document.body.appendChild(container);
-        
-        this.joystick.containerEl = container;
-        this.joystick.stickEl = stick;
-    }
-    
-    // Create jump button
-    createJumpButton() {
-        const button = document.createElement('div');
-        button.id = 'fc-jump-button';
-        button.textContent = 'JUMP';
-        
-        document.body.appendChild(button);
-        this.jumpButton.element = button;
-    }
-    
-    // Setup event listeners
-    setupEventListeners() {
-        // Joystick event listeners
-        this.setupJoystickEvents();
-        
-        // Jump button event listeners
-        this.setupJumpButtonEvents();
-        
-        // Prevent default browser behaviors on touch
-        document.addEventListener('touchmove', (e) => {
-            if (e.target.tagName !== 'BUTTON') {
-                e.preventDefault();
-            }
-        }, { passive: false });
-    }
-    
-    // Setup joystick event handlers
-    setupJoystickEvents() {
-        const container = this.joystick.containerEl;
-        const stick = this.joystick.stickEl;
-        
-        // Touch start on joystick
-        container.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            
-            const touch = e.touches[0];
-            const rect = container.getBoundingClientRect();
-            
-            this.joystick.active = true;
-            this.joystick.startX = rect.left + rect.width / 2;
-            this.joystick.startY = rect.top + rect.height / 2;
-            this.joystick.currentX = touch.clientX;
-            this.joystick.currentY = touch.clientY;
-            
-            this.updateJoystickPosition();
-        });
-        
-        // Touch move on joystick
-        container.addEventListener('touchmove', (e) => {
-            if (!this.joystick.active) return;
-            e.preventDefault();
-            
-            this.joystick.currentX = e.touches[0].clientX;
-            this.joystick.currentY = e.touches[0].clientY;
-            
-            this.updateJoystickPosition();
-        });
-        
-        // Touch end on joystick
-        container.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            this.resetJoystick();
-        });
-        
-        // Touch cancel on joystick
-        container.addEventListener('touchcancel', (e) => {
-            e.preventDefault();
-            this.resetJoystick();
-        });
-    }
-    
-    // Update joystick position and calculate movement values
-    updateJoystickPosition() {
-        // Calculate delta from center
-        this.joystick.deltaX = this.joystick.currentX - this.joystick.startX;
-        this.joystick.deltaY = this.joystick.currentY - this.joystick.startY;
-        
-        // Calculate distance from center
-        const distance = Math.sqrt(this.joystick.deltaX * this.joystick.deltaX + this.joystick.deltaY * this.joystick.deltaY);
-        
-        // If beyond max radius, normalize
-        if (distance > this.joystick.maxRadius) {
-            const scale = this.joystick.maxRadius / distance;
-            this.joystick.deltaX *= scale;
-            this.joystick.deltaY *= scale;
-        }
-        
-        // Update visual position of stick
-        const stick = this.joystick.stickEl;
-        stick.style.transform = `translate(calc(-50% + ${this.joystick.deltaX}px), calc(-50% + ${this.joystick.deltaY}px))`;
-    }
-    
-    // Reset joystick to center position
-    resetJoystick() {
-        this.joystick.active = false;
-        this.joystick.deltaX = 0;
-        this.joystick.deltaY = 0;
-        
-        // Reset visual position
-        this.joystick.stickEl.style.transform = 'translate(-50%, -50%)';
-    }
-    
-    // Setup jump button event handlers
-    setupJumpButtonEvents() {
-        const button = this.jumpButton.element;
-        
-        // Touch start
-        button.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            this.jumpButton.active = true;
-            button.classList.add('active');
-            
-            // Trigger jump
-            this.handleJump();
-        });
-        
-        // Touch end
-        button.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            this.jumpButton.active = false;
-            button.classList.remove('active');
-        });
-    }
-    
-    // Handle jump action
-    handleJump() {
-        if (!this.gameState) return;
-        
-        // Only jump if on ground
-        if (this.gameState.playerOnGround) {
-            this.gameState.playerVelocity.y = this.settings.jumpHeight;
-        }
-    }
-    
-    // Find game objects (player, camera, game state)
-    findGameObjects() {
-        // Check for global game objects
-        if (window.player) {
-            this.player = window.player;
-        }
-        
-        if (window.camera) {
-            this.camera = window.camera;
-        }
-        
-        if (window.gameState) {
-            this.gameState = window.gameState;
-        }
-        
-        // If we couldn't find all objects, retry after a delay
-        if (!this.player || !this.camera || !this.gameState) {
-            setTimeout(() => this.findGameObjects(), 500);
-        } else {
-            console.log("Found all required game objects");
-            
-            // Log initial positions for debugging
-            if (this.debugMode) {
-                this.logDebugInfo();
-            }
-        }
-    }
-    
-    // Override game functions for mobile controls
-    overrideGameFunctions() {
-        const self = this;
-        
-        // Store original functions
-        window._desktopUpdatePlayerPosition = window.updatePlayerPosition || function() {};
-        window._desktopUpdateCamera = window.updateCamera || function() {};
-        
-        // Override player movement function
-        window.updatePlayerPosition = function(deltaTime) {
-            if (self.isMobile) {
-                self.updateMobilePlayerPosition(deltaTime);
-            } else {
-                window._desktopUpdatePlayerPosition(deltaTime);
-            }
-        };
-        
-        // Override camera update function
-        window.updateCamera = function() {
-            if (self.isMobile) {
-                self.updateMobileCamera();
-            } else {
-                window._desktopUpdateCamera();
-            }
-        };
-        
-        console.log("Game functions overridden for mobile controls");
-    }
-    
-    // Update player position based on mobile joystick input
-    updateMobilePlayerPosition(deltaTime) {
-        // Skip if game is over, goal reached, or missing objects
-        if (!this.player || !this.gameState || !this.camera ||
-            this.gameState.goalReached || this.gameState.gameOver) {
-            return;
-        }
-        
-        const speed = this.settings.speed;
-        const gravity = 10.0;
-        
-        // Ground check
-        const groundHeight = window.getTerrainHeight(this.player.position.x, this.player.position.z);
-        this.gameState.playerOnGround = this.player.position.y <= groundHeight + 0.5;
-        
-        // Apply gravity
-        if (!this.gameState.playerOnGround) {
-            this.gameState.playerVelocity.y -= gravity * deltaTime;
-        } else {
-            this.gameState.playerVelocity.y = Math.max(0, this.gameState.playerVelocity.y);
-            
-            // Snap to ground if on ground
-            if (this.player.position.y < groundHeight + 0.5) {
-                this.player.position.y = groundHeight + 0.5;
-            }
-        }
-        
-        // Move player based on joystick input
-        if (this.joystick.active && (this.joystick.deltaX !== 0 || this.joystick.deltaY !== 0)) {
-            // Get camera's forward and right vectors (for movement relative to view)
-            const cameraForward = new THREE.Vector3(0, 0, -1);
-            cameraForward.applyQuaternion(this.camera.quaternion);
-            cameraForward.y = 0; // Keep movement on horizontal plane
-            cameraForward.normalize();
-            
-            const cameraRight = new THREE.Vector3(1, 0, 0);
-            cameraRight.applyQuaternion(this.camera.quaternion);
-            cameraRight.y = 0;
-            cameraRight.normalize();
-            
-            // Convert joystick input to movement direction
-            // Note: Joystick Y is inverted (positive is down on screen)
-            const moveDirection = new THREE.Vector3();
-            moveDirection.addScaledVector(cameraForward, -this.joystick.deltaY); // Forward/backward
-            moveDirection.addScaledVector(cameraRight, this.joystick.deltaX);    // Left/right
-            
-            if (moveDirection.length() > 0.1) {
-                moveDirection.normalize();
+            /* Make instructions smaller on mobile */
+            @media (max-width: 768px) {
+                #instructions {
+                    max-width: 90%;
+                    font-size: 14px;
+                    padding: 10px;
+                }
                 
-                // Calculate movement delta
-                const moveDelta = moveDirection.clone().multiplyScalar(speed * deltaTime);
+                #instructions h3 {
+                    font-size: 16px;
+                    margin-bottom: 8px;
+                }
                 
-                // Move player
-                this.player.position.add(moveDelta);
+                /* Update control instructions for mobile */
+                #instructions p:nth-child(2),
+                #instructions p:nth-child(3) {
+                    display: none;
+                }
                 
-                // Rotate player to face movement direction
-                this.player.lookAt(this.player.position.clone().add(moveDirection));
-                
-                // Adjust to terrain height if on ground
-                if (this.gameState.playerOnGround) {
-                    const newHeight = window.getTerrainHeight(this.player.position.x, this.player.position.z);
-                    this.player.position.y = newHeight + 0.5;
+                /* Add mobile-specific instruction */
+                #instructions::after {
+                    content: "👆 Swipe to move, tap the jump button to jump";
+                    display: block;
+                    margin-top: 8px;
+                    font-size: 14px;
                 }
             }
+        `;
+        document.head.appendChild(styleElement);
+    }
+    
+    // Add event listeners for touch controls
+    addEventListeners() {
+        // Touch start event for movement
+        document.addEventListener('touchstart', (event) => this.handleTouchStart(event), { passive: false });
+        
+        // Touch move event for movement
+        document.addEventListener('touchmove', (event) => this.handleTouchMove(event), { passive: false });
+        
+        // Touch end event to stop movement
+        document.addEventListener('touchend', (event) => this.handleTouchEnd(event), { passive: false });
+        
+        // Jump button events
+        const jumpButton = document.getElementById('mobile-jump-button');
+        jumpButton.addEventListener('touchstart', (event) => {
+            event.preventDefault();
+            this.jumpButtonPressed = true;
+        });
+        
+        jumpButton.addEventListener('touchend', () => {
+            this.jumpButtonPressed = false;
+        });
+    }
+    
+    // Handle touch start event
+    handleTouchStart(event) {
+        // Ignore if it's a touch on the jump button
+        if (event.target.id === 'mobile-jump-button') return;
+        
+        // Get the first touch
+        const touch = event.touches[0];
+        
+        this.touchActive = true;
+        this.touchStartX = touch.clientX;
+        this.touchStartY = touch.clientY;
+        this.touchCurrentX = touch.clientX;
+        this.touchCurrentY = touch.clientY;
+        
+        // Prevent default scrolling behavior
+        if (event.cancelable) event.preventDefault();
+    }
+    
+    // Handle touch move event
+    handleTouchMove(event) {
+        // Ignore if touch isn't active or it's on jump button
+        if (!this.touchActive || event.target.id === 'mobile-jump-button') return;
+        
+        // Get the first touch
+        const touch = event.touches[0];
+        
+        this.touchCurrentX = touch.clientX;
+        this.touchCurrentY = touch.clientY;
+        
+        // Update movement direction based on touch delta
+        if (this.gameState) {
+            this.updateMovementFromTouch();
         }
         
-        // Apply vertical velocity (jumping/falling)
-        this.player.position.y += this.gameState.playerVelocity.y * deltaTime;
+        // Prevent default scrolling behavior
+        if (event.cancelable) event.preventDefault();
+    }
+    
+    // Handle touch end event
+    handleTouchEnd(event) {
+        // Ignore if it's a touch on the jump button
+        if (event.target.id === 'mobile-jump-button') return;
         
-        // Prevent falling through terrain
-        const newGroundHeight = window.getTerrainHeight(this.player.position.x, this.player.position.z);
-        if (this.player.position.y < newGroundHeight + 0.5) {
-            this.player.position.y = newGroundHeight + 0.5;
-            this.gameState.playerVelocity.y = 0;
-            this.gameState.playerOnGround = true;
-        }
+        this.touchActive = false;
         
-        // Check for goal (flag pole)
-        this.checkGoalReached();
-        
-        // Update debug info if enabled
-        if (this.debugMode) {
-            this.logDebugInfo();
+        // Reset movement keys
+        if (this.gameState) {
+            this.gameState.keyStates['KeyW'] = false;
+            this.gameState.keyStates['KeyA'] = false;
+            this.gameState.keyStates['KeyS'] = false;
+            this.gameState.keyStates['KeyD'] = false;
         }
     }
     
-    // Update camera position to follow behind player
+    // Update movement direction based on touch position
+    updateMovementFromTouch() {
+        const deltaX = this.touchCurrentX - this.touchStartX;
+        const deltaY = this.touchCurrentY - this.touchStartY;
+        
+        // Reset all movement keys
+        this.gameState.keyStates['KeyW'] = false;
+        this.gameState.keyStates['KeyA'] = false;
+        this.gameState.keyStates['KeyS'] = false;
+        this.gameState.keyStates['KeyD'] = false;
+        
+        // Apply forward/backward movement (Y axis)
+        if (Math.abs(deltaY) > this.movementDeadzone) {
+            if (deltaY < 0) {
+                this.gameState.keyStates['KeyW'] = true; // Forward
+            } else {
+                this.gameState.keyStates['KeyS'] = true; // Backward
+            }
+        }
+        
+        // Apply left/right movement (X axis)
+        if (Math.abs(deltaX) > this.movementDeadzone) {
+            if (deltaX < 0) {
+                this.gameState.keyStates['KeyA'] = true; // Left
+            } else {
+                this.gameState.keyStates['KeyD'] = true; // Right
+            }
+        }
+    }
+    
+    // Connect to game objects once they're available
+    connectToGame() {
+        // Check if window.gameState exists
+        if (window.gameState) {
+            this.gameState = window.gameState;
+            
+            // Get camera reference
+            if (window.camera) {
+                this.camera = window.camera;
+            }
+            
+            // Get player reference
+            if (window.player) {
+                this.player = window.player;
+            }
+            
+            // Check if we have all required references
+            if (this.gameState && this.camera && this.player && !this.initialized) {
+                this.initialized = true;
+                
+                // Override the camera update function for mobile
+                this.overrideCameraUpdate();
+                
+                // Clear the connection timer
+                clearInterval(this.connectToGameTimer);
+                
+                console.log("Mobile controls connected to game");
+            }
+        }
+    }
+    
+    // Override the camera update function to keep camera behind player
+    overrideCameraUpdate() {
+        if (this.cameraUpdateModified) return;
+        
+        // Store reference to the original updateCamera function
+        const originalUpdateCamera = window.updateCamera;
+        
+        // Override the updateCamera function
+        window.updateCamera = () => {
+            // Only use our mobile camera control on mobile
+            if (this.isMobile && this.cameraLocked) {
+                this.updateMobileCamera();
+            } else {
+                // Use original camera update for desktop
+                originalUpdateCamera();
+            }
+        };
+        
+        this.cameraUpdateModified = true;
+    }
+    
+    // Mobile-specific camera update that follows behind the player
     updateMobileCamera() {
         if (!this.camera || !this.player) return;
         
-        // Skip during game over or goal reached
-        if (this.gameState && (this.gameState.goalReached || this.gameState.gameOver)) {
-            return;
-        }
-        
-        // Get player's forward direction (the direction they're facing)
+        // Get player's forward direction
         const playerForward = new THREE.Vector3(0, 0, 1);
         playerForward.applyQuaternion(this.player.quaternion);
         playerForward.normalize();
         
-        // Calculate camera position directly behind player
-        // The negative of player's forward direction is the vector pointing behind them
-        const behindPlayer = playerForward.clone().multiplyScalar(-this.cameraSettings.distance);
+        // Set camera position behind player
+        const cameraDistance = 5; // Distance behind player
+        const cameraHeight = 2.5; // Height above player
         
-        // Start from player's position
-        const cameraPosition = this.player.position.clone();
+        this.camera.position.x = this.player.position.x - playerForward.x * cameraDistance;
+        this.camera.position.z = this.player.position.z - playerForward.z * cameraDistance;
+        this.camera.position.y = this.player.position.y + cameraHeight;
         
-        // Add the "behind" offset
-        cameraPosition.add(behindPlayer);
-        
-        // Add height offset
-        cameraPosition.y += this.cameraSettings.height;
-        
-        // Set camera position
-        this.camera.position.copy(cameraPosition);
-        
-        // Calculate look target (in front of player)
-        const lookTarget = this.player.position.clone();
-        
-        // Add height offset for player's head
-        lookTarget.y += this.cameraSettings.lookOffset;
-        
-        // Add forward offset
-        lookTarget.add(playerForward.clone().multiplyScalar(this.cameraSettings.lookAhead));
-        
-        // Set camera to look at target
-        this.camera.lookAt(lookTarget);
+        // Make camera look at player
+        const lookAtPoint = new THREE.Vector3();
+        lookAtPoint.copy(this.player.position);
+        lookAtPoint.y += 1; // Look at player's head level
+        this.camera.lookAt(lookAtPoint);
     }
     
-    // Check if player has reached the goal
-    checkGoalReached() {
-        if (!window.flagPole || this.gameState.goalReached) return;
+    // Update method to be called in the game loop
+    update() {
+        if (!this.isMobile || !this.initialized) return;
         
-        const dx = this.player.position.x - window.flagPole.position.x;
-        const dz = this.player.position.z - window.flagPole.position.z;
-        const distance = Math.sqrt(dx * dx + dz * dz);
-        
-        if (distance < 1) {
-            this.gameState.goalReached = true;
-            
-            if (this.gameState.levelSystem) {
-                this.gameState.levelSystem.showLevelComplete();
-            } else {
-                document.getElementById('goal-message').style.display = 'block';
-            }
-        }
-    }
-    
-    // Hide original mobile controls to prevent conflicts
-    hideOriginalControls() {
-        // List of possible original control element IDs
-        const controlIds = [
-            'move-joystick-container',
-            'camera-joystick-container',
-            'jump-button',
-            'mobile-instructions'
-        ];
-        
-        // Try to hide each element
-        controlIds.forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.style.display = 'none';
-                console.log(`Hid original control: ${id}`);
-            }
-        });
-    }
-    
-    // Log debug information
-    logDebugInfo() {
-        if (!this.debugMode || !this.player || !this.camera) return;
-        
-        const debugEl = document.getElementById('fc-debug-info');
-        if (!debugEl) return;
-        
-        const playerPos = this.player.position;
-        const cameraPos = this.camera.position;
-        
-        // Calculate vector from camera to player
-        const cameraToPlayer = new THREE.Vector3();
-        cameraToPlayer.subVectors(playerPos, cameraPos);
-        const distanceToPlayer = cameraToPlayer.length();
-        
-        // Get player forward direction
-        const playerForward = new THREE.Vector3(0, 0, 1);
-        playerForward.applyQuaternion(this.player.quaternion);
-        
-        // Format positions with 2 decimal places
-        const formatVec = (v) => `(${v.x.toFixed(2)}, ${v.y.toFixed(2)}, ${v.z.toFixed(2)})`;
-        
-        debugEl.textContent = 
-            `Player: ${formatVec(playerPos)}\n` +
-            `Camera: ${formatVec(cameraPos)}\n` +
-            `Player Forward: ${formatVec(playerForward)}\n` +
-            `Camera Distance: ${distanceToPlayer.toFixed(2)}\n` +
-            `Joystick: (${this.joystick.deltaX.toFixed(0)}, ${this.joystick.deltaY.toFixed(0)})\n` +
-            `On Ground: ${this.gameState ? this.gameState.playerOnGround : 'unknown'}\n` +
-            `Y Velocity: ${this.gameState ? this.gameState.playerVelocity.y.toFixed(2) : 'unknown'}`;
-    }
-    
-    // Reset controls (called when game resets)
-    reset() {
-        this.resetJoystick();
-        
-        this.jumpButton.active = false;
-        if (this.jumpButton.element) {
-            this.jumpButton.element.classList.remove('active');
+        // Apply jump if jump button is pressed and player is on ground
+        if (this.jumpButtonPressed && this.gameState.playerOnGround) {
+            this.gameState.keyStates['Space'] = true;
+        } else {
+            this.gameState.keyStates['Space'] = false;
         }
     }
 }
 
-// Initialize fixed follow camera system
-window.addEventListener('load', function() {
-    window.fixedFollowCamera = new FixedFollowCamera();
+// Create global instance
+window.mobileControls = new MobileControls();
+
+// Hook into the animation loop to update mobile controls
+(function() {
+    // Original animate function
+    const originalAnimate = window.animate;
     
-    // Override reset function to also reset our controls
-    const originalResetGame = window.resetGame || function() {};
-    window.resetGame = function() {
-        originalResetGame();
-        
-        if (window.fixedFollowCamera) {
-            window.fixedFollowCamera.reset();
-        }
-    };
-});
+    // Override animate to include mobile controls update
+    if (originalAnimate && window.mobileControls) {
+        window.animate = function(currentTime) {
+            // Call the original animate function
+            const result = originalAnimate(currentTime);
+            
+            // Update mobile controls if enabled
+            if (window.mobileControls.isMobile && window.mobileControls.initialized) {
+                window.mobileControls.update();
+            }
+            
+            return result;
+        };
+    }
+})();
