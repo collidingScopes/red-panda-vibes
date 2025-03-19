@@ -145,7 +145,7 @@ class MobileControls {
             border: 2px solid #84ffef;
             border-radius: 50%;
             z-index: 150;
-            display: none;
+            // display: none;
             justify-content: center;
             align-items: center;
             box-shadow: 0 0 10px rgba(132, 255, 239, 0.6);
@@ -228,7 +228,7 @@ class MobileControls {
         
         // Create observer for overlay visibility changes
         const observer = new MutationObserver(() => {
-            this.updateCameraFlipButtonVisibility();
+            //this.updateCameraFlipButtonVisibility();
         });
         
         // Observe each overlay for attribute changes
@@ -242,7 +242,7 @@ class MobileControls {
         });
         
         // Initial update
-        this.updateCameraFlipButtonVisibility();
+        //this.updateCameraFlipButtonVisibility();
     }
     
     /**
@@ -516,7 +516,7 @@ class MobileControls {
             
             // Show camera flip button once connected
             if (this.cameraFlipButton) {
-                this.updateCameraFlipButtonVisibility();
+                //this.updateCameraFlipButtonVisibility();
             }
             
             return true;
