@@ -90,10 +90,9 @@ class MobileControls {
         let cameraFlipButton = document.getElementById("camera-flip-button");
         // Add touch event for camera flip
         cameraFlipButton.addEventListener('touchstart', (e) => {
-            console.log("Camera flip button pressed");
             //e.preventDefault();
             if (window.cameraAngleHorizontal !== undefined) {
-                window.cameraAngleHorizontal = (window.cameraAngleHorizontal + Math.PI) % (Math.PI * 2);
+                window.cameraAngleHorizontal = (window.cameraAngleHorizontal + Math.PI/2) % (Math.PI * 2);
                 this.log(`Camera flipped to ${window.cameraAngleHorizontal}`);
                 
                 // Visual feedback
@@ -396,42 +395,9 @@ class MobileControls {
         
         return false;
     }
-    
-    /**
-     * Game loop update function
-     */
-    update() {
-        // Currently empty, but could be used for continuous updates
-        // if needed in the future
-    }
 }
 
 // Initialize mobile controls when the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.mobileControls = new MobileControls();
 });
-
-/*
-// Hook into the animation loop to enable update calls
-(function() {
-    const hookInterval = setInterval(() => {
-        if (typeof window.animate === 'function' && window.mobileControls) {
-            const originalAnimate = window.animate;
-            window.animate = function(currentTime) {
-                const result = originalAnimate(currentTime);
-                if (window.mobileControls.initialized) {
-                    window.mobileControls.update();
-                }
-                return result;
-            };
-            clearInterval(hookInterval);
-            if (MobileControls.DEBUG) {
-                console.log("[MobileControls] Animation loop hooked");
-            }
-        }
-    }, 500);
-    
-    // Safety timeout
-    setTimeout(() => clearInterval(hookInterval), 10000);
-})();
-*/
