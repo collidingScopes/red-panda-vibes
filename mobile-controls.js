@@ -1,4 +1,78 @@
 // Mobile Controls for Red Panda Explorer
+
+// Press button to rotate camera perspective 
+let cameraFlipButton = document.getElementById("camera-flip-button");
+// Add touch event for camera flip
+cameraFlipButton.addEventListener('touchstart', (e) => {
+    mobileCameraTurn();
+}, { passive: false });
+
+// Animation settings for smooth rotations
+const ROTATION_DURATION = 500; // Duration of rotation animation in ms
+const ROTATION_STEPS = 20; // Number of steps for smoother animation
+let isRotating = false; // Flag to prevent multiple rotations at once
+
+// Enhanced camera and character rotation function with animation
+function mobileCameraTurn() {
+
+    isRotating = true;
+    
+    // Calculate target angle (90 degrees clockwise)
+    const startAngle = window.cameraAngleHorizontal;
+    const targetAngle = (startAngle - Math.PI/2) % (Math.PI * 2);
+    
+    // Store player's current rotation
+    const startPlayerRotation = window.player.rotation.y;
+    const targetPlayerRotation = startPlayerRotation - Math.PI/2;
+    
+    // Visual feedback for button
+    cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
+    
+    // Start time for animation
+    const startTime = performance.now();
+    
+    // Animation function
+    function animateRotation(currentTime) {
+        const elapsedTime = currentTime - startTime;
+        const progress = Math.min(elapsedTime / ROTATION_DURATION, 1);
+        
+        // Use easeInOutQuad for smoother animation
+        const easeProgress = progress < 0.5 
+            ? 2 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        
+        // Update camera angle with smooth transition
+        window.cameraAngleHorizontal = startAngle - (Math.PI/2 * easeProgress);
+        
+        // Update player rotation to match camera movement
+        if (window.player) {
+            window.player.rotation.y = startPlayerRotation - (Math.PI/2 * easeProgress);
+        }
+        
+        // Continue animation if not complete
+        if (progress < 1) {
+            requestAnimationFrame(animateRotation);
+        } else {
+            // Ensure final values are exact
+            window.cameraAngleHorizontal = targetAngle;
+            if (window.player) {
+                window.player.rotation.y = targetPlayerRotation;
+            }
+            
+            // Reset button color after a delay
+            setTimeout(() => {
+                cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                isRotating = false;
+            }, 300);
+            
+            console.log(`Camera and player rotated to ${targetAngle}`);
+        }
+    }
+    
+    // Start the animation
+    requestAnimationFrame(animateRotation);
+}
+
 class MobileControls {
     // Constants for configuration
     static DEBUG = true;                // Set to true to enable debug logging
@@ -43,7 +117,6 @@ class MobileControls {
         this.log("Initializing mobile UI");
         
         // Create camera flip button
-        this.createCameraFlipButton();
         this.setupEventListeners();
         
         // Track initialization state
@@ -80,28 +153,6 @@ class MobileControls {
         };
     }
 
-    // =============== UI CREATION METHODS ===============
-
-    /**
-     * Creates a camera flip button for quick camera rotation
-     */
-    createCameraFlipButton() {
- 
-        let cameraFlipButton = document.getElementById("camera-flip-button");
-        // Add touch event for camera flip
-        cameraFlipButton.addEventListener('touchstart', (e) => {
-            //e.preventDefault();
-            if (window.cameraAngleHorizontal !== undefined) {
-                window.cameraAngleHorizontal = (window.cameraAngleHorizontal + Math.PI/2) % (Math.PI * 2);
-                this.log(`Camera flipped to ${window.cameraAngleHorizontal}`);
-                
-                // Visual feedback
-                cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
-                setTimeout(() => cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)', 300);
-            }
-        }, { passive: false });
-    }
-    
     // =============== EVENT HANDLING METHODS ===============
     
     /**
