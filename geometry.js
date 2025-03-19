@@ -275,68 +275,101 @@ function createTerrainBaseTexture() {
     return texture;
 }
 
-// Create neon-styled flag pole with rainbow flag
+// Create stylized bamboo stalk (replaces flag pole)
 function createFlagPole() {
     const group = new THREE.Group();
     
-    // CHANGE: Make the pole taller (increased from 10 to 20)
-    const poleGeometry = new THREE.BoxGeometry(0.5, 20, 0.5); // Doubled height
-    const poleMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xffffff, // White color
-        roughness: 0.3,
-        metalness: 0.8,
-        emissive: 0xaaaaff, // Subtle blue glow
-        emissiveIntensity: 0.4
+    // Create node rings (the slightly wider parts between segments)
+    function createNodeRing(posY, radius) {
+        const ringGeometry = new THREE.CylinderGeometry(radius/1.5, radius/1.5, 0.3, 12);
+        const ringMaterial = new THREE.MeshStandardMaterial({
+            color: 0x228B22, // Darker green for nodes
+            roughness: 0.8,
+            metalness: 0.1
+        });
+        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+        ring.position.y = posY;
+        ring.castShadow = true;
+        return ring;
+    }
+    
+    // Create a leaf cluster (small pointed leaves coming out from the node)
+    function createLeafCluster(posY, radius) {
+        const cluster = new THREE.Group();
+        
+        // Create 3-5 leaves in a fan arrangement
+        const leafCount = 3 + Math.floor(Math.random() * 3);
+        const baseAngle = Math.random() * Math.PI * 2; // Random starting angle
+        
+        for (let i = 0; i < leafCount; i++) {
+            // Calculate angle for this leaf
+            const angle = baseAngle + (i * (Math.PI / 2) / (leafCount - 1));
+            
+            // Create a simple triangle shape for the leaf
+            const leafShape = new THREE.Shape();
+            leafShape.moveTo(0, 0);
+            leafShape.lineTo(0.6, 0.3);
+            leafShape.lineTo(1+Math.random()*4, 0);
+            leafShape.lineTo(Math.random(), -0.3);
+            leafShape.lineTo(0, 0);
+            
+            const leafGeometry = new THREE.ShapeGeometry(leafShape);
+            const leafMaterial = new THREE.MeshStandardMaterial({ 
+                color: 0x32CD32, // Lime green
+                roughness: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+            
+            // Position and rotate leaf
+            leaf.position.set(
+                Math.cos(angle) * (radius), 
+                0,
+                Math.sin(angle) * (radius)
+            );
+            
+            // Rotate to face outward
+            leaf.rotation.y = Math.PI/2 - angle;
+            // Tilt slightly upward
+            leaf.rotation.x = -Math.PI/6;
+            
+            cluster.add(leaf);
+        }
+        
+        cluster.position.y = posY;
+        return cluster;
+    }
+    
+    // Create a full bamboo stalk that goes all the way to the ground
+    const bambooHeight = 25; // Total height
+    const bambooRadius = 0.7;
+
+    // Add node rings at positions matching the image
+    const nodePositions = [3, 7, 11, 15]; // Positions from bottom
+    
+    nodePositions.forEach(posY => {
+        const ring = createNodeRing(posY, bambooRadius);
+        group.add(ring);
+        
+        // Add leaf cluster at this node if it's not too close to the top
+        if (posY < bambooHeight - 3) {
+            const leafCluster = createLeafCluster(posY+Math.random()*4-2, bambooRadius);
+            group.add(leafCluster);
+        }
     });
-    const pole = new THREE.Mesh(poleGeometry, poleMaterial);
-    pole.position.y = 10; // Adjusted to center the taller pole
-    pole.castShadow = true;
     
-    // CHANGE: Create a rainbow gradient flag
-    // Create a canvas for the rainbow gradient
-    const canvas = getCanvas(300, 150);
-    const ctx = canvas.getContext('2d');
+    // Add a light to highlight the bamboo
+    const bambooLight = new THREE.PointLight(0x00ff00, 1.5, 15); // Green light
+    bambooLight.position.y = bambooHeight / 2; // Position at middle of bamboo
+    bambooLight.castShadow = false;
+    group.add(bambooLight);
     
-    // Create a vibrant rainbow gradient
-    const gradient = ctx.createLinearGradient(0, 0, 0, 150);
-    gradient.addColorStop(0, '#ff1a8c'); // Hot pink
-    gradient.addColorStop(0.16, '#ff1a1a'); // Bright red
-    gradient.addColorStop(0.33, '#ffaa00'); // Orange
-    gradient.addColorStop(0.5, '#ffff00'); // Yellow
-    gradient.addColorStop(0.66, '#1aff1a'); // Green
-    gradient.addColorStop(0.83, '#00ccff'); // Cyan
-    gradient.addColorStop(1, '#cc66ff'); // Purple
-    
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, 300, 150);
-    
-    // Create a texture from the canvas
-    const flagTexture = new THREE.CanvasTexture(canvas);
-    flagTexture.needsUpdate = true;
-    
-    // Create the flag with the rainbow texture
-    const flagGeometry = new THREE.PlaneGeometry(4, 2); // Made larger for better visibility
-    const flagMaterial = new THREE.MeshBasicMaterial({ 
-        map: flagTexture,
-        side: THREE.DoubleSide,
-    });
-    const flag = new THREE.Mesh(flagGeometry, flagMaterial);
-    flag.position.set(2, 18, 0); // Position higher on the taller pole
-    flag.castShadow = true;
-    
-    group.add(pole);
-    group.add(flag);
-    
-    // Add a brighter light for the flag to make it more visible from a distance
-    const flagLight = new THREE.PointLight(0xffffff, 2, 15); // Brighter white light
-    flagLight.position.set(2, 16, 0); // Position at the flag
-    flagLight.castShadow = false;
-    group.add(flagLight);
-    
-    // Position the flag pole far away from the starting point
+    // Position the bamboo stalk far away from the starting point
     const x = 50;
     const z = 50;
     const y = getTerrainHeight(x, z);
+    // Setting y position to terrain height directly (bamboo will grow from ground)
     group.position.set(x, y, z);
     
     scene.add(group);

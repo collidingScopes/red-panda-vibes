@@ -70,7 +70,7 @@ class LevelSystem {
         const fogColor = (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b);
         
         // NEW: Shrink flag pole with each level (minimum 5 units)
-        const flagHeight = Math.max(5, 25 - (level - 1) * 1.5);
+        const flagHeight = Math.max(7, 25 - (level - 1) * 1.5);
         
         // NEW: Increase terrain height multiplier with each level
         const terrainHeightMultiplier = 1.0 + Math.min(2.0, (level - 1) * 0.1);

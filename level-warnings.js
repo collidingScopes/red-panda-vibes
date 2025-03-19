@@ -9,7 +9,7 @@ class LevelWarnings {
         // Warning messages for specific levels
         this.warnings = {
             2: "☣️ Warning: avoid the evil bubble monsters 🫧",
-            3: "⏫ Each level brings more monsters and a harder flag to find 📈"
+            3: "🔺 Each level brings more monsters and a harder bamboo to find 🧐"
         };
         
         // Track whether we've shown warnings for specific levels

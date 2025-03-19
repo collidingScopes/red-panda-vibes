@@ -379,11 +379,6 @@ function animate(currentTime) {
         }
     }
     
-    // Flag animation - using a single sine calculation
-    const sineValue = Math.sin(currentTime * 0.004);
-    flagMesh.rotation.y = sineValue * 0.1;
-    flagMesh.position.z = sineValue * 0.2;
-    
     renderer.render(scene, camera);
 }
 // Initialize the game
