@@ -9,6 +9,7 @@ const gameState = {
     goalReached: false,
     enemyManager: null,
     levelSystem: null, // Add the level system reference
+    gameStarted: false,
     gameOver: false,   // Add game over state
     animationId: null, // Track animation frame ID
 };
@@ -23,7 +24,7 @@ let fps = 0;
 const fpsCounter = document.getElementById('fps-counter');
 
 // Camera setup
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
 
 // Renderer setup with post-processing for dithering
@@ -151,7 +152,7 @@ function updateCamera() {
     // Update camera position using player's position without cloning
     camera.position.x = player.position.x + horizontalDistance * Math.sin(window.cameraAngleHorizontal);
     camera.position.z = player.position.z + horizontalDistance * Math.cos(window.cameraAngleHorizontal);
-    camera.position.y = player.position.y + 1.5 + verticalDistance; // 1.5 is a height offset
+    camera.position.y = player.position.y + 2.5 + verticalDistance; // 1.5 is a height offset
     
     // Reuse the target vector
     cameraTarget.copy(player.position);
@@ -172,7 +173,7 @@ function updatePlayerPosition(deltaTime) {
     gameState.playerOnGround = player.position.y <= groundHeight + 0.5;
     
     // Apply gravity
-    if (!gameState.playerOnGround) {
+    if (!gameState.playerOnGround && gameState.gameStarted) {
         gameState.playerVelocity.y -= gravity * deltaTime;
     } else {
         gameState.playerVelocity.y = Math.max(0, gameState.playerVelocity.y);
@@ -400,6 +401,12 @@ function init() {
         console.log("Mobile controls found - ensuring proper integration");
     }
 }
+
+let startGameButton = document.querySelector("#start-game-button");
+startGameButton.addEventListener("click", () => {
+    gameState.gameStarted = true;
+    startGameButton.classList.add("hidden");
+});
 
 // Start the game
 init();
