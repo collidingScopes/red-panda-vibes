@@ -1,5 +1,5 @@
 // Enhanced Mobile Camera Controls
-// This script adds camera rotation and proper Y-axis sync for mobile devices
+// This script adds camera rotation that follows player orientation and movement
 
 // We'll directly check if this is a mobile device for immediate execution
 if (typeof isMobileDevice !== 'undefined' && isMobileDevice) {
@@ -27,11 +27,15 @@ function initializeMobileCameraControls() {
         angleVertical: Math.PI/12, // Small downward angle (15 degrees)
         distance: 5,
         rotationSpeed: 0.05,
+        smoothRotationSpeed: 0.08, // Speed for smooth rotation following player
         isRotating: false,
         lastPlayerY: 0,
         smoothedPlayerY: 0,
         yFollowSpeed: 0.1, // Control how quickly camera follows Y changes
-        playerHeadOffset: 1.0
+        playerHeadOffset: 1.0,
+        lastPlayerRotation: new THREE.Quaternion(), // Store player's last rotation
+        playerForward: new THREE.Vector3(0, 0, 1), // Initial player forward direction
+        lastMovementDirection: new THREE.Vector3() // Last direction player was moving
     };
     
     // Try to get references to game objects
@@ -41,6 +45,8 @@ function initializeMobileCameraControls() {
             // Store initial player Y position for reference
             cameraState.lastPlayerY = gamePlayer.position.y;
             cameraState.smoothedPlayerY = gamePlayer.position.y;
+            // Initialize the player's rotation
+            cameraState.lastPlayerRotation.copy(gamePlayer.quaternion);
         }
         
         if (window.camera) {
@@ -126,6 +132,24 @@ function initializeMobileCameraControls() {
         }
     }
     
+    // Extract player's forward direction
+    function getPlayerForwardDirection() {
+        if (!gamePlayer) return new THREE.Vector3(0, 0, 1);
+        
+        const forward = new THREE.Vector3(0, 0, 1);
+        forward.applyQuaternion(gamePlayer.quaternion);
+        forward.y = 0; // Keep the direction in the horizontal plane
+        forward.normalize();
+        
+        return forward;
+    }
+    
+    // Calculate angle between two vectors in the horizontal plane
+    function getHorizontalAngle(vector) {
+        // Calculate the angle in the horizontal plane (XZ plane)
+        return Math.atan2(vector.x, vector.z);
+    }
+    
     // The main camera update function
     function updateMobileCamera() {
         // Skip if required objects aren't available
@@ -153,7 +177,30 @@ function initializeMobileCameraControls() {
         // Save current Y for next frame comparison
         cameraState.lastPlayerY = playerPos.y;
         
-        // Smooth camera rotation
+        // Get player's current forward direction
+        const playerForward = getPlayerForwardDirection();
+        
+        // Calculate player's orientation angle in the horizontal plane
+        const playerAngle = getHorizontalAngle(playerForward);
+        
+        // Check if player has actually moved
+        let hasMovement = false;
+        
+        // Check the gameState key states to see if player is moving
+        if (window.gameState && window.gameState.keyStates) {
+            const keys = window.gameState.keyStates;
+            hasMovement = keys['KeyW'] || keys['KeyS'] || keys['KeyA'] || keys['KeyD'];
+        }
+        
+        // Only update target angle when player has rotated significantly or we're in joystick rotation mode
+        const rotationDiff = Math.abs(playerAngle - cameraState.targetAngleHorizontal);
+        if (hasMovement && rotationDiff > 0.1) {
+            // When player is moving, the camera should slowly rotate to follow player's direction
+            cameraState.targetAngleHorizontal = playerAngle;
+            cameraState.isRotating = true;
+        }
+        
+        // Apply smooth rotation
         if (cameraState.isRotating) {
             // Calculate shortest path for angle change
             let angleDiff = cameraState.targetAngleHorizontal - cameraState.currentAngleHorizontal;
@@ -164,7 +211,7 @@ function initializeMobileCameraControls() {
             
             // Apply smooth rotation
             if (Math.abs(angleDiff) > 0.01) {
-                cameraState.currentAngleHorizontal += angleDiff * cameraState.rotationSpeed;
+                cameraState.currentAngleHorizontal += angleDiff * cameraState.smoothRotationSpeed;
             } else {
                 cameraState.isRotating = false;
             }
@@ -174,7 +221,7 @@ function initializeMobileCameraControls() {
         const horizontalDistance = cameraState.distance * Math.cos(cameraState.angleVertical);
         const verticalDistance = cameraState.distance * Math.sin(cameraState.angleVertical);
         
-        // Position camera using smoothed player Y position
+        // Position camera using player's current position and our camera angle
         gameCamera.position.x = playerPos.x + horizontalDistance * Math.sin(cameraState.currentAngleHorizontal);
         gameCamera.position.z = playerPos.z + horizontalDistance * Math.cos(cameraState.currentAngleHorizontal);
         
@@ -187,6 +234,9 @@ function initializeMobileCameraControls() {
             cameraState.smoothedPlayerY + cameraState.playerHeadOffset, // Look at head level
             playerPos.z
         );
+        
+        // Save player's rotation for next frame comparison
+        cameraState.lastPlayerRotation.copy(gamePlayer.quaternion);
     }
     
     // Set up mobile camera controls based on player movement
@@ -224,8 +274,8 @@ function initializeMobileCameraControls() {
                     // Calculate angle based on movement direction
                     const moveAngle = Math.atan2(moveX, moveZ);
                     
-                    // Set target camera angle
-                    cameraState.targetAngleHorizontal = moveAngle;
+                    // Set target camera angle (with opposite angle for camera)
+                    cameraState.targetAngleHorizontal = -moveAngle; // Inverse for camera position
                     cameraState.isRotating = true;
                     
                     // Store last valid movement direction
@@ -233,6 +283,32 @@ function initializeMobileCameraControls() {
                 }
             }
         };
+        
+        // Hook into the game's player movement function if available
+        // This helps us detect when the player turns due to keyboard input
+        if (window.updatePlayerPosition && typeof window.updatePlayerPosition === 'function') {
+            const originalUpdatePlayerPosition = window.updatePlayerPosition;
+            
+            window.updatePlayerPosition = function(deltaTime) {
+                // Call the original function first
+                originalUpdatePlayerPosition(deltaTime);
+                
+                // After the player has been updated, check if they've rotated
+                if (gamePlayer) {
+                    const playerForward = getPlayerForwardDirection();
+                    const playerAngle = getHorizontalAngle(playerForward);
+                    
+                    // If significant rotation detected, update camera target
+                    const rotationThreshold = 0.2; // About 11 degrees
+                    const rotationDiff = Math.abs(playerAngle - cameraState.targetAngleHorizontal);
+                    
+                    if (rotationDiff > rotationThreshold) {
+                        cameraState.targetAngleHorizontal = playerAngle;
+                        cameraState.isRotating = true;
+                    }
+                }
+            };
+        }
         
         console.log("Mobile camera controls successfully set up!");
     }
