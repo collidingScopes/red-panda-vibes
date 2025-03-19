@@ -1,3 +1,4 @@
+//flag to detect mobile controls
 const isMobile = window.mobileControls && window.mobileControls.isMobile;
 
 // Game state
@@ -145,60 +146,26 @@ const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below g
 const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera() {
-    if (isMobile && window.mobileControls && window.mobileControls.initialized) {
-        // Mobile camera behavior
-        const moveDirection = window.mobileControls.lastMoveDirection;
-        
-        // Only update camera if there's significant movement
-        if (moveDirection.length() > 0.1) {
-            // Calculate target camera position based on movement direction
-            const targetHorizontalAngle = Math.atan2(moveDirection.x, moveDirection.z);
-            
-            // Smoothly interpolate camera angle
-            cameraAngleHorizontal = THREE.MathUtils.lerp(
-                cameraAngleHorizontal,
-                targetHorizontalAngle,
-                0.1 // Adjust this value for smoother/faster rotation
-            );
-            
-            // Keep vertical angle slightly above horizon
-            cameraAngleVertical = THREE.MathUtils.lerp(
-                cameraAngleVertical,
-                Math.PI / 12, // Slight downward tilt
-                0.1
-            );
-        }
-        
-        // Calculate camera position
-        const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
-        const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
-        
-        camera.position.x = player.position.x - horizontalDistance * Math.sin(cameraAngleHorizontal);
-        camera.position.z = player.position.z - horizontalDistance * Math.cos(cameraAngleHorizontal);
-        camera.position.y = player.position.y + 1.5 + verticalDistance;
-        
-        // Look at player
-        cameraTarget.copy(player.position);
-        cameraTarget.y += 1;
-        camera.lookAt(cameraTarget);
-    } else {
-        // Existing desktop behavior
-        if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.04;
-        if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.04;
-        if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
-        if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
-        
-        const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
-        const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
-        
-        camera.position.x = player.position.x + horizontalDistance * Math.sin(cameraAngleHorizontal);
-        camera.position.z = player.position.z + horizontalDistance * Math.cos(cameraAngleHorizontal);
-        camera.position.y = player.position.y + 1.5 + verticalDistance;
-        
-        cameraTarget.copy(player.position);
-        cameraTarget.y += 1;
-        camera.lookAt(cameraTarget);
-    }
+    // Update camera angles based on arrow key inputs
+    if (gameState.keyStates['ArrowLeft']) cameraAngleHorizontal += 0.04;
+    if (gameState.keyStates['ArrowRight']) cameraAngleHorizontal -= 0.04;
+    // Apply the min/max vertical angle limits
+    if (gameState.keyStates['ArrowUp']) cameraAngleVertical = Math.max(cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowDown']) cameraAngleVertical = Math.min(cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
+    
+    // Calculate camera position with orbit controls
+    const horizontalDistance = cameraDistance * Math.cos(cameraAngleVertical);
+    const verticalDistance = cameraDistance * Math.sin(cameraAngleVertical);
+    
+    // Update camera position using player's position without cloning
+    camera.position.x = player.position.x + horizontalDistance * Math.sin(cameraAngleHorizontal);
+    camera.position.z = player.position.z + horizontalDistance * Math.cos(cameraAngleHorizontal);
+    camera.position.y = player.position.y + 1.5 + verticalDistance; // 1.5 is a height offset
+    
+    // Reuse the target vector
+    cameraTarget.copy(player.position);
+    cameraTarget.y += 1; // Look at player's head level
+    camera.lookAt(cameraTarget);
 }
 
 // Game physics and movement

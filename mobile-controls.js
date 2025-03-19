@@ -29,9 +29,6 @@ class MobileControls {
         this.initialized = false;
         this.connectToGameTimer = setInterval(() => this.connectToGame(), 100);
         this.cameraUpdateModified = false;
-
-        this.lastMoveDirection = new THREE.Vector3(0, 0, 1); // Default forward direction
-
     }
 
     checkIfMobile() {
@@ -149,27 +146,21 @@ class MobileControls {
             console.log("Cannot update movement - gameState not available");
             return;
         }
-    
+
         const deltaX = (this.moveCurrentX - this.moveStartX) * this.movementScale;
         const deltaY = (this.moveCurrentY - this.moveStartY) * this.movementScale;
-    
+
         this.resetMovementKeys();
-    
-        const moveVector = new THREE.Vector3();
+
         if (Math.abs(deltaX) > this.movementDeadzone * this.movementScale) {
             this.gameState.keyStates['KeyA'] = deltaX < 0;
             this.gameState.keyStates['KeyD'] = deltaX > 0;
-            moveVector.x = deltaX < 0 ? -1 : 1;
+            console.log(`Horizontal movement: ${deltaX < 0 ? 'Left' : 'Right'}`);
         }
         if (Math.abs(deltaY) > this.movementDeadzone * this.movementScale) {
             this.gameState.keyStates['KeyW'] = deltaY < 0;
             this.gameState.keyStates['KeyS'] = deltaY > 0;
-            moveVector.z = deltaY < 0 ? 1 : -1;
-        }
-    
-        // Update lastMoveDirection if there's significant movement
-        if (moveVector.length() > 0) {
-            this.lastMoveDirection.copy(moveVector).normalize();
+            console.log(`Vertical movement: ${deltaY < 0 ? 'Forward' : 'Backward'}`);
         }
     }
 
