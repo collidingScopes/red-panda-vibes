@@ -1,34 +1,30 @@
-// Mobile Controls for Red Panda Explorer
-class MobileControls {
+// RedPandaMobileControls.js
+// A mobile control system with a camera that follows behind the character
+
+class RedPandaMobileControls {
     constructor() {
-        this.initialized = false;
+        // Only initialize on mobile devices
         this.isMobile = this.detectMobile();
-        
         if (!this.isMobile) return;
         
-        // References to game objects
+        // Core game references
         this.player = null;
         this.camera = null;
         this.gameState = null;
         
-        // Movement joystick state
-        this.moveJoystick = {
-            active: false,
-            startX: 0,
-            startY: 0,
-            currentX: 0,
-            currentY: 0,
-            deltaX: 0,
-            deltaY: 0,
-            angle: 0,
-            intensity: 0,
-            maxRadius: 60, // Maximum joystick movement radius
-            containerEl: null,
-            stickEl: null
+        // Camera settings
+        this.cameraSettings = {
+            distance: 6,           // Distance behind player
+            height: 3,             // Height above player
+            lookAheadOffset: 1,    // Look ahead offset (player head height)
+            damping: 0.1,          // Camera position damping factor (lower = smoother)
+            rotationDamping: 0.15, // Camera rotation damping factor
+            targetPosition: new THREE.Vector3(),
+            currentLookDirection: new THREE.Vector3(0, 0, 1)
         };
         
-        // Camera joystick state
-        this.cameraJoystick = {
+        // Movement joystick state
+        this.joystick = {
             active: false,
             startX: 0,
             startY: 0,
@@ -43,15 +39,7 @@ class MobileControls {
             stickEl: null
         };
         
-        // Camera state tracking
-        this.cameraState = {
-            horizontalAngle: 0,
-            verticalAngle: 0,
-            MIN_VERTICAL_ANGLE: -Math.PI/8,
-            MAX_VERTICAL_ANGLE: Math.PI/6
-        };
-        
-        // Jump button state
+        // Jump button
         this.jumpButton = {
             active: false,
             element: null,
@@ -59,20 +47,18 @@ class MobileControls {
             cooldownTime: 500 // ms
         };
         
-        // Vector objects for calculations (reused to reduce garbage collection)
+        // Vector for calculations (reused to reduce garbage collection)
         this.moveVector = new THREE.Vector3();
-        this.cameraForward = new THREE.Vector3();
-        this.cameraRight = new THREE.Vector3();
+        this.tempVector = new THREE.Vector3();
         
         // Settings
         this.settings = {
             moveSensitivity: 5.0,
-            cameraSensitivity: 1.5,
             jumpHeight: 8.0,
             deadzone: 0.1 // Percentage of joystick movement to ignore
         };
         
-        // Initialize after DOM is fully loaded
+        // Initialize after DOM is loaded
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => this.init());
         } else {
@@ -80,7 +66,7 @@ class MobileControls {
         }
     }
     
-    // Detect if user is on a mobile device
+    // Detect mobile device
     detectMobile() {
         const userAgent = navigator.userAgent || navigator.vendor || window.opera;
         const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !window.MSStream;
@@ -93,6 +79,8 @@ class MobileControls {
     
     // Initialize mobile controls
     init() {
+        console.log("Initializing Red Panda Mobile Controls");
+        
         // Add mobile class to body
         document.body.classList.add('mobile-device');
         
@@ -111,47 +99,36 @@ class MobileControls {
         // Try to find game objects
         this.findGameObjects();
         
-        // Override movement functions
+        // Override game functions
         this.overrideGameFunctions();
         
-        this.initialized = true;
-        console.log("Mobile controls initialized");
+        // Disable original on-screen arrow buttons if they exist
+        this.disableOriginalControls();
+        
+        console.log("Red Panda Mobile Controls initialization complete");
     }
     
     // Create mobile UI elements
     createMobileUI() {
-        // Add styles
+        // Add mobile-specific styles
         this.addMobileStyles();
         
-        // Create movement joystick
-        this.moveJoystick.containerEl = document.createElement('div');
-        this.moveJoystick.containerEl.id = 'move-joystick-container';
-        this.moveJoystick.containerEl.className = 'joystick-container';
+        // Create joystick
+        this.joystick.containerEl = document.createElement('div');
+        this.joystick.containerEl.id = 'rp-joystick-container';
+        this.joystick.containerEl.className = 'rp-joystick-container';
         
-        this.moveJoystick.stickEl = document.createElement('div');
-        this.moveJoystick.stickEl.id = 'move-joystick-stick';
-        this.moveJoystick.stickEl.className = 'joystick-stick';
-        this.moveJoystick.stickEl.innerHTML = '<div class="joystick-icon">⬆</div>';
+        this.joystick.stickEl = document.createElement('div');
+        this.joystick.stickEl.id = 'rp-joystick-stick';
+        this.joystick.stickEl.className = 'rp-joystick-stick';
+        this.joystick.stickEl.innerHTML = '<div class="rp-joystick-icon">⬆</div>';
         
-        this.moveJoystick.containerEl.appendChild(this.moveJoystick.stickEl);
-        document.body.appendChild(this.moveJoystick.containerEl);
-        
-        // Create camera joystick
-        this.cameraJoystick.containerEl = document.createElement('div');
-        this.cameraJoystick.containerEl.id = 'camera-joystick-container';
-        this.cameraJoystick.containerEl.className = 'joystick-container';
-        
-        this.cameraJoystick.stickEl = document.createElement('div');
-        this.cameraJoystick.stickEl.id = 'camera-joystick-stick';
-        this.cameraJoystick.stickEl.className = 'joystick-stick';
-        this.cameraJoystick.stickEl.innerHTML = '<div class="joystick-icon">👁️</div>';
-        
-        this.cameraJoystick.containerEl.appendChild(this.cameraJoystick.stickEl);
-        document.body.appendChild(this.cameraJoystick.containerEl);
+        this.joystick.containerEl.appendChild(this.joystick.stickEl);
+        document.body.appendChild(this.joystick.containerEl);
         
         // Create jump button
         this.jumpButton.element = document.createElement('div');
-        this.jumpButton.element.id = 'jump-button';
+        this.jumpButton.element.id = 'rp-jump-button';
         this.jumpButton.element.innerHTML = 'JUMP';
         document.body.appendChild(this.jumpButton.element);
         
@@ -176,34 +153,28 @@ class MobileControls {
             }
             
             /* Joystick styles */
-            .joystick-container {
+            .rp-joystick-container {
                 position: fixed;
-                width: 120px;
-                height: 120px;
+                width: 130px;
+                height: 130px;
                 background-color: rgba(255, 255, 255, 0.1);
                 border: 2px solid rgba(132, 255, 239, 0.5);
                 border-radius: 50%;
                 touch-action: none;
                 z-index: 1000;
+                left: 50%;
+                bottom: 100px;
+                transform: translateX(-50%);
+                backdrop-filter: blur(2px);
             }
             
-            #move-joystick-container {
-                left: 70px;
-                bottom: 70px;
-            }
-            
-            #camera-joystick-container {
-                right: 70px;
-                bottom: 70px;
-            }
-            
-            .joystick-stick {
+            .rp-joystick-stick {
                 position: absolute;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
-                width: 60px;
-                height: 60px;
+                width: 70px;
+                height: 70px;
                 background-color: rgba(255, 132, 223, 0.3);
                 border: 2px solid rgba(255, 132, 223, 0.8);
                 border-radius: 50%;
@@ -213,25 +184,25 @@ class MobileControls {
                 box-shadow: 0 0 10px rgba(255, 132, 223, 0.6);
             }
             
-            .joystick-icon {
+            .rp-joystick-icon {
                 color: rgba(255, 255, 255, 0.9);
                 font-size: 24px;
                 text-shadow: 0 0 8px rgba(255, 132, 223, 0.8);
             }
             
             /* Jump button */
-            #jump-button {
+            #rp-jump-button {
                 position: fixed;
-                right: 70px;
-                bottom: 200px;
-                width: 80px;
-                height: 80px;
+                right: 40px;
+                bottom: 130px;
+                width: 90px;
+                height: 90px;
                 background-color: rgba(162, 255, 132, 0.3);
                 border: 3px solid rgba(162, 255, 132, 0.8);
                 border-radius: 50%;
                 color: rgba(255, 255, 255, 0.9);
                 font-family: 'Courier New', monospace;
-                font-size: 18px;
+                font-size: 20px;
                 font-weight: bold;
                 display: flex;
                 align-items: center;
@@ -239,22 +210,23 @@ class MobileControls {
                 z-index: 1000;
                 text-shadow: 0 0 8px rgba(162, 255, 132, 0.8);
                 box-shadow: 0 0 15px rgba(162, 255, 132, 0.5);
+                backdrop-filter: blur(2px);
             }
             
-            #jump-button.active {
+            #rp-jump-button.active {
                 background-color: rgba(162, 255, 132, 0.6);
                 transform: scale(0.95);
             }
             
             /* Mobile instructions */
-            #mobile-instructions {
+            #rp-mobile-instructions {
                 position: fixed;
                 top: 50%;
                 left: 50%;
                 transform: translate(-50%, -50%);
                 background-color: rgba(0, 0, 0, 0.8);
                 color: #ff84df;
-                padding: 20px;
+                padding: 25px;
                 border: 3px solid #84ffef;
                 border-radius: 5px;
                 z-index: 3000;
@@ -267,31 +239,14 @@ class MobileControls {
                 max-width: 80%;
             }
             
-            #mobile-instructions h3 {
+            #rp-mobile-instructions h3 {
                 color: #ffee84;
                 margin-top: 10px;
                 margin-bottom: 20px;
                 font-size: 24px;
             }
             
-            #mobile-instructions .control-diagram {
-                display: flex;
-                justify-content: space-around;
-                margin: 15px 0;
-            }
-            
-            #mobile-instructions .control-item {
-                text-align: center;
-                padding: 10px;
-            }
-            
-            #mobile-instructions .control-icon {
-                font-size: 30px;
-                margin-bottom: 5px;
-                color: #84ffef;
-            }
-            
-            #start-mobile-game {
+            #rp-start-mobile-game {
                 background-color: rgba(162, 255, 132, 0.2);
                 color: #a2ff84;
                 border: 2px solid #a2ff84;
@@ -303,11 +258,6 @@ class MobileControls {
                 border-radius: 5px;
                 cursor: pointer;
                 transition: all 0.3s ease;
-            }
-            
-            /* Hide desktop instructions on mobile */
-            body.mobile-device #instructions {
-                display: none !important;
             }
             
             /* Button cooldown effect */
@@ -327,50 +277,37 @@ class MobileControls {
     // Create mobile instructions dialog
     createMobileInstructions() {
         const instructions = document.createElement('div');
-        instructions.id = 'mobile-instructions';
+        instructions.id = 'rp-mobile-instructions';
         instructions.className = 'game-overlay-screen';
         
         instructions.innerHTML = `
-            <button id="close-mobile-instructions" class="close-button">&times;</button>
+            <button id="rp-close-mobile-instructions" class="close-button">&times;</button>
             <h3>Red Panda Explorer 🐼</h3>
-            <div class="control-diagram">
-                <div class="control-item">
-                    <div class="control-icon">👈</div>
-                    <p>LEFT: Move Panda</p>
-                </div>
-                <div class="control-item">
-                    <div class="control-icon">👉</div>
-                    <p>RIGHT: Look Around</p>
-                </div>
+            <div>
+                <p>DRAG JOYSTICK TO MOVE</p>
+                <p>TAP JUMP BUTTON TO JUMP</p>
             </div>
-            <div class="control-item">
-                <div class="control-icon">👆</div>
-                <p>Press JUMP button to jump</p>
-            </div>
-            <p>🏁 Find the rainbow flag!</p>
-            <p>Avoid the dark monsters!</p>
-            <button id="start-mobile-game" class="start-button">START GAME</button>
+            <p>🏁 FIND THE RAINBOW FLAG!</p>
+            <p>AVOID THE DARK MONSTERS!</p>
+            <button id="rp-start-mobile-game" class="start-button">START GAME</button>
         `;
         
         document.body.appendChild(instructions);
         
         // Add event listeners
-        document.getElementById('close-mobile-instructions').addEventListener('click', () => {
+        document.getElementById('rp-close-mobile-instructions').addEventListener('click', () => {
             instructions.classList.add('hidden');
         });
         
-        document.getElementById('start-mobile-game').addEventListener('click', () => {
+        document.getElementById('rp-start-mobile-game').addEventListener('click', () => {
             instructions.classList.add('hidden');
         });
     }
     
     // Set up event listeners for touch controls
     setupEventListeners() {
-        // Movement joystick events
-        this.setupJoystickEvents(this.moveJoystick);
-        
-        // Camera joystick events
-        this.setupJoystickEvents(this.cameraJoystick);
+        // Joystick events
+        this.setupJoystickEvents();
         
         // Jump button events
         this.jumpButton.element.addEventListener('touchstart', (e) => {
@@ -402,16 +339,50 @@ class MobileControls {
         document.addEventListener('touchmove', (e) => {
             if (e.target.tagName !== 'BUTTON' && 
                 !e.target.classList.contains('close-button') && 
-                e.target.id !== 'start-mobile-game') {
+                e.target.id !== 'rp-start-mobile-game') {
                 e.preventDefault();
             }
         }, { passive: false });
+        
+        // Special handling: anywhere on screen can be joystick
+        document.addEventListener('touchstart', (e) => {
+            // Skip if touching the jump button or other UI elements
+            if (e.target === this.jumpButton.element || 
+                e.target.tagName === 'BUTTON' || 
+                e.target.classList.contains('close-button') ||
+                e.target.id === 'rp-start-mobile-game' ||
+                // Check if any overlay screens are visible
+                (!document.getElementById('instructions').classList.contains('hidden') ||
+                !document.getElementById('level-complete-content').classList.contains('hidden') ||
+                !document.getElementById('game-over-screen').classList.contains('hidden'))) {
+                return;
+            }
+            
+            // If touch is on the left half of the screen, treat as joystick
+            const touchX = e.touches[0].clientX;
+            const windowWidth = window.innerWidth;
+            
+            if (touchX < windowWidth * 0.7) {  // Left 70% of screen for movement
+                // Move joystick container to touch position
+                const touchY = e.touches[0].clientY;
+                this.joystick.containerEl.style.left = (touchX) + 'px';
+                this.joystick.containerEl.style.bottom = (window.innerHeight - touchY) + 'px';
+                this.joystick.containerEl.style.transform = 'translate(-50%, 50%)';
+                
+                // Trigger joystick's touchstart (will be handled by the joystick's event handler)
+                const touchEvent = new TouchEvent('touchstart', {
+                    touches: e.touches,
+                    bubbles: true
+                });
+                this.joystick.containerEl.dispatchEvent(touchEvent);
+            }
+        });
     }
     
     // Set up joystick event handlers
-    setupJoystickEvents(joystick) {
-        const container = joystick.containerEl;
-        const stick = joystick.stickEl;
+    setupJoystickEvents() {
+        const container = this.joystick.containerEl;
+        const stick = this.joystick.stickEl;
         
         // Touch start - initialize joystick position
         container.addEventListener('touchstart', (e) => {
@@ -421,96 +392,140 @@ class MobileControls {
             const touch = e.touches[0];
             const rect = container.getBoundingClientRect();
             
-            joystick.active = true;
-            joystick.startX = rect.left + rect.width / 2;
-            joystick.startY = rect.top + rect.height / 2;
-            joystick.currentX = touch.clientX;
-            joystick.currentY = touch.clientY;
+            this.joystick.active = true;
+            this.joystick.startX = rect.left + rect.width / 2;
+            this.joystick.startY = rect.top + rect.height / 2;
+            this.joystick.currentX = touch.clientX;
+            this.joystick.currentY = touch.clientY;
             
             // Calculate delta from center
-            this.updateJoystickDelta(joystick);
+            this.updateJoystickDelta();
             
             // Update visual position of stick
-            this.updateJoystickVisuals(joystick);
+            this.updateJoystickVisuals();
         });
         
         // Touch move - update joystick position
         container.addEventListener('touchmove', (e) => {
-            if (!joystick.active) return;
+            if (!this.joystick.active) return;
             e.preventDefault();
             
             // Update current position
-            joystick.currentX = e.touches[0].clientX;
-            joystick.currentY = e.touches[0].clientY;
+            this.joystick.currentX = e.touches[0].clientX;
+            this.joystick.currentY = e.touches[0].clientY;
             
             // Calculate delta from center
-            this.updateJoystickDelta(joystick);
+            this.updateJoystickDelta();
             
             // Update visual position of stick
-            this.updateJoystickVisuals(joystick);
+            this.updateJoystickVisuals();
         });
         
         // Touch end - reset joystick
         container.addEventListener('touchend', (e) => {
             e.preventDefault();
-            joystick.active = false;
-            joystick.deltaX = 0;
-            joystick.deltaY = 0;
-            joystick.angle = 0;
-            joystick.intensity = 0;
+            this.joystick.active = false;
+            this.joystick.deltaX = 0;
+            this.joystick.deltaY = 0;
+            this.joystick.angle = 0;
+            this.joystick.intensity = 0;
             
             // Center the stick
             stick.style.transform = 'translate(-50%, -50%)';
+            
+            // Reset container position after short delay
+            setTimeout(() => {
+                if (!this.joystick.active) {
+                    container.style.left = '50%';
+                    container.style.bottom = '100px';
+                    container.style.transform = 'translateX(-50%)';
+                }
+            }, 300);
         });
         
         // Touch cancel - same as touch end
         container.addEventListener('touchcancel', (e) => {
             e.preventDefault();
-            joystick.active = false;
-            joystick.deltaX = 0;
-            joystick.deltaY = 0;
-            joystick.angle = 0;
-            joystick.intensity = 0;
+            this.joystick.active = false;
+            this.joystick.deltaX = 0;
+            this.joystick.deltaY = 0;
+            this.joystick.angle = 0;
+            this.joystick.intensity = 0;
             
             // Center the stick
             stick.style.transform = 'translate(-50%, -50%)';
+            
+            // Reset container position after short delay
+            setTimeout(() => {
+                if (!this.joystick.active) {
+                    container.style.left = '50%';
+                    container.style.bottom = '100px';
+                    container.style.transform = 'translateX(-50%)';
+                }
+            }, 300);
+        });
+        
+        // Make document-level touch events also release joystick if moved away
+        document.addEventListener('touchend', () => {
+            if (this.joystick.active) {
+                this.joystick.active = false;
+                this.joystick.deltaX = 0;
+                this.joystick.deltaY = 0;
+                this.joystick.angle = 0;
+                this.joystick.intensity = 0;
+                
+                // Center the stick
+                stick.style.transform = 'translate(-50%, -50%)';
+                
+                // Reset container position after short delay
+                setTimeout(() => {
+                    if (!this.joystick.active) {
+                        container.style.left = '50%';
+                        container.style.bottom = '100px';
+                        container.style.transform = 'translateX(-50%)';
+                    }
+                }, 300);
+            }
         });
     }
     
     // Update joystick delta values
-    updateJoystickDelta(joystick) {
+    updateJoystickDelta() {
         // Calculate raw delta
-        joystick.deltaX = joystick.currentX - joystick.startX;
-        joystick.deltaY = joystick.currentY - joystick.startY;
+        this.joystick.deltaX = this.joystick.currentX - this.joystick.startX;
+        this.joystick.deltaY = this.joystick.currentY - this.joystick.startY;
         
         // Calculate distance from center
-        const distance = Math.sqrt(joystick.deltaX * joystick.deltaX + joystick.deltaY * joystick.deltaY);
+        const distance = Math.sqrt(
+            this.joystick.deltaX * this.joystick.deltaX + 
+            this.joystick.deltaY * this.joystick.deltaY
+        );
         
         // If beyond max radius, normalize
-        if (distance > joystick.maxRadius) {
-            const scale = joystick.maxRadius / distance;
-            joystick.deltaX *= scale;
-            joystick.deltaY *= scale;
+        if (distance > this.joystick.maxRadius) {
+            const scale = this.joystick.maxRadius / distance;
+            this.joystick.deltaX *= scale;
+            this.joystick.deltaY *= scale;
         }
         
         // Calculate angle and intensity
-        joystick.angle = Math.atan2(joystick.deltaY, joystick.deltaX);
-        joystick.intensity = Math.min(distance / joystick.maxRadius, 1.0);
+        this.joystick.angle = Math.atan2(this.joystick.deltaY, this.joystick.deltaX);
+        this.joystick.intensity = Math.min(distance / this.joystick.maxRadius, 1.0);
         
         // Apply deadzone
-        if (joystick.intensity < this.settings.deadzone) {
-            joystick.intensity = 0;
-            joystick.deltaX = 0;
-            joystick.deltaY = 0;
+        if (this.joystick.intensity < this.settings.deadzone) {
+            this.joystick.intensity = 0;
+            this.joystick.deltaX = 0;
+            this.joystick.deltaY = 0;
         }
     }
     
     // Update joystick visual position
-    updateJoystickVisuals(joystick) {
-        const offsetX = joystick.deltaX;
-        const offsetY = joystick.deltaY;
+    updateJoystickVisuals() {
+        const offsetX = this.joystick.deltaX;
+        const offsetY = this.joystick.deltaY;
         
-        joystick.stickEl.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
+        this.joystick.stickEl.style.transform = `translate(calc(-50% + ${offsetX}px), calc(-50% + ${offsetY}px))`;
     }
     
     // Handle jump button press
@@ -554,16 +569,7 @@ class MobileControls {
         if (!this.player || !this.camera || !this.gameState) {
             setTimeout(() => this.findGameObjects(), 500);
         } else {
-            console.log("Found all required game objects");
-            
-            // Initialize camera angles
-            if (window.cameraAngleHorizontal !== undefined) {
-                this.cameraState.horizontalAngle = window.cameraAngleHorizontal;
-            }
-            
-            if (window.cameraAngleVertical !== undefined) {
-                this.cameraState.verticalAngle = window.cameraAngleVertical;
-            }
+            console.log("Found all required game objects for RedPandaMobileControls");
         }
     }
     
@@ -573,31 +579,34 @@ class MobileControls {
         
         // Store original update function if it exists
         if (window.updatePlayerPosition && typeof window.updatePlayerPosition === 'function') {
-            window.updatePlayerPositionOriginal = window.updatePlayerPosition;
+            window._originalUpdatePlayerPosition = window.updatePlayerPosition;
             
             // Override with our mobile-aware function
             window.updatePlayerPosition = function(deltaTime) {
-                if (self.initialized && self.isMobile) {
+                if (self.isMobile) {
                     self.updatePlayerMovement(deltaTime);
                 } else {
-                    window.updatePlayerPositionOriginal(deltaTime);
+                    window._originalUpdatePlayerPosition(deltaTime);
                 }
             };
         }
         
         // Store original camera update function if it exists
         if (window.updateCamera && typeof window.updateCamera === 'function') {
-            window.updateCameraOriginal = window.updateCamera;
+            window._originalUpdateCamera = window.updateCamera;
             
             // Override with our mobile-aware function
             window.updateCamera = function() {
-                if (self.initialized && self.isMobile) {
-                    self.updateCamera();
+                if (self.isMobile) {
+                    self.updateFollowCamera();
                 } else {
-                    window.updateCameraOriginal();
+                    window._originalUpdateCamera();
                 }
             };
         }
+        
+        // Add a flag to indicate our control system is active
+        window.redPandaMobileControlsActive = true;
     }
     
     // Update player movement based on joystick input
@@ -628,27 +637,40 @@ class MobileControls {
         }
         
         // Only apply movement if joystick is active
-        if (this.moveJoystick.active && this.moveJoystick.intensity > 0) {
-            // Get camera direction (forward and right vectors)
-            this.camera.getWorldDirection(this.cameraForward);
-            this.cameraForward.y = 0;
-            this.cameraForward.normalize();
+        if (this.joystick.active && this.joystick.intensity > 0) {
+            // Convert joystick input to world space movement
+            const moveDirection = new THREE.Vector3(
+                -this.joystick.deltaX,  // Inverted X for correct left/right movement
+                0,
+                -this.joystick.deltaY   // Inverted Y for correct forward/back movement
+            ).normalize();
             
-            this.cameraRight.crossVectors(new THREE.Vector3(0, 1, 0), this.cameraForward);
-            this.cameraRight.normalize();
+            // Transform movement direction relative to camera
+            const cameraDir = new THREE.Vector3(0, 0, -1);
+            cameraDir.applyQuaternion(this.camera.quaternion);
+            cameraDir.y = 0;
+            cameraDir.normalize();
             
-            // Convert joystick input to world movement
-            // Note: joystick deltaY is inverted because screen Y is inverted
+            // Calculate camera's right vector
+            const cameraRight = new THREE.Vector3(1, 0, 0);
+            cameraRight.applyQuaternion(this.camera.quaternion);
+            cameraRight.y = 0;
+            cameraRight.normalize();
+            
+            // Calculate world move direction
             this.moveVector.set(0, 0, 0);
-            this.moveVector.addScaledVector(this.cameraForward, -this.moveJoystick.deltaY / this.moveJoystick.maxRadius);
-            this.moveVector.addScaledVector(this.cameraRight, this.moveJoystick.deltaX / this.moveJoystick.maxRadius);
+            this.moveVector.addScaledVector(cameraDir, moveDirection.z);
+            this.moveVector.addScaledVector(cameraRight, moveDirection.x);
             
             if (this.moveVector.length() > 0.1) {
                 this.moveVector.normalize();
                 
                 // Apply movement with speed and intensity
-                const moveDelta = this.moveVector.clone().multiplyScalar(speed * this.moveJoystick.intensity * deltaTime);
+                const moveDelta = this.moveVector.clone().multiplyScalar(speed * this.joystick.intensity * deltaTime);
                 this.player.position.add(moveDelta);
+                
+                // Store current look direction for camera follow
+                this.cameraSettings.currentLookDirection.copy(this.moveVector).normalize();
                 
                 // Rotate player to face direction of movement
                 this.player.lookAt(this.player.position.clone().add(this.moveVector));
@@ -671,16 +693,7 @@ class MobileControls {
             this.gameState.playerVelocity.y = 0;
         }
         
-        // Update global values for integration with other code
-        if (typeof window.cameraAngleHorizontal !== 'undefined') {
-            window.cameraAngleHorizontal = this.cameraState.horizontalAngle;
-        }
-        
-        if (typeof window.cameraAngleVertical !== 'undefined') {
-            window.cameraAngleVertical = this.cameraState.verticalAngle;
-        }
-        
-        // Check for goal (flagpole) - copy from original code
+        // Check for goal (flagpole)
         if (window.flagPole) {
             const dx = this.player.position.x - window.flagPole.position.x;
             const dz = this.player.position.z - window.flagPole.position.z;
@@ -698,40 +711,74 @@ class MobileControls {
         }
     }
     
-    // Update camera based on camera joystick input
-    updateCamera() {
+    // Update third-person follow camera
+    updateFollowCamera() {
         if (!this.camera || !this.player) return;
-        
-        // Update camera angles based on joystick input
-        if (this.cameraJoystick.active && this.cameraJoystick.intensity > 0) {
-            // Horizontal movement (left/right) affects horizontal angle
-            this.cameraState.horizontalAngle += this.cameraJoystick.deltaX * 0.0003 * this.settings.cameraSensitivity;
-            
-            // Vertical movement (up/down) affects vertical angle
-            // Note: deltaY is negative when moving up (since screen Y is inverted)
-            const verticalChange = this.cameraJoystick.deltaY * 0.0003 * this.settings.cameraSensitivity;
-            this.cameraState.verticalAngle = Math.max(
-                this.cameraState.MIN_VERTICAL_ANGLE,
-                Math.min(this.cameraState.MAX_VERTICAL_ANGLE, this.cameraState.verticalAngle + verticalChange)
-            );
+
+        // Skip camera update during special game states
+        if (this.gameState && (this.gameState.goalReached || this.gameState.gameOver)) {
+            return;
         }
         
-        // Calculate camera position with orbit controls
-        const cameraDistance = 5; // Same as desktop
-        const horizontalDistance = cameraDistance * Math.cos(this.cameraState.verticalAngle);
-        const verticalDistance = cameraDistance * Math.sin(this.cameraState.verticalAngle);
+        // We always want to look at the same angle as the player is facing
+        // Get the player's facing direction
+        const playerDirection = new THREE.Vector3(0, 0, 1);
+        playerDirection.applyQuaternion(this.player.quaternion);
+        playerDirection.y = 0;
+        playerDirection.normalize();
         
-        // Update camera position
-        this.camera.position.x = this.player.position.x + horizontalDistance * Math.sin(this.cameraState.horizontalAngle);
-        this.camera.position.z = this.player.position.z + horizontalDistance * Math.cos(this.cameraState.horizontalAngle);
-        this.camera.position.y = this.player.position.y + 1.5 + verticalDistance; // 1.5 is height offset
+        // When the player is moving, update the camera look direction
+        // This ensures camera always follows the direction player is moving
+        if (this.joystick.active && this.joystick.intensity > 0) {
+            // Smoothly transition to new look direction
+            this.cameraSettings.currentLookDirection.lerp(playerDirection, this.cameraSettings.rotationDamping);
+        }
         
-        // Look at player's head level
-        const target = this.player.position.clone();
-        target.y += 1;
-        this.camera.lookAt(target);
+        // Calculate camera position: behind player, offset by distance
+        const cameraOffset = this.cameraSettings.currentLookDirection.clone().multiplyScalar(-this.cameraSettings.distance);
+        
+        // Add height offset
+        cameraOffset.y = this.cameraSettings.height;
+        
+        // Set target camera position (player position + offset)
+        this.cameraSettings.targetPosition.copy(this.player.position).add(cameraOffset);
+        
+        // Smoothly move camera to target position
+        this.camera.position.lerp(this.cameraSettings.targetPosition, this.cameraSettings.damping);
+        
+        // Calculate look target (ahead of player)
+        const lookTarget = this.player.position.clone();
+        
+        // Add height offset to look at player's head
+        lookTarget.y += this.cameraSettings.lookAheadOffset;
+        
+        // Add forward offset in player's direction
+        this.tempVector.copy(this.cameraSettings.currentLookDirection).multiplyScalar(2);
+        lookTarget.add(this.tempVector);
+        
+        // Look at the target
+        this.camera.lookAt(lookTarget);
     }
     
+    // Disable original mobile controls
+    disableOriginalControls() {
+        // Try to remove old mobile control elements
+        const oldControls = [
+            'move-joystick-container',
+            'camera-joystick-container',
+            'jump-button',
+            'mobile-instructions'
+        ];
+        
+        oldControls.forEach(id => {
+            const element = document.getElementById(id);
+            if (element) {
+                element.style.display = 'none';
+            }
+        });
+    }
+    
+    // iOS specific optimizations
     optimizeForIOS() {
         // Add iOS-specific viewport meta tag
         let metaViewport = document.querySelector('meta[name=viewport]');
@@ -761,9 +808,9 @@ class MobileControls {
                 -webkit-tap-highlight-color: rgba(0,0,0,0);
             }
             
-            .ios-device .joystick-container,
-            .ios-device .joystick-stick,
-            .ios-device #jump-button {
+            .ios-device .rp-joystick-container,
+            .ios-device .rp-joystick-stick,
+            .ios-device #rp-jump-button {
                 -webkit-transform: translateZ(0);
                 transform: translateZ(0);
                 -webkit-backface-visibility: hidden;
@@ -781,28 +828,25 @@ class MobileControls {
         document.head.appendChild(iosStyleEl);
     }
     
-    // Method to reset controls when game resets
+    // Reset controls when game resets
     reset() {
-        // Reset joystick states
-        this.moveJoystick.active = false;
-        this.moveJoystick.deltaX = 0;
-        this.moveJoystick.deltaY = 0;
-        this.moveJoystick.angle = 0;
-        this.moveJoystick.intensity = 0;
-        
-        this.cameraJoystick.active = false;
-        this.cameraJoystick.deltaX = 0;
-        this.cameraJoystick.deltaY = 0;
-        this.cameraJoystick.angle = 0;
-        this.cameraJoystick.intensity = 0;
+        // Reset joystick state
+        this.joystick.active = false;
+        this.joystick.deltaX = 0;
+        this.joystick.deltaY = 0;
+        this.joystick.angle = 0;
+        this.joystick.intensity = 0;
         
         // Reset joystick visuals
-        if (this.moveJoystick.stickEl) {
-            this.moveJoystick.stickEl.style.transform = 'translate(-50%, -50%)';
+        if (this.joystick.stickEl) {
+            this.joystick.stickEl.style.transform = 'translate(-50%, -50%)';
         }
         
-        if (this.cameraJoystick.stickEl) {
-            this.cameraJoystick.stickEl.style.transform = 'translate(-50%, -50%)';
+        // Reset container position
+        if (this.joystick.containerEl) {
+            this.joystick.containerEl.style.left = '50%';
+            this.joystick.containerEl.style.bottom = '100px';
+            this.joystick.containerEl.style.transform = 'translateX(-50%)';
         }
         
         // Reset jump button
@@ -816,200 +860,69 @@ class MobileControls {
     
     // Handle screen orientation changes
     handleOrientationChange() {
-        // Repositioning controls based on new screen dimensions
-        const width = window.innerWidth;
-        const height = window.innerHeight;
-        
-        // Only make adjustments if elements exist
-        if (this.moveJoystick.containerEl && this.cameraJoystick.containerEl && this.jumpButton.element) {
-            // If in portrait mode (height > width)
-            if (height > width) {
-                // Move controls closer to bottom for better thumb reach
-                this.moveJoystick.containerEl.style.bottom = '40px';
-                this.cameraJoystick.containerEl.style.bottom = '40px';
+        // Adjust UI positions based on orientation
+        if (window.innerHeight > window.innerWidth) {
+            // Portrait mode
+            if (this.joystick.containerEl) {
+                this.joystick.containerEl.style.bottom = '150px';
+            }
+            if (this.jumpButton.element) {
+                this.jumpButton.element.style.bottom = '150px';
+                this.jumpButton.element.style.right = '40px';
+            }
+        } else {
+            // Landscape mode
+            if (this.joystick.containerEl) {
+                this.joystick.containerEl.style.bottom = '100px';
+            }
+            if (this.jumpButton.element) {
                 this.jumpButton.element.style.bottom = '130px';
-            } else {
-                // In landscape, use default positions
-                this.moveJoystick.containerEl.style.bottom = '70px';
-                this.cameraJoystick.containerEl.style.bottom = '70px';
-                this.jumpButton.element.style.bottom = '200px';
-            }
-            
-            // Reset joystick states to prevent stuck inputs
-            this.reset();
-        }
-    }
-    
-    // Helper method to smoothly apply joystick input
-    smoothInput(current, target, smoothFactor) {
-        return current + (target - current) * Math.min(1.0, smoothFactor);
-    }
-    
-    // Vibrate device for haptic feedback (if supported)
-    vibrateDevice(pattern) {
-        if ('vibrate' in navigator) {
-            try {
-                navigator.vibrate(pattern);
-            } catch (e) {
-                // Vibration API not supported or not allowed
+                this.jumpButton.element.style.right = '40px';
             }
         }
-    }
-    
-    // Display a temporary hint overlay to guide new users
-    showControlHints() {
-        const hintsShown = localStorage.getItem('controlHintsShown');
-        if (hintsShown) return;
         
-        // Create hints overlay
-        const hintsOverlay = document.createElement('div');
-        hintsOverlay.className = 'control-hints-overlay';
-        hintsOverlay.innerHTML = `
-            <div class="hint-container left">
-                <div class="hint-arrow">↔️</div>
-                <div class="hint-text">Move</div>
-            </div>
-            <div class="hint-container right">
-                <div class="hint-arrow">↔️</div>
-                <div class="hint-text">Look</div>
-            </div>
-            <div class="hint-container jump">
-                <div class="hint-arrow">⬆️</div>
-                <div class="hint-text">Jump</div>
-            </div>
-            <div class="hint-dismiss">Tap to dismiss</div>
-        `;
-        
-        document.body.appendChild(hintsOverlay);
-        
-        // Add styles for hints
-        const hintsStyle = document.createElement('style');
-        hintsStyle.textContent = `
-            .control-hints-overlay {
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background-color: rgba(0,0,0,0.7);
-                z-index: 5000;
-                color: white;
-                font-family: 'Courier New', monospace;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-            }
-            
-            .hint-container {
-                position: absolute;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                animation: pulse 2s infinite;
-            }
-            
-            .hint-container.left {
-                bottom: 100px;
-                left: 70px;
-            }
-            
-            .hint-container.right {
-                bottom: 100px;
-                right: 70px;
-            }
-            
-            .hint-container.jump {
-                bottom: 230px;
-                right: 70px;
-            }
-            
-            .hint-arrow {
-                font-size: 40px;
-                margin-bottom: 10px;
-            }
-            
-            .hint-text {
-                color: #84ffef;
-                font-size: 18px;
-                text-shadow: 0 0 10px rgba(132, 255, 239, 0.8);
-            }
-            
-            .hint-dismiss {
-                position: absolute;
-                bottom: 50px;
-                width: 100%;
-                text-align: center;
-                color: rgba(255,255,255,0.8);
-                font-size: 16px;
-            }
-            
-            @keyframes pulse {
-                0% { transform: scale(1); opacity: 1; }
-                50% { transform: scale(1.1); opacity: 0.8; }
-                100% { transform: scale(1); opacity: 1; }
-            }
-        `;
-        
-        document.head.appendChild(hintsStyle);
-        
-        // Dismiss on tap
-        hintsOverlay.addEventListener('click', () => {
-            hintsOverlay.remove();
-            localStorage.setItem('controlHintsShown', 'true');
-        });
-        
-        // Auto dismiss after 8 seconds
-        setTimeout(() => {
-            if (document.body.contains(hintsOverlay)) {
-                hintsOverlay.remove();
-                localStorage.setItem('controlHintsShown', 'true');
-            }
-        }, 8000);
+        // Reset control states to prevent stuck inputs
+        this.reset();
     }
 }
 
-// Initialize mobile controls
+// Initialize when the document loads
 window.addEventListener('load', function() {
-    // Create global instance
-    window.mobileControls = new MobileControls();
+    // Create a global instance
+    window.redPandaMobileControls = new RedPandaMobileControls();
     
-    // Patch the resetGame function to also reset mobile controls
+    // Patch resetGame function to also reset mobile controls
     const originalResetGame = window.resetGame || function() {};
     window.resetGame = function() {
         // Call original resetGame
         originalResetGame();
         
         // Reset mobile controls
-        if (window.mobileControls) {
-            window.mobileControls.reset();
+        if (window.redPandaMobileControls) {
+            window.redPandaMobileControls.reset();
         }
     };
     
-    // Listen for orientation changes
+    // Handle orientation changes
     window.addEventListener('orientationchange', function() {
-        if (window.mobileControls) {
-            // Small delay to let browser finish orientation change
-            setTimeout(() => window.mobileControls.handleOrientationChange(), 300);
+        if (window.redPandaMobileControls) {
+            // Small delay to let the browser finish orientation change
+            setTimeout(() => {
+                window.redPandaMobileControls.handleOrientationChange();
+            }, 300);
         }
     });
     
-    // Also handle resize events
+    // Also handle resize events (for desktop testing)
     window.addEventListener('resize', function() {
-        if (window.mobileControls) {
-            // Small delay to prevent excessive calls during resize
-            if (window.mobileControls.resizeTimer) {
-                clearTimeout(window.mobileControls.resizeTimer);
+        if (window.redPandaMobileControls) {
+            // Debounce to prevent excessive calls
+            if (window.redPandaMobileControls.resizeTimer) {
+                clearTimeout(window.redPandaMobileControls.resizeTimer);
             }
-            window.mobileControls.resizeTimer = setTimeout(() => {
-                window.mobileControls.handleOrientationChange();
+            window.redPandaMobileControls.resizeTimer = setTimeout(() => {
+                window.redPandaMobileControls.handleOrientationChange();
             }, 250);
         }
     });
-    
-    // Show control hints after short delay
-    setTimeout(() => {
-        if (window.mobileControls && window.mobileControls.isMobile) {
-            window.mobileControls.showControlHints();
-        }
-    }, 2000);
 });
