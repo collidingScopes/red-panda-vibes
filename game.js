@@ -70,15 +70,6 @@ const secondaryLight = new THREE.DirectionalLight(0x84b9ff, 0.6); // Bluish ligh
 secondaryLight.position.set(50, 30, -30);
 scene.add(secondaryLight);
 
-// Make getTerrainHeight function globally accessible
-window.getTerrainHeight = function(x, z) {
-    return Math.max(0, (
-        Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
-        Math.sin(x * 0.07 + z * 0.05) * 4 +
-        Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
-    ) * 0.6 * (window.terrainHeightMultiplier || 1.0));
-};
-
 // Add some neon glow point lights scattered around
 function addNeonLights() {
     for (let i = 0; i < 8; i++) {
