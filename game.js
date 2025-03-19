@@ -46,7 +46,7 @@ scene.fog = new THREE.Fog(0xa183e0, 20, 50);
 
 // Enhanced sunset lighting for more dramatic shadows
 // Warm ambient light for sunset feel
-const ambientLight = new THREE.AmbientLight(0xffe0c0, 0.4); // Warm amber glow
+const ambientLight = new THREE.AmbientLight(0xffe0c0, 0.6); // Warm amber glow
 scene.add(ambientLight);
 
 // Strong directional light with warm sunset color
@@ -83,8 +83,8 @@ window.getTerrainHeight = function(x, z) {
 function addNeonLights() {
     for (let i = 0; i < 8; i++) {
         const color = COLORS.neon[Math.floor(Math.random() * COLORS.neon.length)];
-        const intensity = 0.6 + Math.random() * 0.8;
-        const radius = 2 + Math.random() * 5;
+        const intensity = 0.1 + Math.random() * 0.5;
+        const radius = 2 + Math.random() * 20;
         
         const light = new THREE.PointLight(color, intensity, radius * 8);
         

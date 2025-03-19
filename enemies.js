@@ -142,7 +142,7 @@ class EnemyManager {
         // blobGroup.add(light);
         
         // Scale the entire enemy
-        const scale = 0.8 + Math.random() * 0.5; // Random size variation
+        const scale = 1.0 + Math.random() * 0.5; // Random size variation
         blobGroup.scale.set(scale, scale, scale);
         
         return blobGroup;
@@ -197,7 +197,7 @@ class EnemyManager {
                     const newZ = enemy.position.z + Math.sin(angle) * wanderRadius;
                     const terrainHeight = this.getTerrainHeight(newX, newZ);
                     
-                    userData.targetPoint.set(newX, terrainHeight + 1, newZ);
+                    userData.targetPoint.set(newX, terrainHeight + 1.2, newZ);
                     
                     // Reset wander interval for variation
                     userData.wanderInterval = 3 + Math.random() * 2;
@@ -219,7 +219,7 @@ class EnemyManager {
         
         // Adjust height to terrain
         const terrainHeight = this.getTerrainHeight(enemy.position.x, enemy.position.z);
-        enemy.position.y = terrainHeight + 1; // Hover above terrain
+        enemy.position.y = terrainHeight + 1.2; // Hover above terrain
         
         // Rotate enemy to face direction of movement
         if (userData.velocity.length() > 0.01) {

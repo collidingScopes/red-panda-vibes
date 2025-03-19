@@ -15,6 +15,15 @@ function getCanvas(width, height) {
     return canvas;
 }
 
+// Make getTerrainHeight function globally accessible
+window.getTerrainHeight = function(x, z) {
+    return Math.max(0, (
+        Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
+        Math.sin(x * 0.07 + z * 0.05) * 4 +
+        Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
+    ) * 0.7 * (window.terrainHeightMultiplier || 1.0));
+};
+
 // Create a gradient background for sunset effect
 const createSunsetBackground = () => {
     const canvas = getCanvas(2, 512);
@@ -196,7 +205,7 @@ function createTerrain() {
     scene.add(baseTerrain);
     
     // Create the actual terrain with hills using many small box segments
-    const segmentSize = 5;
+    const segmentSize = 4;
     const terrainSize = 200;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
@@ -245,7 +254,7 @@ function createTerrain() {
     }
     
     // Add the neon glow lights
-    addNeonLights();
+    //addNeonLights();
     
     return hillsGroup;
 }
