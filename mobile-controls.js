@@ -210,7 +210,6 @@ class MobileControls {
                 player: !!this.player
             });
             
-            //setTimeout(() => this.overrideCameraUpdate(), 1000); // Reduced to 1000ms
             clearInterval(this.connectToGameTimer);
         } else {
             console.log("Waiting for game objects...", {
@@ -220,42 +219,6 @@ class MobileControls {
             });
         }
     }
-
-    /*
-    overrideCameraUpdate() {
-        if (this.cameraUpdateModified) return;
-
-        const originalUpdateCamera = window.updateCamera;
-        if (typeof originalUpdateCamera === 'function') {
-            window.updateCamera = () => {
-                originalUpdateCamera();
-                if (this.isMobile && this.player && this.camera && this.gameState.playerOnGround) {
-                    this.adjustMobileCamera();
-                }
-            };
-            this.cameraUpdateModified = true;
-            console.log("Camera update overridden");
-        } else {
-            console.warn("updateCamera function not found");
-        }
-    }
-
-    adjustMobileCamera() {
-        if (!this.camera || !this.player) return;
-
-        const playerForward = new THREE.Vector3(0, 0, 1);
-        playerForward.applyQuaternion(this.player.quaternion);
-        playerForward.normalize();
-
-        if (window.cameraAngleHorizontal !== undefined) {
-            const targetAngle = Math.atan2(playerForward.x, playerForward.z);
-            let angleDiff = targetAngle - window.cameraAngleHorizontal;
-            if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
-            if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
-            window.cameraAngleHorizontal += angleDiff * 0.1;
-        }
-    }
-    */
 
     fixGameButtonsForTouch() {
         console.log("Fixing game buttons for touch");
