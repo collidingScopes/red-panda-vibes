@@ -202,6 +202,9 @@ class LevelSystem {
         this.currentLevel++;
         this.applyLevelSettings(this.currentLevel);
         this.updateLevelIndicator();
+
+        // Add this line to play level up sound:
+        if (window.playLevelUpSound) window.playLevelUpSound();
         
         // Hide level complete screen and reset goal reached state
         document.getElementById('level-complete-content').classList.add('hidden');

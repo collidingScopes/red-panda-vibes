@@ -23,6 +23,9 @@
     <meta property="twitter:title" content="Red Panda Vibes">
     <meta property="twitter:description" content="Be a red panda, explore the world, find bamboo.">
     <meta property="twitter:image" content="https://raw.githubusercontent.com/collidingScopes/red-panda-vibes/main/assets/siteOGImage2.png">
+    <!-- Load Tone.js without defer to ensure it's available before other scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+</head>
 <body>
     <div id="instructions" class="hidden">
         <button id="close-instructions" class="close-button">&times;</button>
@@ -107,5 +110,7 @@
     <script src="enemies.js" defer></script>
     <script src="game.js" defer></script>
     <script src="mobile-controls.js" defer></script>
+    <!-- Load sounds.js without defer -->
+    <script src="sounds.js"></script>
 </body>
 </html>

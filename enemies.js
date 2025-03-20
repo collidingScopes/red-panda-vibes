@@ -169,6 +169,10 @@ class EnemyManager {
         
         // Update enemy state based on player proximity
         if (distanceToPlayer < this.DETECTION_RADIUS) {
+            // Add this check to play warning sound only when first detecting player:
+            if (userData.state !== 'chase') {
+                if (window.playEnemyWarningSound) window.playEnemyWarningSound();
+            }
             userData.state = 'chase';
             
             // For chase state, target the player directly
@@ -286,6 +290,9 @@ class EnemyManager {
         // Set game state to game over
         gameState.gameOver = true;
         this.gameOver = true;
+
+        // Add this line to play game over sound:
+        if (window.playGameOverSound) window.playGameOverSound();
         
         // Save high score to localStorage
         const highScore = localStorage.getItem('redPandaHighScore') || 0;

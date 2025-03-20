@@ -221,6 +221,11 @@ function updatePlayerPosition(deltaTime) {
     // Handle jumping
     if (gameState.keyStates['Space'] && gameState.playerOnGround) {
         gameState.playerVelocity.y = jumpForce;
+
+        // Add this line to play jump sound
+        if (window.soundSystem && window.soundSystem.initialized) {
+            window.soundSystem.playJumpSound();
+        }
         
         // Play jump animation if available
         if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['jump']) {
@@ -278,6 +283,15 @@ function updatePlayerPosition(deltaTime) {
         // Calculate new position
         const moveDelta = worldMoveDirection.clone().multiplyScalar(speed * deltaTime);
         player.position.add(moveDelta);
+
+        // Add this code to play footstep sounds when walking on ground:
+        if (gameState.playerOnGround) {
+            const now = Date.now();
+            if (now - (gameState.lastFootstepTime || 0) > 300) {
+                if (window.playFootstepSound) window.playFootstepSound();
+                gameState.lastFootstepTime = now;
+            }
+        }
         
         // Adjust player to terrain height - improved to prevent sinking
         const newGroundHeight = getTerrainHeight(player.position.x, player.position.z);
@@ -343,9 +357,12 @@ function updatePlayerPosition(deltaTime) {
     const dz = player.position.z - flagPole.position.z;
     const horizontalDistanceToGoal = Math.sqrt(dx * dx + dz * dz);
 
-    // Use a horizontal threshold of 1 units to detect touching any part of the pole
-    if (horizontalDistanceToGoal < 1 && !gameState.goalReached) {
+    // Use a horizontal threshold of 2 units to detect touching any part of the pole
+    if (horizontalDistanceToGoal < 2 && !gameState.goalReached) {
         gameState.goalReached = true;
+
+        // Add this line to play goal sound:
+        if (window.playGoalSound) window.playGoalSound();
         
         // Use level system instead of showing the simple goal message
         if (gameState.levelSystem) {
