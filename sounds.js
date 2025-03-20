@@ -1,5 +1,5 @@
-// Simplified Sound System for Red Panda Vibes
-// Using Web Audio API for reliable sound effects
+// Enhanced Sound System for Red Panda Vibes
+// Using Web Audio API for reliable sound effects and background music
 
 class SoundSystem {
     constructor() {
@@ -11,6 +11,17 @@ class SoundSystem {
         // Sound effect properties
         this.lastJumpTime = 0;
         this.lastFootstepTime = 0;
+        
+        // Background music properties
+        this.musicTracks = [
+            { path: 'assets/song-1.mp3', audio: null, loaded: false },
+            { path: 'assets/song-2.mp3', audio: null, loaded: false },
+            { path: 'assets/song-3.mp3', audio: null, loaded: false }
+        ];
+        this.currentTrackIndex = 0;
+        this.musicLoaded = false;
+        this.musicPlaying = false;
+        this.musicGain = null;
         
         // Create UI controls
         this.createSoundUI();
@@ -33,116 +44,172 @@ class SoundSystem {
             this.masterGain.gain.value = 0.5;
             this.masterGain.connect(this.audioContext.destination);
             
-            // Initialize background music (soft ambient pad)
-            this.initializeBackgroundMusic();
+            // Create separate gain node for music
+            this.musicGain = this.audioContext.createGain();
+            this.musicGain.gain.value = 0.3; // Start with lower volume for music
+            this.musicGain.connect(this.masterGain);
             
             this.initialized = true;
             console.log("Sound system initialized successfully");
+            
+            // Start loading background music
+            this.preloadBackgroundMusic();
         } catch (error) {
             console.error("Failed to initialize sound system:", error);
         }
     }
     
-    // Create a simple background music pad
-    initializeBackgroundMusic() {
-        // Skip if not initialized
+    // Preload background music tracks
+    preloadBackgroundMusic() {
         if (!this.initialized) return;
         
-        try {
-            // Create oscillator for ambient pad sound
-            const pad1 = this.audioContext.createOscillator();
-            pad1.type = 'sine';
-            pad1.frequency.value = 220; // A3
+        console.log("Preloading background music...");
+        
+        // Track loading progress
+        let tracksLoaded = 0;
+        
+        // Load each track
+        this.musicTracks.forEach((track, index) => {
+            // Create an Audio element for this track
+            const audio = new Audio();
             
-            const pad2 = this.audioContext.createOscillator();
-            pad2.type = 'sine';
-            pad2.frequency.value = 330; // E4
+            // Set up event listeners
+            audio.addEventListener('canplaythrough', () => {
+                track.loaded = true;
+                track.audio = audio;
+                tracksLoaded++;
+                
+                console.log(`Loaded track ${index + 1}: ${track.path}`);
+                
+                // Check if all tracks are loaded
+                if (tracksLoaded === this.musicTracks.length) {
+                    this.musicLoaded = true;
+                    console.log("All background music tracks loaded successfully");
+                    
+                    // Start playing music after all tracks are loaded, but only if panda is loaded too
+                    this.checkAndStartBackgroundMusic();
+                }
+            });
             
-            const pad3 = this.audioContext.createOscillator();
-            pad3.type = 'sine';
-            pad3.frequency.value = 392; // G4
+            audio.addEventListener('error', (e) => {
+                console.error(`Error loading track ${index + 1}: ${track.path}`, e);
+            });
             
-            // Create gain nodes for volume control and soft attack/release
-            const pad1Gain = this.audioContext.createGain();
-            const pad2Gain = this.audioContext.createGain();
-            const pad3Gain = this.audioContext.createGain();
-            
-            // Set initial volume to zero for fade in
-            pad1Gain.gain.value = 0;
-            pad2Gain.gain.value = 0;
-            pad3Gain.gain.value = 0;
-            
-            // Connect oscillators to their gain nodes
-            pad1.connect(pad1Gain);
-            pad2.connect(pad2Gain);
-            pad3.connect(pad3Gain);
-            
-            // Connect gain nodes to master gain
-            pad1Gain.connect(this.masterGain);
-            pad2Gain.connect(this.masterGain);
-            pad3Gain.connect(this.masterGain);
-            
-            // Store references
-            this.backgroundMusic = {
-                oscillators: [pad1, pad2, pad3],
-                gainNodes: [pad1Gain, pad2Gain, pad3Gain],
-                playing: false
-            };
-            
-            console.log("Background music initialized");
-        } catch (error) {
-            console.error("Failed to initialize background music:", error);
+            // Start loading
+            audio.src = track.path;
+            audio.load();
+        });
+    }
+    
+    // Check if panda is loaded and start music if it is
+    checkAndStartBackgroundMusic() {
+        if (this.musicLoaded && window.gameState && window.gameState.pandaModelLoaded) {
+            console.log("Panda model is loaded, starting background music");
+            this.startBackgroundMusic();
+        } else {
+            // Check again in a moment
+            setTimeout(() => this.checkAndStartBackgroundMusic(), 500);
         }
     }
     
     // Start playing background music
     startBackgroundMusic() {
-        if (!this.initialized || !this.backgroundMusic || this.backgroundMusic.playing) return;
+        if (!this.initialized || !this.musicLoaded || this.musicPlaying) return;
         
         try {
-            const currentTime = this.audioContext.currentTime;
-            const { oscillators, gainNodes } = this.backgroundMusic;
-            
-            // Start oscillators
-            oscillators.forEach(osc => osc.start());
-            
-            // Fade in volumes gradually
-            gainNodes[0].gain.setValueAtTime(0, currentTime);
-            gainNodes[0].gain.linearRampToValueAtTime(0.1, currentTime + 3);
-            
-            gainNodes[1].gain.setValueAtTime(0, currentTime);
-            gainNodes[1].gain.linearRampToValueAtTime(0.07, currentTime + 5);
-            
-            gainNodes[2].gain.setValueAtTime(0, currentTime);
-            gainNodes[2].gain.linearRampToValueAtTime(0.06, currentTime + 4);
-            
-            this.backgroundMusic.playing = true;
-            console.log("Background music started");
+            console.log("Starting background music");
+            this.playCurrentTrack();
+            this.musicPlaying = true;
         } catch (error) {
-            console.error("Failed to start background music:", error);
+            console.error("Error starting background music:", error);
         }
+    }
+    
+    // Play the current track in the sequence
+    playCurrentTrack() {
+        const track = this.musicTracks[this.currentTrackIndex];
+        
+        if (!track || !track.loaded || !track.audio) {
+            console.error("Current track not loaded properly");
+            return;
+        }
+        
+        console.log(`Playing track ${this.currentTrackIndex + 1}: ${track.path}`);
+        
+        // Connect track to Web Audio context for volume control
+        if (!track.audioSource) {
+            track.audioSource = this.audioContext.createMediaElementSource(track.audio);
+            track.audioSource.connect(this.musicGain);
+        }
+        
+        // Set up ended event to play next track
+        track.audio.onended = () => {
+            console.log(`Track ${this.currentTrackIndex + 1} ended`);
+            this.playNextTrack();
+        };
+        
+        // Start playback
+        track.audio.currentTime = 0;
+        track.audio.play()
+            .catch(error => {
+                console.error("Error playing track:", error);
+                
+                // If autoplay was blocked, set up a user interaction handler
+                if (error.name === 'NotAllowedError') {
+                    this.setupAutoplayFallback();
+                }
+            });
+    }
+    
+    // Play the next track in the sequence
+    playNextTrack() {
+        // Stop current track if it's still playing
+        const currentTrack = this.musicTracks[this.currentTrackIndex];
+        if (currentTrack && currentTrack.audio) {
+            currentTrack.audio.pause();
+        }
+        
+        // Move to next track (loop back to first after the last)
+        this.currentTrackIndex = (this.currentTrackIndex + 1) % this.musicTracks.length;
+        console.log(`Advancing to track ${this.currentTrackIndex + 1}`);
+        
+        // Play the next track
+        this.playCurrentTrack();
+    }
+    
+    // Handle autoplay restrictions
+    setupAutoplayFallback() {
+        console.log("Autoplay blocked - setting up interaction handler");
+        
+        const handleUserInteraction = () => {
+            if (!this.musicPlaying) {
+                this.startBackgroundMusic();
+            }
+            
+            // Remove the event listeners after first interaction
+            document.removeEventListener('click', handleUserInteraction);
+            document.removeEventListener('keydown', handleUserInteraction);
+            document.removeEventListener('touchstart', handleUserInteraction);
+        };
+        
+        // Add event listeners for user interaction
+        document.addEventListener('click', handleUserInteraction);
+        document.addEventListener('keydown', handleUserInteraction);
+        document.addEventListener('touchstart', handleUserInteraction);
     }
     
     // Stop background music
     stopBackgroundMusic() {
-        if (!this.initialized || !this.backgroundMusic || !this.backgroundMusic.playing) return;
+        if (!this.initialized || !this.musicPlaying) return;
         
         try {
-            const currentTime = this.audioContext.currentTime;
-            const { oscillators, gainNodes } = this.backgroundMusic;
+            // Stop the current track
+            const currentTrack = this.musicTracks[this.currentTrackIndex];
+            if (currentTrack && currentTrack.audio) {
+                currentTrack.audio.pause();
+            }
             
-            // Fade out volumes
-            gainNodes.forEach(gain => {
-                gain.gain.setValueAtTime(gain.gain.value, currentTime);
-                gain.gain.linearRampToValueAtTime(0, currentTime + 1);
-            });
-            
-            // Stop oscillators after fade out
-            oscillators.forEach(osc => {
-                osc.stop(currentTime + 1.1);
-            });
-            
-            this.backgroundMusic.playing = false;
+            this.musicPlaying = false;
             console.log("Background music stopped");
         } catch (error) {
             console.error("Failed to stop background music:", error);
@@ -151,7 +218,6 @@ class SoundSystem {
     
     // Create sound UI elements
     createSoundUI() {
-
         let soundToggle = document.querySelector("#sound-toggle");
         
         // Add click event
@@ -182,6 +248,18 @@ class SoundSystem {
         const soundToggle = document.getElementById('sound-toggle');
         if (soundToggle) {
             soundToggle.textContent = this.muted ? "🔇" : "🔊";
+        }
+        
+        // Pause or resume background music
+        if (this.musicPlaying) {
+            const currentTrack = this.musicTracks[this.currentTrackIndex];
+            if (currentTrack && currentTrack.audio) {
+                if (this.muted) {
+                    currentTrack.audio.pause();
+                } else {
+                    currentTrack.audio.play().catch(err => console.error("Error resuming music:", err));
+                }
+            }
         }
         
         console.log(`Sound ${this.muted ? 'muted' : 'unmuted'}`);
@@ -289,7 +367,6 @@ class SoundSystem {
             this.playTone(800, 0.3, 'sine', volume);
             this.playTone(600, 0.2, 'sine', volume, 0.1);
         }
-
     }
     
     // Play footstep sound
@@ -379,17 +456,13 @@ function initializeSoundSystem() {
     const startButton = document.getElementById('start-game-button');
     if (startButton) {
         startButton.addEventListener('click', () => {
-            soundSystem.initialize().then(() => {
-                soundSystem.startBackgroundMusic();
-            });
+            soundSystem.initialize();
         });
     }
     
     // Alternative init method - initialize on first user interaction
     document.addEventListener('click', function initAudio() {
-        soundSystem.initialize().then(() => {
-            soundSystem.startBackgroundMusic();
-        });
+        soundSystem.initialize();
         document.removeEventListener('click', initAudio);
     }, { once: true });
 }
@@ -406,6 +479,19 @@ function connectSoundsToGameEvents() {
     
     // Add property to track last footstep time
     gameState.lastFootstepTime = 0;
+    
+    // Set up a watcher for the panda model loading to start music
+    if (gameState.pandaModelLoaded && soundSystem.initialized && soundSystem.musicLoaded) {
+        soundSystem.startBackgroundMusic();
+    } else {
+        // Add an observer for the pandaModelLoaded property
+        const checkPandaLoaded = setInterval(() => {
+            if (gameState.pandaModelLoaded && soundSystem.initialized && soundSystem.musicLoaded) {
+                soundSystem.startBackgroundMusic();
+                clearInterval(checkPandaLoaded);
+            }
+        }, 500);
+    }
     
     console.log("Sound system connected to game events");
 }
