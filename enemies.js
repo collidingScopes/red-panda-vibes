@@ -17,6 +17,10 @@ class EnemyManager {
         // Reusable vectors to optimize performance
         this.tempVector = new THREE.Vector3();
         this.targetVector = new THREE.Vector3();
+
+        // Add these new properties for smooth movement
+        this.rotationSmoothness = 0.1; // Lower values = smoother rotation (0.05 - 0.2 is good)
+        this.minMovementThreshold = 0.01; // Minimum movement before rotating
         
         // Create game over screen (hidden initially)
         this.createGameOverScreen();
@@ -189,21 +193,36 @@ class EnemyManager {
             } else {
                 userData.state = 'wander';
                 
-                // For wander state, update target point periodically
                 userData.wanderTimer += deltaTime;
                 if (userData.wanderTimer >= userData.wanderInterval) {
                     userData.wanderTimer = 0;
                     
                     // Generate new random point near current position
-                    const wanderRadius = 10;
-                    const angle = Math.random() * Math.PI * 2;
+                    // Use a smaller radius for more natural movement
+                    const wanderRadius = 5 + Math.random() * 5; // Variable radius between 5-10
+                    
+                    // Choose a new direction that's not too different from current direction
+                    // This prevents drastic 180° turns that cause the spasming
+                    let angle;
+                    
+                    if (userData.lastWanderAngle !== undefined) {
+                        // Choose a new angle that's within 90 degrees of previous angle
+                        angle = userData.lastWanderAngle + (Math.random() * Math.PI/2 - Math.PI/4);
+                    } else {
+                        // First wander, choose completely random angle
+                        angle = Math.random() * Math.PI * 2;
+                    }
+                    
+                    // Save this angle for next time
+                    userData.lastWanderAngle = angle;
+                    
                     const newX = enemy.position.x + Math.cos(angle) * wanderRadius;
                     const newZ = enemy.position.z + Math.sin(angle) * wanderRadius;
                     const terrainHeight = this.getTerrainHeight(newX, newZ);
                     
                     userData.targetPoint.set(newX, terrainHeight + 1.2, newZ);
                     
-                    // Reset wander interval for variation
+                    // Add slight variation to wander interval
                     userData.wanderInterval = 3 + Math.random() * 2;
                 }
             }
@@ -225,9 +244,24 @@ class EnemyManager {
         const terrainHeight = this.getTerrainHeight(enemy.position.x, enemy.position.z);
         enemy.position.y = terrainHeight + 1.2; // Hover above terrain
         
-        // Rotate enemy to face direction of movement
-        if (userData.velocity.length() > 0.01) {
-            enemy.lookAt(enemy.position.clone().add(userData.velocity));
+        // Rotate enemy to face direction of movement (with smoothing)
+        if (userData.velocity.length() > this.minMovementThreshold) {
+            // Store the current rotation as a quaternion if it doesn't exist
+            if (!userData.currentRotation) {
+                userData.currentRotation = new THREE.Quaternion().copy(enemy.quaternion);
+            }
+            
+            // Create a target rotation by looking at where we're moving
+            const targetPosition = enemy.position.clone().add(userData.velocity.clone().normalize());
+            const tempEnemy = enemy.clone();
+            tempEnemy.lookAt(targetPosition);
+            const targetRotation = new THREE.Quaternion().copy(tempEnemy.quaternion);
+            
+            // Smoothly interpolate between current and target rotation
+            userData.currentRotation.slerp(targetRotation, this.rotationSmoothness);
+            
+            // Apply the smooth rotation
+            enemy.quaternion.copy(userData.currentRotation);
         }
         
         // Animate the enemy based on state (pulsing/morphing)
