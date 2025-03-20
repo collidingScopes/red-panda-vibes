@@ -16,7 +16,7 @@ class LevelSystem {
             enemySpeedWander: speed*0.6,     // Base speed when wandering
             enemySpeedChase: speed*0.8,      // Base speed when chasing
             fogDensity: 0.01,        // Base fog density
-            fogDistance: 120,         // Base fog distance
+            fogDistance: 150,         // Base fog distance
             fogColor: 0xa183e0       // Base fog color
         };
         
@@ -41,7 +41,7 @@ class LevelSystem {
                 enemyCount: 0,
                 enemySpeedWander: this.baseSettings.enemySpeedWander,
                 enemySpeedChase: this.baseSettings.enemySpeedChase,
-                fogDensity: 0.01,
+                fogDensity: 0.005,
                 fogColor: this.baseSettings.fogColor,
                 fogDistance: 150,
                 flagHeight: 25, // Starting flag height

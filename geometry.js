@@ -673,7 +673,7 @@ function createRiver() {
     
     // River settings
     const riverWidth = 20.0; // Width of the river (narrow enough to jump across)
-    const segmentLength = 8.5; // Length of each river segment
+    const segmentLength = 1.0; // Length of each river segment
     const riverLength = 8000; // Total river length (number of segments)
     const mapRadius = 150; // Approximate radius of walkable area
     const centerAttraction = 1.5; // How strongly the river is pulled toward the map center
@@ -824,7 +824,7 @@ function createRiver() {
         
         // Create shape
         const shape = new THREE.Shape();
-        let shapeOverlap = 5; //overlap between river panels
+        let shapeOverlap = 0; //overlap between river panels
         shape.moveTo(points[0].x-shapeOverlap, points[0].z-shapeOverlap);
         
         for (let j = 1; j < points.length; j++) {
