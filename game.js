@@ -19,9 +19,9 @@ const gameState = {
 };
 
 //physics
-const speed = 15.0;
-const jumpForce = 8.5;
-const gravity = 15.0;
+const speed = 12.0;
+const jumpForce = 9.5;
+const gravity = 16.0;
 
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
@@ -177,7 +177,8 @@ function initEventListeners() {
 // Camera controls
 let cameraAngleHorizontal = 0;
 let cameraAngleVertical = 0;
-const cameraDistance = 7.5;
+window.cameraDistance = 7.5;
+
 // Add min and max for vertical camera angle to prevent looking below ground
 const MIN_VERTICAL_ANGLE = -Math.PI/11; // Minimum (looking up)
 const MAX_VERTICAL_ANGLE = Math.PI/4;  // Maximum (looking down, but not below ground)
@@ -192,8 +193,8 @@ function updateCamera() {
     if (gameState.keyStates['ArrowDown']) window.cameraAngleVertical = Math.min(window.cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
     
     // Calculate camera position with orbit controls
-    const horizontalDistance = cameraDistance * Math.cos(window.cameraAngleVertical);
-    const verticalDistance = cameraDistance * Math.sin(window.cameraAngleVertical);
+    const horizontalDistance = window.cameraDistance * Math.cos(window.cameraAngleVertical);
+    const verticalDistance = window.cameraDistance * Math.sin(window.cameraAngleVertical);
     
     // Update camera position using player's position without cloning
     camera.position.x = player.position.x + horizontalDistance * Math.sin(window.cameraAngleHorizontal);

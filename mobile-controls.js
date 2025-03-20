@@ -205,6 +205,32 @@ class MobileControls {
         window.camera.aspect = window.innerWidth / window.innerHeight;
         window.camera.updateProjectionMatrix();
         
+        // NEW CODE: Adjust camera distance based on aspect ratio
+        const currentAspect = window.innerWidth / window.innerHeight;
+        const baseAspect = 16 / 9; // Reference aspect ratio (landscape)
+        const baseDistance = 7.5;  // Your original camera distance
+        
+        // Calculate new distance: 
+        // - In portrait mode (aspect < 1), increase distance to show more of the scene
+        // - In landscape mode (aspect > baseAspect), keep distance normal or slightly decrease
+        let aspectFactor;
+        if (currentAspect < 1) {
+            // Portrait mode - increase distance (lower value = more increase)
+            aspectFactor = 0.7 + (0.3 * currentAspect); // Will be between 0.7-1.0 for portrait
+        } else if (currentAspect > baseAspect) {
+            // Very wide landscape - can slightly reduce distance
+            aspectFactor = 1.0 - (0.1 * (currentAspect - baseAspect) / baseAspect);
+            aspectFactor = Math.max(aspectFactor, 0.9); // Don't go below 0.9
+        } else {
+            // Normal landscape - use base distance
+            aspectFactor = 1.0;
+        }
+        
+        // Set the new camera distance
+        window.cameraDistance = baseDistance * aspectFactor;
+        
+        this.log(`Adjusted camera distance to ${window.cameraDistance} (aspect: ${currentAspect})`);
+        
         // Maintain pixel ratio setting
         if (window.pixelRatio) {
             window.renderer.setPixelRatio(window.pixelRatio);
