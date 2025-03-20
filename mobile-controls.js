@@ -401,7 +401,7 @@ class MobileControls {
         if (!this.initialized) {
             return;
         }
-
+    
         // Process each ended touch
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
@@ -410,15 +410,28 @@ class MobileControls {
             if (this.activeTouches.has(touch.identifier)) {
                 const touchData = this.activeTouches.get(touch.identifier);
                 
-                // If it was a very short movement (tap), trigger jump
-                if (!touchData.isJumpTouch && !touchData.isMovementTouch) {
-                    const deltaX = touchData.currentX - touchData.startX;
-                    const deltaY = touchData.currentY - touchData.startY;
-                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-                    
-                    if (distance < MobileControls.MOVEMENT_DEADZONE) {
+                // Calculate touch duration and movement
+                const touchDuration = Date.now() - (touchData.startTime || 0);
+                const deltaX = touchData.currentX - touchData.startX;
+                const deltaY = touchData.currentY - touchData.startY;
+                const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                
+                // Check for a quick tap with minimal movement
+                // A tap is defined as: short duration (< 300ms) + minimal movement
+                if (touchDuration < 300 && distance < MobileControls.MOVEMENT_DEADZONE * 2) {
+                    // Only trigger jump if it wasn't already a movement or jump touch
+                    // or if it was marked as a potential tap-to-jump
+                    if ((!touchData.isJumpTouch && !touchData.isMovementTouch) || 
+                        touchData.potentialTapJump) {
                         this.triggerJump();
+                        this.log("Jump triggered from quick tap: " + touchDuration + "ms, movement: " + distance.toFixed(2));
                     }
+                }
+                // Also check for potential tap-to-jump that had some movement
+                else if (touchData.potentialTapJump && touchDuration < 400 && 
+                         distance < MobileControls.MOVEMENT_DEADZONE * 4) {
+                    this.triggerJump();
+                    this.log("Jump triggered from short tap with movement: " + touchDuration + "ms, movement: " + distance.toFixed(2));
                 }
                 
                 // If this was our movement touch, reset it
@@ -583,6 +596,32 @@ class MobileControls {
         }
         
         return false;
+    }
+
+    setupTapHandler() {
+        // Tap detection variables
+        this.lastTapTime = 0;
+        
+        // Create a simple tap handler that works even if the regular touch handling doesn't catch it
+        document.addEventListener('click', (event) => {
+            // Skip if we're on a UI element, not initialized, or during game over
+            if (this.isUIElement(event.target) || !this.initialized || 
+                (this.gameState && this.gameState.gameOver)) {
+                return;
+            }
+            
+            // Get current time for debouncing
+            const now = Date.now();
+            
+            // Prevent too many rapid taps (debounce)
+            if (now - this.lastTapTime < 300) {
+                return;
+            }
+            
+            this.lastTapTime = now;
+            this.log("Tap detected, triggering jump");
+            this.triggerJump();
+        });
     }
 }
 

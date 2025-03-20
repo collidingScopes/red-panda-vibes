@@ -19,3 +19,5 @@ Be a red panda, explore the world, find the bamboo.
 - Built with vanilla JavaScript and Three.js
 - Code mostly written by Claude Sonnet 3.7 and Grok AI
 - Open source repo hosted on Github
+- Red panda 3D model built with Gemini and TripoAI
+- Soundtrack made with Suno

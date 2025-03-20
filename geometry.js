@@ -311,7 +311,7 @@ function createTerrain() {
     });
     
     const baseTerrain = new THREE.Mesh(baseGeometry, baseMaterial);
-    baseTerrain.position.y = -0.5;
+    baseTerrain.position.y = 0.0;
     baseTerrain.receiveShadow = true;
     scene.add(baseTerrain);
     
