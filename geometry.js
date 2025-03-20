@@ -667,299 +667,185 @@ function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
 }
 
 function createRiver() {
-    console.log("Generating improved river...");
+    console.log("Generating smooth river...");
+    
     // River group to hold all segments
     const riverGroup = new THREE.Group();
     
     // River settings
-    const riverWidth = 20.0; // Width of the river (narrow enough to jump across)
-    const segmentLength = 1.0; // Length of each river segment
-    const riverLength = 8000; // Total river length (number of segments)
-    const mapRadius = 150; // Approximate radius of walkable area
-    const centerAttraction = 1.5; // How strongly the river is pulled toward the map center
-    const noiseInfluence = 0.8; // How much terrain influences river direction
-    const pathRandomness = 0; // Random variation in river direction
-    const riverFloatHeight = 0.8; //amount of float above ground
-
-    // Shimmering water material - semi-transparent with slight animation
-    const waterMaterial = new THREE.MeshStandardMaterial({
-        color: 0x4a9ff5, // Base blue color
-        roughness: 0.9, // Very smooth surface
-        metalness: 0.1, // Slightly metallic for light reflections
-        transparent: true,
-        opacity: 0.65,
-        side: THREE.DoubleSide // Render both sides for better visibility
-        /*
-        emissive: 0x006699, // Slight blue glow
-        emissiveIntensity: 0.2,
-        */
-    });
+    const riverWidth = 15.0;           // Width of the river
+    const riverDepth = -0.8;            // Depth of the river below terrain
+    const curveSegments = 20;          // Number of segments to create the smooth curve
+    const curveResolution = 100;       // Resolution of points along the curve
+    const mapRadius = 150;             // Approximate radius of walkable area
+    const waterColor = 0x0049ff;       // Bright turquoise color for better visibility
     
-    // Find a starting point at the edge of the walkable area
-    const startAngle = Math.random() * Math.PI * 2;
-    const startX = Math.cos(startAngle) * mapRadius;
-    const startZ = Math.sin(startAngle) * mapRadius;
+    // Create a spline curve for the river path
+    const generateRiverPath = () => {
+        // Find a starting point at the edge of the walkable area
+        const startAngle = Math.random() * Math.PI * 2;
+        const startX = Math.cos(startAngle) * mapRadius * 0.9;
+        const startZ = Math.sin(startAngle) * mapRadius * 0.9;
+        
+        // Random points for the spline
+        const points = [];
+        
+        // Add starting point
+        points.push(new THREE.Vector3(startX, 0, startZ));
+        
+        // Calculate the general direction (opposite side of the map)
+        const endAngle = startAngle + Math.PI + (Math.random() * Math.PI/2 - Math.PI/4);
+        const targetX = Math.cos(endAngle) * mapRadius * 0.9;
+        const targetZ = Math.sin(endAngle) * mapRadius * 0.9;
+        
+        // Generate control points for the curve
+        // We'll create several points along the way with some randomness
+        const numControlPoints = 6;
+        for (let i = 1; i <= numControlPoints; i++) {
+            const t = i / (numControlPoints + 1);
+            
+            // Linear interpolation from start to end
+            const baseX = startX + (targetX - startX) * t;
+            const baseZ = startZ + (targetZ - startZ) * t;
+            
+            // Add randomness, but less as we get closer to the target
+            const randomFactor = (1 - t) * 0.5;
+            const offsetX = (Math.random() * 2 - 1) * mapRadius * randomFactor;
+            const offsetZ = (Math.random() * 2 - 1) * mapRadius * randomFactor;
+            
+            // Push the point slightly toward the center for a more natural flow
+            const distFromCenter = Math.sqrt(baseX * baseX + baseZ * baseZ);
+            const centerPull = Math.max(0, (distFromCenter - mapRadius * 0.4) / mapRadius);
+            const toCenterX = -baseX * centerPull * 0.3;
+            const toCenterZ = -baseZ * centerPull * 0.3;
+            
+            points.push(new THREE.Vector3(
+                baseX + offsetX + toCenterX,
+                0,
+                baseZ + offsetZ + toCenterZ
+            ));
+        }
+        
+        // Add end point
+        points.push(new THREE.Vector3(targetX, 0, targetZ));
+        
+        // Create a smooth curve through these points
+        return new THREE.CatmullRomCurve3(points, false, "centripetal", 0.5);
+    };
     
-    // Calculate the opposite direction (to flow across the map)
-    const endAngle = startAngle + Math.PI; // Opposite direction
-    const targetX = Math.cos(endAngle) * mapRadius;
-    const targetZ = Math.sin(endAngle) * mapRadius;
+    // Generate the river curve
+    const riverCurve = generateRiverPath();
     
-    // Initialize river path
-    let currentX = startX;
-    let currentZ = startZ;
-    let currentAngle = Math.atan2(targetZ - startZ, targetX - startX); // Initial angle toward target
-    
-    // Use simplex noise for more natural flow
-    const simplex = new SimplexNoise();
-    
-    // Generate river path
+    // Create an array to store the river path for collision detection
     const riverPath = [];
     
-    for (let i = 0; i < riverLength; i++) {
-        // Store current point
-        const terrainHeight = getTerrainHeight(currentX, currentZ);
-        riverPath.push({
-            x: currentX,
-            z: currentZ,
-            y: terrainHeight + riverFloatHeight, // Slightly above terrain
+    // Create semi-transparent water material with subtle animation
+    const waterMaterial = new THREE.MeshStandardMaterial({
+        color: waterColor,
+        roughness: 0.8,
+        metalness: 0.1,
+        transparent: true,
+        opacity: 0.65,
+        side: THREE.DoubleSide
+    });
+    
+    // Create the river mesh by extruding a shape along the curve
+    const createRiverMesh = () => {
+        // Sample points along the curve for collision detection
+        const samples = riverCurve.getPoints(curveResolution);
+        samples.forEach(point => {
+            const terrainHeight = getTerrainHeight(point.x, point.z);
+            riverPath.push({
+                x: point.x,
+                z: point.z,
+                y: terrainHeight - riverDepth,
+            });
         });
         
-        // Calculate direction to center for attraction
-        const distanceFromCenter = Math.sqrt(currentX * currentX + currentZ * currentZ);
-        const angleToCenter = Math.atan2(-currentZ, -currentX); // Angle toward center (0,0)
+        // Create frames along the curve for extrusion
+        const frames = riverCurve.computeFrenetFrames(curveSegments, false);
         
-        // Calculate terrain gradient to influence flow direction (rivers tend to flow downhill)
-        const gradientSampleDistance = 8.0;
-        const heightRight = getTerrainHeight(currentX + gradientSampleDistance, currentZ);
-        const heightLeft = getTerrainHeight(currentX - gradientSampleDistance, currentZ);
-        const heightDown = getTerrainHeight(currentX, currentZ + gradientSampleDistance);
-        const heightUp = getTerrainHeight(currentX, currentZ - gradientSampleDistance);
+        // Create geometry
+        const riverGeometry = new THREE.BufferGeometry();
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
+        const indices = [];
         
-        const gradientX = (heightLeft - heightRight) / (2 * gradientSampleDistance);
-        const gradientZ = (heightUp - heightDown) / (2 * gradientSampleDistance);
-        
-        const gradientAngle = Math.atan2(gradientZ, gradientX);
-        
-        // Get noise value for this position to add variation
-        const noiseValue = simplex.noise2D(currentX * 0.01, currentZ * 0.01) * Math.PI;
-        
-        // Angle toward the end point (with decreasing influence as we get closer to center)
-        const targetDirection = Math.atan2(targetZ - currentZ, targetX - currentX);
-        const targetInfluence = Math.min(1.0, distanceFromCenter / mapRadius) * 0.4;
-        
-        // Combine all influences:
-        // 1. General direction toward the target (with decreasing influence)
-        // 2. Attraction toward the center (with increasing influence as we get further from center)
-        // 3. Terrain gradient influence (rivers flow downhill)
-        // 4. Noise for natural variation
-        // 5. Small random factor for unpredictability
-        let newAngle = currentAngle;
-        
-        newAngle += (targetDirection - currentAngle) * targetInfluence;
-        newAngle += (angleToCenter - currentAngle) * centerAttraction * (distanceFromCenter / mapRadius);
-        newAngle += (gradientAngle - currentAngle) * noiseInfluence;
-        newAngle += noiseValue * noiseInfluence;
-        newAngle += (Math.random() - 0.5) * pathRandomness;
-        
-        // Smooth the angle change for more natural flow
-        currentAngle = currentAngle * 0.8 + newAngle * 0.2;
-        
-        // Move to next point
-        currentX += Math.cos(currentAngle) * segmentLength;
-        currentZ += Math.sin(currentAngle) * segmentLength;
-        
-        // Stop if we're beyond the map boundary
-        if (Math.sqrt(currentX * currentX + currentZ * currentZ) > mapRadius * 1.2) {
-            break;
+        // Generate mesh data
+        for (let i = 0; i <= curveSegments; i++) {
+            const t = i / curveSegments;
+            const point = riverCurve.getPoint(t);
+            const normal = frames.normals[Math.min(i, curveSegments - 1)];
+            const binormal = frames.binormals[Math.min(i, curveSegments - 1)];
+            
+            // Adjust height to follow terrain with a slight depression
+            const terrainHeight = getTerrainHeight(point.x, point.z);
+            point.y = terrainHeight - riverDepth;
+            
+            // Create points on both sides of the river
+            for (let j = 0; j <= 1; j++) {
+                const side = j === 0 ? -1 : 1;
+                const width = riverWidth / 2;
+                
+                // Calculate vertex position
+                const vx = point.x + binormal.x * width * side;
+                const vy = point.y;
+                const vz = point.z + binormal.z * width * side;
+                
+                // Add vertex
+                vertices.push(vx, vy, vz);
+                
+                // Add normal (pointing up)
+                normals.push(0, 1, 0);
+                
+                // Add UV coordinates
+                uvs.push(j, t * 10); // Repeat texture along the river
+            }
         }
         
-        // Also stop if we've reached the approximate opposite side
-        const distanceToTarget = Math.sqrt(
-            Math.pow(currentX - targetX, 2) + 
-            Math.pow(currentZ - targetZ, 2)
-        );
-        
-        if (distanceToTarget < mapRadius * 0.3) {
-            break;
+        // Create faces (triangles)
+        for (let i = 0; i < curveSegments; i++) {
+            const base = i * 2;
+            
+            // Two triangles per segment
+            indices.push(
+                base, base + 1, base + 2,
+                base + 2, base + 1, base + 3
+            );
         }
-    }
+        
+        // Set attributes
+        riverGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+        riverGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+        riverGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+        riverGeometry.setIndex(indices);
+        
+        // Create the mesh
+        const riverMesh = new THREE.Mesh(riverGeometry, waterMaterial);
+        //riverMesh.receiveShadow = true;
+        
+        return riverMesh;
+    };
     
-    // Create river segments from the generated path
-    for (let i = 0; i < riverPath.length - 1; i++) {
-        const start = riverPath[i];
-        const end = riverPath[i + 1];
+    // Create and add the main river mesh
+    const riverMesh = createRiverMesh();
+    riverGroup.add(riverMesh);
         
-        // Calculate segment direction
-        const direction = new THREE.Vector3(end.x - start.x, 0, end.z - start.z).normalize();
-        
-        // Calculate perpendicular direction for width
-        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x);
-        
-        // Calculate the length of this segment
-        const dx = (end.x - start.x);
-        const dz = (end.z - start.z);
-        
-        // Create a custom geometry for the river segment that follows the terrain
-        const points = [];
-        const numSteps = 20; // More steps mean smoother terrain following
-        
-        // Create points for left bank
-        for (let step = 0; step <= numSteps; step++) {
-            const t = step / numSteps;
-            const x = start.x + dx * t - perpendicular.x * riverWidth/2;
-            const z = start.z + dz * t - perpendicular.z * riverWidth/2;
-            const y = getTerrainHeight(x, z) + riverFloatHeight; // Slightly above terrain
-            points.push(new THREE.Vector3(x, y, z));
-        }
-        
-        // Create points for right bank (in reverse order)
-        for (let step = numSteps; step >= 0; step--) {
-            const t = step / numSteps;
-            const x = start.x + dx * t + perpendicular.x * riverWidth/2;
-            const z = start.z + dz * t + perpendicular.z * riverWidth/2;
-            const y = getTerrainHeight(x, z) + riverFloatHeight; // Slightly above terrain
-            points.push(new THREE.Vector3(x, y, z));
-        }
-        
-        // Create shape
-        const shape = new THREE.Shape();
-        let shapeOverlap = 0; //overlap between river panels
-        shape.moveTo(points[0].x-shapeOverlap, points[0].z-shapeOverlap);
-        
-        for (let j = 1; j < points.length; j++) {
-            shape.lineTo(points[j].x, points[j].z);
-        }
-        
-        shape.lineTo(points[0].x-shapeOverlap, points[0].z-shapeOverlap); // Close the shape
-        
-        // Create geometry from shape
-        const geometry = new THREE.ShapeGeometry(shape);
-        
-        // Map vertices to 3D positions
-        const positionAttribute = geometry.getAttribute('position');
-        
-        for (let j = 0; j < positionAttribute.count; j++) {
-            const x = positionAttribute.getX(j);
-            const z = positionAttribute.getY(j); // Y in shape becomes Z in 3D
-            const y = getTerrainHeight(x, z) + riverFloatHeight; // Y is height above terrain with ripple
-            positionAttribute.setXYZ(j, x, y, z);
-        }
-        
-        geometry.computeVertexNormals();
-        
-        // Create the river segment
-        const segment = new THREE.Mesh(geometry, waterMaterial.clone());
-        riverGroup.add(segment);
-    }
-    
-    // Add to scene
+    // Add the river group to the scene
     scene.add(riverGroup);
     
     // Store river path in game state for collision detection
     if (window.gameState) {
         window.gameState.riverPath = riverPath;
         window.gameState.riverWidth = riverWidth;
+        window.gameState.riverCurve = riverCurve; // Store the curve for animation
     }
     
     return riverGroup;
 }
 
-// SimplexNoise implementation (simplified version)
-// This is a basic implementation to avoid external dependencies
-class SimplexNoise {
-    constructor() {
-        this.grad3 = [
-            [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
-            [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
-            [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
-        ];
-        this.p = [];
-        for (let i = 0; i < 256; i++) {
-            this.p[i] = Math.floor(Math.random() * 256);
-        }
-        
-        // To remove the need for index wrapping, double the permutation table length
-        this.perm = new Array(512);
-        this.gradP = new Array(512);
-        
-        for (let i = 0; i < 512; i++) {
-            this.perm[i] = this.p[i & 255];
-            this.gradP[i] = this.grad3[this.perm[i] % 12];
-        }
-    }
-    
-    // 2D simplex noise
-    noise2D(xin, yin) {
-        // Skew the input space to determine which simplex cell we're in
-        const F2 = 0.5 * (Math.sqrt(3) - 1);
-        const G2 = (3 - Math.sqrt(3)) / 6;
-        
-        const s = (xin + yin) * F2; // Hairy factor for 2D
-        let i = Math.floor(xin + s);
-        let j = Math.floor(yin + s);
-        
-        const t = (i + j) * G2;
-        const X0 = i - t; // Unskew the cell origin back to (x,y) space
-        const Y0 = j - t;
-        const x0 = xin - X0; // The x,y distances from the cell origin
-        const y0 = yin - Y0;
-        
-        // Determine which simplex we are in
-        let i1, j1;
-        if (x0 > y0) {
-            i1 = 1;
-            j1 = 0;
-        } else {
-            i1 = 0;
-            j1 = 1;
-        }
-        
-        // Offsets for corners
-        const x1 = x0 - i1 + G2;
-        const y1 = y0 - j1 + G2;
-        const x2 = x0 - 1 + 2 * G2;
-        const y2 = y0 - 1 + 2 * G2;
-        
-        // Wrap the integer indices at 256
-        const ii = i & 255;
-        const jj = j & 255;
-        
-        // Calculate the contribution from the three corners
-        let t0 = 0.5 - x0 * x0 - y0 * y0;
-        let n0 = 0;
-        
-        if (t0 >= 0) {
-            t0 *= t0;
-            const gi0 = this.gradP[ii + this.perm[jj]];
-            n0 = t0 * t0 * (gi0[0] * x0 + gi0[1] * y0);
-        }
-        
-        let t1 = 0.5 - x1 * x1 - y1 * y1;
-        let n1 = 0;
-        
-        if (t1 >= 0) {
-            t1 *= t1;
-            const gi1 = this.gradP[ii + i1 + this.perm[jj + j1]];
-            n1 = t1 * t1 * (gi1[0] * x1 + gi1[1] * y1);
-        }
-        
-        let t2 = 0.5 - x2 * x2 - y2 * y2;
-        let n2 = 0;
-        
-        if (t2 >= 0) {
-            t2 *= t2;
-            const gi2 = this.gradP[ii + 1 + this.perm[jj + 1]];
-            n2 = t2 * t2 * (gi2[0] * x2 + gi2[1] * y2);
-        }
-        
-        // Add contributions from each corner to get the final noise value
-        // The result is scaled to return values in the interval [-1, 1]
-        return 70 * (n0 + n1 + n2);
-    }
-}
-
-// Add river collision detection and effects to the game loop
+// Updated river collision detection
 function setupRiverGameplay() {
     // Skip if we don't have the river path
     if (!window.gameState || !window.gameState.riverPath) return;
@@ -973,60 +859,90 @@ function setupRiverGameplay() {
         originalUpdatePlayerPosition(deltaTime);
         
         // Check for river collision
-        checkRiverCollision();
+        checkRiverCollision(deltaTime);
     };
     
     // Function to check if player is in the river
-    function checkRiverCollision() {
+    function checkRiverCollision(deltaTime) {
         // Skip if game is over
         if (window.gameState.gameOver) return;
         
         const player = window.player;
         const riverPath = window.gameState.riverPath;
         const riverWidth = window.gameState.riverWidth;
+        const riverCurve = window.gameState.riverCurve;
         
-        // Check each river segment
-        for (let i = 0; i < riverPath.length - 1; i++) {
-            const start = riverPath[i];
-            const end = riverPath[i + 1];
+        // Find the closest point on the river path to the player
+        let closestDist = Infinity;
+        let closestPoint = null;
+        let closestIndex = 0;
+        
+        // Check each point in the river path
+        for (let i = 0; i < riverPath.length; i++) {
+            const point = riverPath[i];
+            const dx = player.position.x - point.x;
+            const dz = player.position.z - point.z;
+            const distance = Math.sqrt(dx * dx + dz * dz);
             
-            // Calculate distance to line segment (river segment)
-            const distanceToRiver = distanceToLineSegment(
-                player.position.x, player.position.z,
-                start.x, start.z,
-                end.x, end.z
-            );
-            
-            // If player is in the river and not jumping high enough
-            if (distanceToRiver < riverWidth/2) {
-                // Add a slight slowing effect in the river
-                if (gameState.playerVelocity.x !== 0 || gameState.playerVelocity.z !== 0) {
-                    // Slow down by 30%
-                    gameState.playerVelocity.x *= 0.4;
-                    gameState.playerVelocity.z *= 0.4;
-                }
-                
-                // Add slight current effect pushing in river direction
-                const direction = new THREE.Vector3(end.x - start.x, 0, end.z - start.z).normalize();
-                player.position.x += direction.x * 0.08;
-                player.position.z += direction.z * 0.08;
-                
-                // Play splash sound if we just entered the river
-                if (!gameState.playerInRiver) {
-                    if (window.soundSystem && window.soundSystem.initialized) {
-                        // Using the existing sound system if available
-                        // We'll create a splash sound function in a moment
-                        playWaterSplashSound();
-                    }
-                }
-                
-                // Mark that player is in river
-                gameState.playerInRiver = true;
-                return;
+            if (distance < closestDist) {
+                closestDist = distance;
+                closestPoint = point;
+                closestIndex = i;
             }
         }
         
-        // If we got here, player is not in the river
+        // If within river width, player is in the river
+        if (closestDist < riverWidth / 2) {
+            // Add slowing effect
+            if (gameState.playerVelocity.x !== 0 || gameState.playerVelocity.z !== 0) {
+                // Slow down movement
+                gameState.playerVelocity.x *= 0.5;
+                gameState.playerVelocity.z *= 0.5;
+            }
+            
+            // Calculate river flow direction
+            let flowDirection;
+            
+            if (riverCurve) {
+                // Use the tangent from the curve for more accuracy
+                const t = closestIndex / (riverPath.length - 1);
+                flowDirection = riverCurve.getTangent(t);
+            } else {
+                // Fallback: calculate direction based on points
+                const prevIndex = Math.max(0, closestIndex - 1);
+                const nextIndex = Math.min(riverPath.length - 1, closestIndex + 1);
+                
+                const prevPoint = riverPath[prevIndex];
+                const nextPoint = riverPath[nextIndex];
+                
+                const dx = nextPoint.x - prevPoint.x;
+                const dz = nextPoint.z - prevPoint.z;
+                
+                // Normalize
+                const mag = Math.sqrt(dx * dx + dz * dz);
+                flowDirection = {
+                    x: dx / mag,
+                    z: dz / mag
+                };
+            }
+            
+            // Apply current effect
+            player.position.x += flowDirection.x * 4 * deltaTime;
+            player.position.z += flowDirection.z * 4 * deltaTime;
+            
+            // Play splash sound if just entered the river
+            if (!gameState.playerInRiver) {
+                if (window.soundSystem && window.soundSystem.initialized) {
+                    window.playWaterSplashSound();
+                }
+            }
+            
+            // Mark player as in river
+            gameState.playerInRiver = true;
+            return;
+        }
+        
+        // Not in river
         gameState.playerInRiver = false;
     }
 }
