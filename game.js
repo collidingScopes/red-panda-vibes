@@ -203,7 +203,7 @@ function updatePlayerPosition(deltaTime) {
     
     const speed = 8.0;
     const jumpForce = 8.5;
-    const gravity = 10.0;
+    const gravity = 15.0;
     
     // Ground check
     const groundHeight = getTerrainHeight(player.position.x, player.position.z);

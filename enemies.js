@@ -140,11 +140,6 @@ class EnemyManager {
             blobGroup.add(bubble);
         }
         
-        // // Add a subtle point light to create glow effect
-        // const light = new THREE.PointLight(0x334455, 1, 3);
-        // light.position.set(0, 0, 0);
-        // blobGroup.add(light);
-        
         // Scale the entire enemy
         const scale = 1.0 + Math.random() * 0.5; // Random size variation
         blobGroup.scale.set(scale, scale, scale);
@@ -270,7 +265,7 @@ class EnemyManager {
                 this.killEnemy(enemy);
                 
                 // Make player bounce
-                gameState.playerVelocity.y = 5.0; // Bounce up velocity
+                gameState.playerVelocity.y = 11.0; // Bounce up velocity
                 
                 // Only kill one enemy per frame
                 break;
