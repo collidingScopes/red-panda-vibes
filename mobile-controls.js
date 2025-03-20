@@ -25,7 +25,7 @@ function mobileCameraTurn() {
     
     // Store player's current rotation
     const startPlayerRotation = window.player.rotation.y;
-    const targetPlayerRotation = startPlayerRotation - Math.PI/2;
+    const targetPlayerRotation = startPlayerRotation + Math.PI/2;
     
     // Visual feedback for button
     cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
@@ -48,7 +48,7 @@ function mobileCameraTurn() {
         
         // Update player rotation to match camera movement
         if (window.player) {
-            window.player.rotation.y = startPlayerRotation - (Math.PI/2 * easeProgress);
+            window.player.rotation.y = startPlayerRotation + (Math.PI/2 * easeProgress);
         }
         
         // Continue animation if not complete
@@ -125,6 +125,9 @@ class MobileControls {
         
         // Setup event listeners
         this.setupEventListeners();
+        
+        // Add tap handler for additional jump detection
+        this.setupTapHandler();
         
         // Track initialization state
         this.initialized = false;
@@ -308,6 +311,10 @@ class MobileControls {
             return;
         }
 
+        // Check first if this could be a simple tap-to-jump
+        // If there's no active movement touch, consider this a potential jump
+        let isPotentialJump = this.moveTouchId === null;
+
         // Process each touch in the event
         for (let i = 0; i < event.changedTouches.length; i++) {
             const touch = event.changedTouches[i];
@@ -318,17 +325,19 @@ class MobileControls {
                 continue;
             }
             
-            // Store touch information
+            // Store touch information with timestamp
             this.activeTouches.set(touch.identifier, {
                 startX: touch.clientX,
                 startY: touch.clientY,
                 currentX: touch.clientX,
                 currentY: touch.clientY,
+                startTime: Date.now(),
                 isMovementTouch: false,
-                isJumpTouch: false
+                isJumpTouch: false,
+                potentialTapJump: isPotentialJump // Flag this as a potential tap jump if we have no movement touch
             });
             
-            // If we don't have a movement touch yet, use this one
+            // If this is the first touch and we don't have a movement touch yet, use it for potential movement
             if (this.moveTouchId === null) {
                 this.moveTouchId = touch.identifier;
                 this.moveStartX = touch.clientX;
@@ -337,19 +346,15 @@ class MobileControls {
                 this.moveCurrentY = touch.clientY;
                 this.activeTouches.get(touch.identifier).isMovementTouch = true;
                 this.log(`Movement touch started at (${this.moveStartX}, ${this.moveStartY}) with ID: ${this.moveTouchId}`);
+                
+                // We'll determine if this is actually a jump in handleTouchEnd based on duration and movement
             } 
-            // If this is a second touch and we don't have a jump touch, use it for jumping
-            else if (this.jumpTouchId === null) {
+            // If this is a second touch or beyond, always trigger a jump
+            else {
                 this.jumpTouchId = touch.identifier;
                 this.activeTouches.get(touch.identifier).isJumpTouch = true;
                 this.triggerJump();
-                this.log(`Jump touch started with ID: ${this.jumpTouchId}`);
-            }
-            // Additional touches can be used for jumping too
-            else {
-                this.activeTouches.get(touch.identifier).isJumpTouch = true;
-                this.triggerJump();
-                this.log(`Additional jump touch detected with ID: ${touch.identifier}`);
+                this.log(`Additional touch detected - triggering jump with ID: ${touch.identifier}`);
             }
         }
         
@@ -416,22 +421,14 @@ class MobileControls {
                 const deltaY = touchData.currentY - touchData.startY;
                 const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
                 
-                // Check for a quick tap with minimal movement
-                // A tap is defined as: short duration (< 300ms) + minimal movement
-                if (touchDuration < 300 && distance < MobileControls.MOVEMENT_DEADZONE * 2) {
-                    // Only trigger jump if it wasn't already a movement or jump touch
-                    // or if it was marked as a potential tap-to-jump
-                    if ((!touchData.isJumpTouch && !touchData.isMovementTouch) || 
-                        touchData.potentialTapJump) {
-                        this.triggerJump();
-                        this.log("Jump triggered from quick tap: " + touchDuration + "ms, movement: " + distance.toFixed(2));
-                    }
-                }
-                // Also check for potential tap-to-jump that had some movement
-                else if (touchData.potentialTapJump && touchDuration < 400 && 
-                         distance < MobileControls.MOVEMENT_DEADZONE * 4) {
+                this.log(`Touch ended - Duration: ${touchDuration}ms, Distance: ${distance.toFixed(2)}px`);
+                
+                // Detect tap-to-jump: short duration with minimal movement
+                if (touchDuration < 300 && distance < MobileControls.MOVEMENT_DEADZONE * 1.5) {
+                    // If this is the movement touch but it was just a quick tap with minimal movement,
+                    // treat it as a jump instead of movement
                     this.triggerJump();
-                    this.log("Jump triggered from short tap with movement: " + touchDuration + "ms, movement: " + distance.toFixed(2));
+                    this.log("Jump triggered from quick tap");
                 }
                 
                 // If this was our movement touch, reset it
@@ -598,6 +595,9 @@ class MobileControls {
         return false;
     }
 
+    /**
+     * Sets up a separate tap handler for jump detection
+     */
     setupTapHandler() {
         // Tap detection variables
         this.lastTapTime = 0;
