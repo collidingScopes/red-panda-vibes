@@ -289,8 +289,8 @@ class SoundSystem {
         this.lastJumpTime = now;
         
         // "Boing" sound with pitch bend
-        this.playTone(400, 0.3, 'triangle', 0.3);
-        this.playTone(600, 0.2, 'triangle', 0.2, 0.1);
+        this.playTone(400, 0.3, 'sine', 0.15);
+        this.playTone(600, 0.2, 'sine', 0.15, 0.1);
     }
     
     // Play footstep sound
@@ -356,13 +356,13 @@ class SoundSystem {
         // A quick low tone followed by a higher pitch sound
         
         // Low frequency "thud"
-        this.playTone(150, 0.1, 'sine', 0.3);
+        this.playTone(150, 0.1, 'sine', 0.35);
         
         // Higher "splat" sound
-        this.playTone(300, 0.2, 'sawtooth', 0.2, 0.05);
+        this.playTone(300, 0.2, 'sawtooth', 0.2, 0.15);
         
         // Add a noise burst for texture
-        this.playNoise(0.1, 0.2, 0.05);
+        this.playNoise(0.1, 0.2, 0.25);
     }
 }
 
