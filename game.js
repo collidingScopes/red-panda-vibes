@@ -138,7 +138,6 @@ const flagPole = createFlagPole();
 const flagMesh = flagPole.children[1]; // Cache flag reference for animation
 const obstacles = createObstacles();
 
-// Initialize event listeners
 function initEventListeners() {
     // Input handling
     document.addEventListener('keydown', (event) => {
@@ -154,12 +153,16 @@ function initEventListeners() {
         document.getElementById('instructions').style.display = 'none';
     });
 
-    window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.setPixelRatio(pixelRatio); // Maintain pixelated look on resize
-    });
+    // Handle window resize for all devices
+    window.addEventListener('resize', handleViewportResize);
+    
+    // Add explicit orientation change handling for mobile
+    if (isMobile) {
+        window.addEventListener('orientationchange', () => {
+            // Slight delay to let the browser complete orientation change
+            setTimeout(handleViewportResize, 100);
+        });
+    }
 }
 
 // Camera controls
@@ -199,7 +202,7 @@ function updatePlayerPosition(deltaTime) {
     if (gameState.goalReached) return;
     
     const speed = 7.0;
-    const jumpForce = 9.0;
+    const jumpForce = 8.5;
     const gravity = 10.0;
     
     // Ground check
@@ -517,6 +520,12 @@ function init() {
     gameState.levelSystem = new LevelSystem(scene, gameState.enemyManager, player, flagPole);
     gameState.levelSystem.initialize();
     
+    // Make renderer globally accessible for mobile orientation handling
+    window.renderer = renderer;
+    
+    // Handle initial sizing for proper mobile rendering
+    handleViewportResize();
+    
     // Start the animation loop with the correct timestamp
     lastTime = performance.now();
     requestAnimationFrame(animate);
@@ -528,6 +537,18 @@ function init() {
     if (window.mobileControls) {
         console.log("Mobile controls found - ensuring proper integration");
     }
+}
+
+function handleViewportResize() {
+    // Update renderer size to match viewport
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    
+    // Update camera aspect ratio
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    
+    // Maintain pixelated look
+    renderer.setPixelRatio(pixelRatio);
 }
 
 let startGameButton = document.querySelector("#start-game-button");

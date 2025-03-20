@@ -5,6 +5,7 @@ let cameraFlipButton = document.getElementById("camera-flip-button");
 // Add touch event for camera flip
 cameraFlipButton.addEventListener('touchstart', (e) => {
     mobileCameraTurn();
+    e.preventDefault(); // Prevent default behavior
 }, { passive: false });
 
 // Animation settings for smooth rotations
@@ -14,7 +15,8 @@ let isRotating = false; // Flag to prevent multiple rotations at once
 
 // Enhanced camera and character rotation function with animation
 function mobileCameraTurn() {
-
+    if (isRotating) return; // Prevent multiple simultaneous rotations
+    
     isRotating = true;
     
     // Calculate target angle (90 degrees clockwise)
@@ -75,7 +77,7 @@ function mobileCameraTurn() {
 
 class MobileControls {
     // Constants for configuration
-    static DEBUG = true;                // Set to true to enable debug logging
+    static DEBUG = false;                // Set to true to enable debug logging
     static MOVEMENT_DEADZONE = 20;       // Pixels of movement to ignore
     static MOVEMENT_SCALE = 0.015;       // Scaling factor for touch movement
     static JUMP_DURATION = 100;          // Ms for jump touch duration
@@ -99,13 +101,15 @@ class MobileControls {
         this.camera = null;
         this.gameState = null;
 
-        // Touch tracking variables
+        // Touch tracking variables - updated for multi-touch
         this.moveTouchId = null;
+        this.jumpTouchId = null;
         this.moveStartX = 0;
         this.moveStartY = 0;
         this.moveCurrentX = 0;
         this.moveCurrentY = 0;
         this.jumpTriggered = false;
+        this.activeTouches = new Map(); // Track all active touches by ID
         
         // Cache DOM elements
         this.instructionsElement = document.getElementById('instructions');
@@ -113,10 +117,13 @@ class MobileControls {
         this.gameOverElement = document.getElementById('game-over-screen');
         this.levelCompleteElement = document.getElementById('level-complete-content');
         
-        // Initialize UI and event listeners=
+        // Initialize UI and event listeners
         this.log("Initializing mobile UI");
         
-        // Create camera flip button
+        // Setup orientation change and resize handling
+        this.setupOrientationHandling();
+        
+        // Setup event listeners
         this.setupEventListeners();
         
         // Track initialization state
@@ -153,6 +160,54 @@ class MobileControls {
         };
     }
 
+    /**
+     * Sets up orientation change and resize handling
+     */
+    setupOrientationHandling() {
+        // Handle both orientation change and resize events
+        window.addEventListener('orientationchange', this.handleOrientationChange.bind(this));
+        window.addEventListener('resize', this.throttle(this.handleResize.bind(this), 100));
+        
+        // Initial resize
+        this.handleResize();
+    }
+    
+    /**
+     * Handles orientation change event
+     */
+    handleOrientationChange() {
+        this.log("Orientation changed");
+        
+        // We need to wait a bit for the browser to complete the orientation change
+        setTimeout(() => {
+            this.handleResize();
+        }, 200);
+    }
+    
+    /**
+     * Handles resize event - adjusts renderer and camera
+     */
+    handleResize() {
+        if (!window.renderer || !window.camera) {
+            this.log("Renderer or camera not ready for resize");
+            return;
+        }
+        
+        this.log("Resizing view");
+        
+        // Update renderer size to fill viewport
+        window.renderer.setSize(window.innerWidth, window.innerHeight);
+        
+        // Update camera aspect ratio
+        window.camera.aspect = window.innerWidth / window.innerHeight;
+        window.camera.updateProjectionMatrix();
+        
+        // Maintain pixel ratio setting
+        if (window.pixelRatio) {
+            window.renderer.setPixelRatio(window.pixelRatio);
+        }
+    }
+
     // =============== EVENT HANDLING METHODS ===============
     
     /**
@@ -168,6 +223,7 @@ class MobileControls {
             { passive: false }
         );
         document.addEventListener('touchend', (e) => this.handleTouchEnd(e), { passive: false });
+        document.addEventListener('touchcancel', (e) => this.handleTouchEnd(e), { passive: false });
         
         // Fix touch handling for game buttons
         this.setupTouchForGameButtons();
@@ -243,7 +299,7 @@ class MobileControls {
     }
     
     /**
-     * Handles the start of a touch event
+     * Handles the start of a touch event - updated for multi-touch
      * @param {TouchEvent} event - The touch start event
      */
     handleTouchStart(event) {
@@ -252,51 +308,93 @@ class MobileControls {
             return;
         }
 
-        const touch = event.touches[0];
-        
-        // Skip if touching a UI element
-        if (this.isUIElement(event.target)) {
-            this.log("Touch on UI element:", event.target);
-            return;
+        // Process each touch in the event
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const touch = event.changedTouches[i];
+            
+            // Skip if touching a UI element
+            if (this.isUIElement(event.target)) {
+                this.log("Touch on UI element:", event.target);
+                continue;
+            }
+            
+            // Store touch information
+            this.activeTouches.set(touch.identifier, {
+                startX: touch.clientX,
+                startY: touch.clientY,
+                currentX: touch.clientX,
+                currentY: touch.clientY,
+                isMovementTouch: false,
+                isJumpTouch: false
+            });
+            
+            // If we don't have a movement touch yet, use this one
+            if (this.moveTouchId === null) {
+                this.moveTouchId = touch.identifier;
+                this.moveStartX = touch.clientX;
+                this.moveStartY = touch.clientY;
+                this.moveCurrentX = touch.clientX;
+                this.moveCurrentY = touch.clientY;
+                this.activeTouches.get(touch.identifier).isMovementTouch = true;
+                this.log(`Movement touch started at (${this.moveStartX}, ${this.moveStartY}) with ID: ${this.moveTouchId}`);
+            } 
+            // If this is a second touch and we don't have a jump touch, use it for jumping
+            else if (this.jumpTouchId === null) {
+                this.jumpTouchId = touch.identifier;
+                this.activeTouches.get(touch.identifier).isJumpTouch = true;
+                this.triggerJump();
+                this.log(`Jump touch started with ID: ${this.jumpTouchId}`);
+            }
+            // Additional touches can be used for jumping too
+            else {
+                this.activeTouches.get(touch.identifier).isJumpTouch = true;
+                this.triggerJump();
+                this.log(`Additional jump touch detected with ID: ${touch.identifier}`);
+            }
         }
         
-        // Skip if already tracking a touch
-        if (this.moveTouchId !== null) {
-            return;
+        // Prevent default behavior to avoid scrolling
+        if (!this.isUIElement(event.target)) {
+            event.preventDefault();
         }
-
-        // Start tracking this touch
-        this.moveTouchId = touch.identifier;
-        this.moveStartX = this.moveCurrentX = touch.clientX;
-        this.moveStartY = this.moveCurrentY = touch.clientY;
-        this.log(`Movement started at (${this.moveStartX}, ${this.moveStartY}) with ID: ${this.moveTouchId}`);
-        event.preventDefault();
     }
 
     /**
-     * Handles touch movement for player control
+     * Handles touch movement for player control - updated for multi-touch
      * @param {TouchEvent} event - The touch move event
      */
     handleTouchMove(event) {
-        if (!this.initialized || this.moveTouchId === null) {
+        if (!this.initialized) {
             return;
         }
 
-        // Find the touch we're tracking
-        const touch = Array.from(event.touches).find(t => t.identifier === this.moveTouchId);
-        if (!touch) {
-            return;
+        // Process each moved touch
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const touch = event.changedTouches[i];
+            
+            // Update the touch data in our map
+            if (this.activeTouches.has(touch.identifier)) {
+                const touchData = this.activeTouches.get(touch.identifier);
+                touchData.currentX = touch.clientX;
+                touchData.currentY = touch.clientY;
+                
+                // If this is our movement touch, update movement
+                if (touch.identifier === this.moveTouchId) {
+                    this.moveCurrentX = touch.clientX;
+                    this.moveCurrentY = touch.clientY;
+                    this.updateMovement();
+                }
+            }
         }
-
-        // Update current position
-        this.moveCurrentX = touch.clientX;
-        this.moveCurrentY = touch.clientY;
-        this.updateMovement();
-        event.preventDefault();
+        
+        // Prevent default behavior to avoid scrolling
+        if (!this.isUIElement(event.target)) {
+            event.preventDefault();
+        }
     }
 
     /**
-     * Handles the end of a touch event
+     * Handles the end of a touch event - updated for multi-touch
      * @param {TouchEvent} event - The touch end event
      */
     handleTouchEnd(event) {
@@ -304,22 +402,57 @@ class MobileControls {
             return;
         }
 
-        // Check if this is the touch we're tracking
-        const touch = Array.from(event.changedTouches).find(t => t.identifier === this.moveTouchId);
-        if (touch) {
-            // Calculate movement distance
-            const deltaX = touch.clientX - this.moveStartX;
-            const deltaY = touch.clientY - this.moveStartY;
-            const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-
-            // If minimal movement, treat as tap (jump)
-            if (distance < MobileControls.MOVEMENT_DEADZONE && !this.isUIElement(event.target)) {
-                this.triggerJump();
+        // Process each ended touch
+        for (let i = 0; i < event.changedTouches.length; i++) {
+            const touch = event.changedTouches[i];
+            
+            // Check if this touch is in our tracked touches
+            if (this.activeTouches.has(touch.identifier)) {
+                const touchData = this.activeTouches.get(touch.identifier);
+                
+                // If it was a very short movement (tap), trigger jump
+                if (!touchData.isJumpTouch && !touchData.isMovementTouch) {
+                    const deltaX = touchData.currentX - touchData.startX;
+                    const deltaY = touchData.currentY - touchData.startY;
+                    const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
+                    
+                    if (distance < MobileControls.MOVEMENT_DEADZONE) {
+                        this.triggerJump();
+                    }
+                }
+                
+                // If this was our movement touch, reset it
+                if (touch.identifier === this.moveTouchId) {
+                    this.moveTouchId = null;
+                    this.resetMovementKeys();
+                    
+                    // Try to find another touch to use for movement
+                    for (const [id, data] of this.activeTouches.entries()) {
+                        if (id !== touch.identifier && !data.isJumpTouch) {
+                            this.moveTouchId = id;
+                            this.moveStartX = data.startX;
+                            this.moveStartY = data.startY;
+                            this.moveCurrentX = data.currentX;
+                            this.moveCurrentY = data.currentY;
+                            data.isMovementTouch = true;
+                            this.updateMovement();
+                            break;
+                        }
+                    }
+                }
+                
+                // If this was our jump touch, reset it
+                if (touch.identifier === this.jumpTouchId) {
+                    this.jumpTouchId = null;
+                }
+                
+                // Remove the touch from our map
+                this.activeTouches.delete(touch.identifier);
             }
-
-            // Stop tracking this touch
-            this.moveTouchId = null;
-            this.resetMovementKeys();
+        }
+        
+        // Prevent default behavior
+        if (!this.isUIElement(event.target)) {
             event.preventDefault();
         }
     }
@@ -335,7 +468,9 @@ class MobileControls {
                target.closest('#goal-message') || 
                target.closest('#level-complete-content') || 
                target.closest('#game-over-screen') ||
-               target.closest('#camera-flip-button');
+               target.closest('#camera-flip-button') ||
+               target.closest('#sound-toggle') ||
+               target.closest('#level-indicator');
     }
     
     // =============== GAME CONTROL METHODS ===============
@@ -439,6 +574,9 @@ class MobileControls {
             this.camera = window.camera;
             this.player = window.player;
             this.initialized = true;
+            
+            // Make renderer globally accessible for resize handling
+            window.renderer = renderer;
             
             this.log("Connected to game objects successfully");
             return true;
