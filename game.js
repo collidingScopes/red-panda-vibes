@@ -361,6 +361,11 @@ function updatePlayerPosition(deltaTime) {
     if (horizontalDistanceToGoal < 2 && !gameState.goalReached) {
         gameState.goalReached = true;
 
+        // Hide all elements with class "level-warning"
+        document.querySelectorAll('.level-warning').forEach(element => {
+            element.classList.add('hidden');
+        });
+
         // Add this line to play goal sound:
         if (window.playGoalSound) window.playGoalSound();
         
@@ -556,7 +561,7 @@ function showTutorialMessages() {
     }
     
     // Display time for each message in milliseconds
-    const displayTime = 6000; // 6 seconds
+    const displayTime = 5500; // 5.5 seconds
     
     // Break time between messages
     const breakTime = 1500;
