@@ -1,12 +1,18 @@
-body {
+html, body {
+    width: 100%;
+    height: 100%;
     margin: 0;
+    padding: 0;
     overflow: hidden;
-    font-family: 'Courier New', monospace;
-    background-color: #000;
+    position: fixed; /* Prevent bounce/scroll on mobile */
+    touch-action: none; /* Disable browser touch actions */
 }
 
 canvas {
     display: block;
+    width: 100%;
+    height: 100%;
+    touch-action: none;
 }
 
 #instructions {
@@ -417,38 +423,67 @@ h2, h3 {
     background-color: rgba(132, 255, 239, 0.3);
 }
 
-/* Only show camera flip button on mobile */
-/* @media (min-width: 769px) {
+/* Optimize game UI positioning for different orientations */
+@media screen and (orientation: portrait) {
     #camera-flip-button {
-        display: none !important;
+        top: 10px;
+        left: 10px;
     }
-} */
-
-@media (max-width: 768px) {
-    /*
-    #instructions {
-        max-width: 90%;
-        font-size: 14px;
-        padding: 10px;
+    
+    #sound-toggle {
+        top: 10px;
+        right: 70px;
     }
-    #instructions h3 {
-        font-size: 16px;
-        margin-bottom: 8px;
+    
+    #level-indicator {
+        top: 10px;
+        right: 10px;
     }
-    #instructions p:nth-child(2),
-    #instructions p:nth-child(3) {
-        display: none;
+    
+    /* Adjust instruction message positioning */
+    [id^="instruction-message"] {
+        top: 25%;
     }
-    #instructions::after {
-        content: "👆 Drag to move, tap to jump";
-        display: block;
-        margin-top: 8px;
-        font-size: 14px;
+    
+    #start-game-button {
+        top: 30%;
     }
-    */
 }
 
-/* Prevent delay on touch devices */
+@media screen and (orientation: landscape) {
+    #camera-flip-button {
+        top: 10px;
+        left: 10px;
+    }
+    
+    #sound-toggle {
+        top: 10px;
+        right: 70px;
+    }
+    
+    #level-indicator {
+        top: 10px;
+        right: 10px;
+    }
+    
+    /* Adjust instruction message positioning */
+    [id^="instruction-message"] {
+        top: 20%;
+    }
+    
+    #start-game-button {
+        top: 25%;
+    }
+}
+
+/* Optimize touch targets for mobile */
 button {
+    min-width: 44px;
+    min-height: 44px;
     touch-action: manipulation;
+}
+
+/* Remove any transitions that might interfere with orientation changes */
+* {
+    transition: none !important;
 }
