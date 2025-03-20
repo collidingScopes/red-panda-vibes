@@ -316,7 +316,7 @@ function createTerrain() {
     scene.add(baseTerrain);
     
     // Create the actual terrain with hills using many small box segments
-    const segmentSize = 4;
+    const segmentSize = 2;
     const terrainSize = 200;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
@@ -358,7 +358,7 @@ function createTerrain() {
                 const hill = new THREE.Mesh(hillGeometry, hillMaterial);
                 hill.position.set(posX, height/2, posZ);
                 hill.receiveShadow = true;
-                hill.castShadow = true;
+                //hill.castShadow = true;
                 hillsGroup.add(hill);
             }
         }
