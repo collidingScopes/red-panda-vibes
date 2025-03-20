@@ -12,6 +12,10 @@ const gameState = {
     gameStarted: false,
     gameOver: false,   // Add game over state
     animationId: null, // Track animation frame ID
+    pandaModel: null,  // Reference to the actual 3D model inside the player group
+    pandaModelLoaded: false, // Flag to track if the 3D model was loaded
+    pandaAnimationMixer: null, // Animation mixer for the panda model
+    pandaAnimations: {} // Storage for different animations
 };
 
 // Make gameState globally accessible for mobile controls
@@ -98,6 +102,36 @@ player.position.set(0, 50, 0);
 player.receiveShadow = true;
 scene.add(player);
 
+// Function to store reference to the panda model when it's loaded
+// This will be called by the geometry.js file after model loading
+window.setPandaModel = function(model, animations) {
+    gameState.pandaModel = model;
+    gameState.pandaModelLoaded = true;
+    
+    if (animations && animations.length > 0) {
+        // Set up animation mixer
+        gameState.pandaAnimationMixer = new THREE.AnimationMixer(model);
+        
+        // Store animations by name for easy access
+        animations.forEach(clip => {
+            gameState.pandaAnimations[clip.name] = clip;
+            console.log("Found animation: " + clip.name);
+        });
+        
+        // Set default animation if available
+        if (gameState.pandaAnimations['idle']) {
+            const idleAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['idle']);
+            idleAction.play();
+        } else if (animations.length > 0) {
+            // Just play the first animation if no idle animation is found
+            const defaultAction = gameState.pandaAnimationMixer.clipAction(animations[0]);
+            defaultAction.play();
+        }
+    }
+    
+    console.log("Panda model reference set in game state");
+};
+
 // Create the map
 const terrain = createTerrain();
 const flagPole = createFlagPole();
@@ -164,8 +198,8 @@ function updateCamera() {
 function updatePlayerPosition(deltaTime) {
     if (gameState.goalReached) return;
     
-    const speed = 6.0;
-    const jumpForce = 8.0;
+    const speed = 7.0;
+    const jumpForce = 9.0;
     const gravity = 10.0;
     
     // Ground check
@@ -187,6 +221,27 @@ function updatePlayerPosition(deltaTime) {
     // Handle jumping
     if (gameState.keyStates['Space'] && gameState.playerOnGround) {
         gameState.playerVelocity.y = jumpForce;
+        
+        // Play jump animation if available
+        if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['jump']) {
+            gameState.pandaAnimationMixer.stopAllAction();
+            const jumpAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['jump']);
+            jumpAction.setLoop(THREE.LoopOnce);
+            jumpAction.clampWhenFinished = true;
+            jumpAction.play();
+            
+            // Switch back to idle or run after animation completes
+            setTimeout(() => {
+                if (!gameState.gameOver && gameState.pandaModelLoaded) {
+                    gameState.pandaAnimationMixer.stopAllAction();
+                    const nextAnim = isMoving() ? 'run' : 'idle';
+                    if (gameState.pandaAnimations[nextAnim]) {
+                        const action = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations[nextAnim]);
+                        action.play();
+                    }
+                }
+            }, 1000); // Adjust timing based on your jump animation length
+        }
     }
     
     // Movement direction (in camera space)
@@ -198,6 +253,11 @@ function updatePlayerPosition(deltaTime) {
     if (gameState.keyStates['KeyD']) moveDirection.x = -1;
     
     moveDirection.normalize();
+    
+    // Helper function to check if player is moving horizontally
+    function isMoving() {
+        return moveDirection.length() > 0;
+    }
     
     // Convert movement from camera space to world space
     const cameraDirection = new THREE.Vector3();
@@ -229,6 +289,28 @@ function updatePlayerPosition(deltaTime) {
         
         // Rotate player to face direction of movement
         player.lookAt(player.position.clone().add(worldMoveDirection));
+        
+        // Play run animation if available and not already running
+        if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['run']) {
+            // Check if we're not already playing the run animation
+            const currentAction = gameState.pandaAnimationMixer._actions.find(a => a.isRunning());
+            if (!currentAction || currentAction._clip.name !== 'run') {
+                gameState.pandaAnimationMixer.stopAllAction();
+                const runAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['run']);
+                runAction.play();
+            }
+        }
+    } else if (gameState.playerOnGround) {
+        // Play idle animation when not moving and on ground
+        if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['idle']) {
+            // Check if we're not already playing the idle animation
+            const currentAction = gameState.pandaAnimationMixer._actions.find(a => a.isRunning());
+            if (!currentAction || currentAction._clip.name !== 'idle') {
+                gameState.pandaAnimationMixer.stopAllAction();
+                const idleAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['idle']);
+                idleAction.play();
+            }
+        }
     }
     
     // Apply vertical velocity (gravity/jumping)
@@ -239,6 +321,18 @@ function updatePlayerPosition(deltaTime) {
     if (player.position.y < currentGroundHeight + 0.5 && gameState.playerVelocity.y <= 0) {
         player.position.y = currentGroundHeight + 0.5;
         gameState.playerVelocity.y = 0;
+        
+        // If we just landed, play idle or run animation
+        if (!gameState.playerOnGround) {
+            if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer) {
+                gameState.pandaAnimationMixer.stopAllAction();
+                const nextAnim = isMoving() ? 'run' : 'idle';
+                if (gameState.pandaAnimations[nextAnim]) {
+                    const action = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations[nextAnim]);
+                    action.play();
+                }
+            }
+        }
     }
     
     // Update camera position
@@ -304,6 +398,13 @@ function resetGame() {
         gameState.enemyManager.reset();
     }
     
+    // Reset animation - play idle if available
+    if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['idle']) {
+        gameState.pandaAnimationMixer.stopAllAction();
+        const idleAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['idle']);
+        idleAction.play();
+    }
+    
     // Restart animation loop if it was cancelled
     if (!gameState.animationId) {
         lastTime = performance.now();
@@ -362,6 +463,11 @@ function animate(currentTime) {
         lastFpsUpdate = currentTime;
     }
     
+    // Update animation mixer if available
+    if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer) {
+        gameState.pandaAnimationMixer.update(deltaTime);
+    }
+    
     // Only update game logic if not game over
     if (!gameState.gameOver) {
         // Game logic updates
@@ -410,7 +516,6 @@ startGameButton.addEventListener("click", () => {
     setTimeout(() => {
         showTutorialMessages();
     }, 4000);
-    
 });
 
 function showTutorialMessages() {

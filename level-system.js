@@ -13,8 +13,8 @@ class LevelSystem {
         // Base level settings - we'll calculate harder difficulties from these
         this.baseSettings = {
             enemyCount: 5,           // Base number of enemies
-            enemySpeedWander: 3,     // Base speed when wandering
-            enemySpeedChase: 5,      // Base speed when chasing
+            enemySpeedWander: 4,     // Base speed when wandering
+            enemySpeedChase: 6,      // Base speed when chasing
             fogDensity: 0.01,        // Base fog density
             fogDistance: 120,         // Base fog distance
             fogColor: 0xa183e0       // Base fog color
