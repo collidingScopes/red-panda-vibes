@@ -73,7 +73,7 @@ class LevelSystem {
         const flagHeight = Math.max(7, 25 - (level - 1) * 1.5);
         
         // NEW: Increase terrain height multiplier with each level
-        const terrainHeightMultiplier = 1.0 + Math.min(2.0, (level - 1) * 0.1);
+        const terrainHeightMultiplier = 1.0 + Math.min(1.8, (level - 1) * 0.05);
         
         return {
             enemyCount,

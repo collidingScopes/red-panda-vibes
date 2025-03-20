@@ -677,17 +677,17 @@ function createRiver() {
     const riverLength = 8000; // Total river length (number of segments)
     const mapRadius = 150; // Approximate radius of walkable area
     const centerAttraction = 1.5; // How strongly the river is pulled toward the map center
-    const noiseInfluence = 0.4; // How much terrain influences river direction
-    const pathRandomness = 0.15; // Random variation in river direction
+    const noiseInfluence = 0.8; // How much terrain influences river direction
+    const pathRandomness = 0; // Random variation in river direction
     const riverFloatHeight = 0.8; //amount of float above ground
 
     // Shimmering water material - semi-transparent with slight animation
     const waterMaterial = new THREE.MeshStandardMaterial({
         color: 0x4a9ff5, // Base blue color
-        roughness: 0.1, // Very smooth surface
-        metalness: 0.3, // Slightly metallic for light reflections
+        roughness: 0.9, // Very smooth surface
+        metalness: 0.1, // Slightly metallic for light reflections
         transparent: true,
-        opacity: 0.75,
+        opacity: 0.65,
         side: THREE.DoubleSide // Render both sides for better visibility
         /*
         emissive: 0x006699, // Slight blue glow
@@ -797,12 +797,12 @@ function createRiver() {
         const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x);
         
         // Calculate the length of this segment
-        const dx = end.x - start.x;
-        const dz = end.z - start.z;
+        const dx = (end.x - start.x);
+        const dz = (end.z - start.z);
         
         // Create a custom geometry for the river segment that follows the terrain
         const points = [];
-        const numSteps = 2; // More steps mean smoother terrain following
+        const numSteps = 20; // More steps mean smoother terrain following
         
         // Create points for left bank
         for (let step = 0; step <= numSteps; step++) {
@@ -824,13 +824,14 @@ function createRiver() {
         
         // Create shape
         const shape = new THREE.Shape();
-        shape.moveTo(points[0].x, points[0].z);
+        let shapeOverlap = 5; //overlap between river panels
+        shape.moveTo(points[0].x-shapeOverlap, points[0].z-shapeOverlap);
         
         for (let j = 1; j < points.length; j++) {
             shape.lineTo(points[j].x, points[j].z);
         }
         
-        shape.lineTo(points[0].x, points[0].z); // Close the shape
+        shape.lineTo(points[0].x-shapeOverlap, points[0].z-shapeOverlap); // Close the shape
         
         // Create geometry from shape
         const geometry = new THREE.ShapeGeometry(shape);

@@ -370,6 +370,11 @@ function updatePlayerPosition(deltaTime) {
     if (horizontalDistanceToGoal < 2 && !gameState.goalReached) {
         gameState.goalReached = true;
 
+        // Hide all tutorial messages if this is level 1
+        if (gameState.levelSystem && gameState.levelSystem.currentLevel === 1) {
+            cancelAllTutorials();
+        }
+
         // Hide all elements with class "level-warning"
         document.querySelectorAll('.level-warning').forEach(element => {
             element.classList.add('hidden');
@@ -572,19 +577,19 @@ function showTutorialMessages() {
     let messageIds;
     
     if(isMobile){
-        messageIds = [
-            'instruction-message-1-mobile',
-            'instruction-message-2-mobile',
-            'instruction-message-3-mobile',
-            'instruction-message-4-mobile'
-        ];
+      messageIds = [
+        'instruction-message-1-mobile',
+        'instruction-message-2-mobile',
+        'instruction-message-3-mobile',
+        'instruction-message-4-mobile'
+      ];
     } else {
-        messageIds = [
-            'instruction-message-1',
-            'instruction-message-2',
-            'instruction-message-3',
-            'instruction-message-4'
-        ];
+      messageIds = [
+        'instruction-message-1',
+        'instruction-message-2',
+        'instruction-message-3',
+        'instruction-message-4'
+      ];
     }
     
     // Display time for each message in milliseconds
@@ -593,24 +598,44 @@ function showTutorialMessages() {
     // Break time between messages
     const breakTime = 1500;
     
+    // Create array to store timeouts so we can cancel them later
+    window.tutorialTimeouts = [];
+    
     // Show messages sequentially
     messageIds.forEach((id, index) => {
-        // Calculate delay for this message
-        // Each message starts after: (display + break) * previous messages
-        const delay = index * (displayTime + breakTime);
-        
-        // Show this message after the calculated delay
-        setTimeout(() => {
-            const messageEl = document.getElementById(id);
-            if (messageEl) {
-                messageEl.classList.remove('hidden');
-                
-                // Hide this message after display time
-                setTimeout(() => {
-                    messageEl.classList.add('hidden');
-                }, displayTime);
-            }
-        }, delay);
+      // Calculate delay for this message
+      // Each message starts after: (display + break) * previous messages
+      const delay = index * (displayTime + breakTime);
+      
+      // Show this message after the calculated delay
+      window.tutorialTimeouts.push(setTimeout(() => {
+        const messageEl = document.getElementById(id);
+        if (messageEl) {
+          messageEl.classList.remove('hidden');
+          
+          // Hide this message after display time
+          window.tutorialTimeouts.push(setTimeout(() => {
+            messageEl.classList.add('hidden');
+          }, displayTime));
+        }
+      }, delay));
+    });
+  }
+
+function cancelAllTutorials() {
+    // Clear any pending tutorial timeouts
+    if (window.tutorialTimeouts) {
+      window.tutorialTimeouts.forEach(timeoutId => clearTimeout(timeoutId));
+    }
+    
+    // Hide all tutorial messages (both desktop and mobile)
+    document.querySelectorAll('[id^="instruction-message-"]').forEach(element => {
+      element.classList.add('hidden');
+    });
+    
+    // Hide any visible level warnings too
+    document.querySelectorAll('.level-warning').forEach(element => {
+      element.classList.add('hidden');
     });
 }
 
