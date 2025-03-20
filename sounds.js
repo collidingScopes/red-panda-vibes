@@ -285,12 +285,26 @@ class SoundSystem {
         
         // Prevent too frequent triggers
         const now = Date.now();
-        if (now - this.lastJumpTime < 300) return;
+        if (now - this.lastJumpTime < 500) return;
         this.lastJumpTime = now;
         
-        // "Boing" sound with pitch bend
-        this.playTone(400, 0.3, 'sine', 0.15);
-        this.playTone(600, 0.2, 'sine', 0.15, 0.1);
+        let random = Math.random();
+        let volume = 0.1
+        // "Boing" sound with pitch bend -- with variations
+        if(random < 0.25){
+            this.playTone(400, 0.3, 'sine', volume);
+            this.playTone(600, 0.2, 'sine', volume, 0.1);
+        } else if(random < 0.5){
+            this.playTone(600, 0.3, 'sine', volume);
+            this.playTone(800, 0.2, 'sine', volume, 0.1);
+        } else if(random < 0.75){
+            this.playTone(600, 0.3, 'sine', volume);
+            this.playTone(400, 0.2, 'sine', volume, 0.1);
+        } else if(random <= 1){
+            this.playTone(800, 0.3, 'sine', volume);
+            this.playTone(600, 0.2, 'sine', volume, 0.1);
+        }
+
     }
     
     // Play footstep sound

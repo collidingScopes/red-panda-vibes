@@ -6,6 +6,7 @@ html, body {
     overflow: hidden;
     position: fixed; /* Prevent bounce/scroll on mobile */
     touch-action: none; /* Disable browser touch actions */
+    background-color: #000;
 }
 
 canvas {
