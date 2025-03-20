@@ -317,7 +317,7 @@ function createTerrain() {
     
     // Create the actual terrain with hills using many small box segments
     const segmentSize = 2;
-    const terrainSize = 200;
+    const terrainSize = 250;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
     
