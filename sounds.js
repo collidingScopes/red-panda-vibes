@@ -348,6 +348,22 @@ class SoundSystem {
             this.playTone(note, 0.3, 'sawtooth', 0.3, index * 0.2);
         });
     }
+
+    playEnemyCrushSound() {
+        if (!this.initialized || this.muted) return;
+        
+        // Create a "squish" sound for crushing enemies
+        // A quick low tone followed by a higher pitch sound
+        
+        // Low frequency "thud"
+        this.playTone(150, 0.1, 'sine', 0.3);
+        
+        // Higher "splat" sound
+        this.playTone(300, 0.2, 'sawtooth', 0.2, 0.05);
+        
+        // Add a noise burst for texture
+        this.playNoise(0.1, 0.2, 0.05);
+    }
 }
 
 // Initialize sound system when the document is ready
@@ -426,4 +442,8 @@ window.playLevelUpSound = function() {
 
 window.playGameOverSound = function() {
     if (soundSystem) soundSystem.playGameOverSound();
+};
+
+window.playEnemyCrushSound = function() {
+    if (soundSystem) soundSystem.playEnemyCrushSound();
 };

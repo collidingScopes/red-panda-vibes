@@ -152,13 +152,141 @@ class EnemyManager {
         return blobGroup;
     }
     
-    // Update all enemies
+    // 1. First, add a method to EnemyManager class to kill a single enemy
+    // Add this method to the EnemyManager class
+    killEnemy(enemy) {
+        // Create an explosion effect at the enemy's position
+        this.createDeathEffect(enemy.position.clone());
+        
+        // Remove from scene
+        this.scene.remove(enemy);
+        
+        // Remove from array
+        const index = this.enemies.indexOf(enemy);
+        if (index > -1) {
+            this.enemies.splice(index, 1);
+        }
+        
+        // Properly dispose of resources
+        this.disposeEnemy(enemy);
+        
+        // Play crush sound
+        if (window.playEnemyCrushSound) {
+            window.playEnemyCrushSound();
+        }
+    }
+
+    // 2. Add a visual effect for when enemies are killed
+    // Add this method to the EnemyManager class
+    createDeathEffect(position) {
+        // Create particle effect (simple expanding rings)
+        const ringCount = 3;
+        //const ringColor = 0x84ffef; // Cyan color to match game's theme
+        const ringColor = COLORS.neon[Math.floor(Math.random() * COLORS.neon.length)];
+            
+        for (let i = 0; i < ringCount; i++) {
+            // Create ring geometry
+            const geometry = new THREE.RingGeometry(0.2, 0.4, 16);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: ringColor,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            const ring = new THREE.Mesh(geometry, material);
+            ring.position.copy(position);
+            
+            // Rotate ring to be horizontal
+            ring.rotation.x = Math.PI / 2;
+            
+            this.scene.add(ring);
+            
+            // Animate the ring
+            const delay = i * 100; // Stagger the animations
+            const duration = 800; // Animation duration in ms
+            const startTime = performance.now() + delay;
+            
+            const animate = (time) => {
+                const elapsed = time - startTime;
+                
+                if (elapsed < 0) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                if (elapsed > duration) {
+                    this.scene.remove(ring);
+                    geometry.dispose();
+                    material.dispose();
+                    return;
+                }
+                
+                const progress = elapsed / duration;
+                
+                // Scale the ring
+                const scale = 0.5 + progress * 10;
+                ring.scale.set(scale, scale, scale);
+                
+                // Fade out
+                material.opacity = 1.0 * (1 - progress);
+                
+                requestAnimationFrame(animate);
+            };
+            
+            requestAnimationFrame(animate);
+        }
+    }
+
+    checkJumpKill() {
+        // Skip if we're on level 1 (no enemies) or game is over
+        if ((gameState.levelSystem && gameState.levelSystem.currentLevel === 1) || this.gameOver) {
+            return;
+        }
+        
+        // Only check when player is falling (velocity.y < 0)
+        if (gameState.playerVelocity.y >= 0) {
+            return;
+        }
+        
+        const playerPos = this.player.position.clone();
+        const playerBottom = playerPos.y - 0.5; // Approximate bottom of player
+        
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const enemyPos = enemy.position.clone();
+            const enemyTop = enemyPos.y + 1.0; // Approximate top of enemy
+            
+            // Calculate horizontal distance to enemy
+            enemyPos.y = 0;
+            playerPos.y = 0;
+            const horizontalDistance = enemyPos.distanceTo(playerPos);
+            
+            // If player is directly above enemy (within jump kill radius) and close to top of enemy
+            if (horizontalDistance < 1.2 && 
+                Math.abs(playerBottom - enemyTop) < 0.5) {
+                
+                // Kill the enemy
+                this.killEnemy(enemy);
+                
+                // Make player bounce
+                gameState.playerVelocity.y = 5.0; // Bounce up velocity
+                
+                // Only kill one enemy per frame
+                break;
+            }
+        }
+    }
+
     update(deltaTime) {
         if (this.gameOver) return;
         
         for (const enemy of this.enemies) {
             this.updateEnemy(enemy, deltaTime);
         }
+        
+        // Check for jump kills (add this line)
+        this.checkJumpKill();
         
         // Check if any enemy has caught the player
         this.checkPlayerCaught();
