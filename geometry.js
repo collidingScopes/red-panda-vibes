@@ -311,13 +311,13 @@ function createTerrain() {
     });
     
     const baseTerrain = new THREE.Mesh(baseGeometry, baseMaterial);
-    baseTerrain.position.y = 0.0;
+    baseTerrain.position.y = -0.5;
     baseTerrain.receiveShadow = true;
     scene.add(baseTerrain);
     
     // Create the actual terrain with hills using many small box segments
     const segmentSize = 2;
-    const terrainSize = 250;
+    const terrainSize = 220;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
     
@@ -547,7 +547,7 @@ function createObstacles() {
     }
     
     // Create pastel-styled trees
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 25; i++) {
         const tree = createPastelTree();
         
         // Position trees randomly around the map
@@ -572,7 +572,7 @@ function createObstacles() {
         emissiveIntensity: 0.4
     });
     
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 300; i++) {
         const flowerGroup = createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial);
         
         const angle = Math.random() * Math.PI * 2;
@@ -664,4 +664,401 @@ function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
     }
     
     return flowerGroup;
+}
+
+function createRiver() {
+    console.log("Generating improved river...");
+    // River group to hold all segments
+    const riverGroup = new THREE.Group();
+    
+    // River settings
+    const riverWidth = 20.0; // Width of the river (narrow enough to jump across)
+    const segmentLength = 8.5; // Length of each river segment
+    const riverLength = 8000; // Total river length (number of segments)
+    const mapRadius = 150; // Approximate radius of walkable area
+    const centerAttraction = 1.5; // How strongly the river is pulled toward the map center
+    const noiseInfluence = 0.4; // How much terrain influences river direction
+    const pathRandomness = 0.15; // Random variation in river direction
+    const riverFloatHeight = 0.8; //amount of float above ground
+
+    // Shimmering water material - semi-transparent with slight animation
+    const waterMaterial = new THREE.MeshStandardMaterial({
+        color: 0x4a9ff5, // Base blue color
+        roughness: 0.1, // Very smooth surface
+        metalness: 0.3, // Slightly metallic for light reflections
+        transparent: true,
+        opacity: 0.75,
+        side: THREE.DoubleSide // Render both sides for better visibility
+        /*
+        emissive: 0x006699, // Slight blue glow
+        emissiveIntensity: 0.2,
+        */
+    });
+    
+    // Find a starting point at the edge of the walkable area
+    const startAngle = Math.random() * Math.PI * 2;
+    const startX = Math.cos(startAngle) * mapRadius;
+    const startZ = Math.sin(startAngle) * mapRadius;
+    
+    // Calculate the opposite direction (to flow across the map)
+    const endAngle = startAngle + Math.PI; // Opposite direction
+    const targetX = Math.cos(endAngle) * mapRadius;
+    const targetZ = Math.sin(endAngle) * mapRadius;
+    
+    // Initialize river path
+    let currentX = startX;
+    let currentZ = startZ;
+    let currentAngle = Math.atan2(targetZ - startZ, targetX - startX); // Initial angle toward target
+    
+    // Use simplex noise for more natural flow
+    const simplex = new SimplexNoise();
+    
+    // Generate river path
+    const riverPath = [];
+    
+    for (let i = 0; i < riverLength; i++) {
+        // Store current point
+        const terrainHeight = getTerrainHeight(currentX, currentZ);
+        riverPath.push({
+            x: currentX,
+            z: currentZ,
+            y: terrainHeight + riverFloatHeight, // Slightly above terrain
+        });
+        
+        // Calculate direction to center for attraction
+        const distanceFromCenter = Math.sqrt(currentX * currentX + currentZ * currentZ);
+        const angleToCenter = Math.atan2(-currentZ, -currentX); // Angle toward center (0,0)
+        
+        // Calculate terrain gradient to influence flow direction (rivers tend to flow downhill)
+        const gradientSampleDistance = 8.0;
+        const heightRight = getTerrainHeight(currentX + gradientSampleDistance, currentZ);
+        const heightLeft = getTerrainHeight(currentX - gradientSampleDistance, currentZ);
+        const heightDown = getTerrainHeight(currentX, currentZ + gradientSampleDistance);
+        const heightUp = getTerrainHeight(currentX, currentZ - gradientSampleDistance);
+        
+        const gradientX = (heightLeft - heightRight) / (2 * gradientSampleDistance);
+        const gradientZ = (heightUp - heightDown) / (2 * gradientSampleDistance);
+        
+        const gradientAngle = Math.atan2(gradientZ, gradientX);
+        
+        // Get noise value for this position to add variation
+        const noiseValue = simplex.noise2D(currentX * 0.01, currentZ * 0.01) * Math.PI;
+        
+        // Angle toward the end point (with decreasing influence as we get closer to center)
+        const targetDirection = Math.atan2(targetZ - currentZ, targetX - currentX);
+        const targetInfluence = Math.min(1.0, distanceFromCenter / mapRadius) * 0.4;
+        
+        // Combine all influences:
+        // 1. General direction toward the target (with decreasing influence)
+        // 2. Attraction toward the center (with increasing influence as we get further from center)
+        // 3. Terrain gradient influence (rivers flow downhill)
+        // 4. Noise for natural variation
+        // 5. Small random factor for unpredictability
+        let newAngle = currentAngle;
+        
+        newAngle += (targetDirection - currentAngle) * targetInfluence;
+        newAngle += (angleToCenter - currentAngle) * centerAttraction * (distanceFromCenter / mapRadius);
+        newAngle += (gradientAngle - currentAngle) * noiseInfluence;
+        newAngle += noiseValue * noiseInfluence;
+        newAngle += (Math.random() - 0.5) * pathRandomness;
+        
+        // Smooth the angle change for more natural flow
+        currentAngle = currentAngle * 0.8 + newAngle * 0.2;
+        
+        // Move to next point
+        currentX += Math.cos(currentAngle) * segmentLength;
+        currentZ += Math.sin(currentAngle) * segmentLength;
+        
+        // Stop if we're beyond the map boundary
+        if (Math.sqrt(currentX * currentX + currentZ * currentZ) > mapRadius * 1.2) {
+            break;
+        }
+        
+        // Also stop if we've reached the approximate opposite side
+        const distanceToTarget = Math.sqrt(
+            Math.pow(currentX - targetX, 2) + 
+            Math.pow(currentZ - targetZ, 2)
+        );
+        
+        if (distanceToTarget < mapRadius * 0.3) {
+            break;
+        }
+    }
+    
+    // Create river segments from the generated path
+    for (let i = 0; i < riverPath.length - 1; i++) {
+        const start = riverPath[i];
+        const end = riverPath[i + 1];
+        
+        // Calculate segment direction
+        const direction = new THREE.Vector3(end.x - start.x, 0, end.z - start.z).normalize();
+        
+        // Calculate perpendicular direction for width
+        const perpendicular = new THREE.Vector3(-direction.z, 0, direction.x);
+        
+        // Calculate the length of this segment
+        const dx = end.x - start.x;
+        const dz = end.z - start.z;
+        
+        // Create a custom geometry for the river segment that follows the terrain
+        const points = [];
+        const numSteps = 2; // More steps mean smoother terrain following
+        
+        // Create points for left bank
+        for (let step = 0; step <= numSteps; step++) {
+            const t = step / numSteps;
+            const x = start.x + dx * t - perpendicular.x * riverWidth/2;
+            const z = start.z + dz * t - perpendicular.z * riverWidth/2;
+            const y = getTerrainHeight(x, z) + riverFloatHeight; // Slightly above terrain
+            points.push(new THREE.Vector3(x, y, z));
+        }
+        
+        // Create points for right bank (in reverse order)
+        for (let step = numSteps; step >= 0; step--) {
+            const t = step / numSteps;
+            const x = start.x + dx * t + perpendicular.x * riverWidth/2;
+            const z = start.z + dz * t + perpendicular.z * riverWidth/2;
+            const y = getTerrainHeight(x, z) + riverFloatHeight; // Slightly above terrain
+            points.push(new THREE.Vector3(x, y, z));
+        }
+        
+        // Create shape
+        const shape = new THREE.Shape();
+        shape.moveTo(points[0].x, points[0].z);
+        
+        for (let j = 1; j < points.length; j++) {
+            shape.lineTo(points[j].x, points[j].z);
+        }
+        
+        shape.lineTo(points[0].x, points[0].z); // Close the shape
+        
+        // Create geometry from shape
+        const geometry = new THREE.ShapeGeometry(shape);
+        
+        // Map vertices to 3D positions
+        const positionAttribute = geometry.getAttribute('position');
+        
+        for (let j = 0; j < positionAttribute.count; j++) {
+            const x = positionAttribute.getX(j);
+            const z = positionAttribute.getY(j); // Y in shape becomes Z in 3D
+            const y = getTerrainHeight(x, z) + riverFloatHeight; // Y is height above terrain with ripple
+            positionAttribute.setXYZ(j, x, y, z);
+        }
+        
+        geometry.computeVertexNormals();
+        
+        // Create the river segment
+        const segment = new THREE.Mesh(geometry, waterMaterial.clone());
+        riverGroup.add(segment);
+    }
+    
+    // Add to scene
+    scene.add(riverGroup);
+    
+    // Store river path in game state for collision detection
+    if (window.gameState) {
+        window.gameState.riverPath = riverPath;
+        window.gameState.riverWidth = riverWidth;
+    }
+    
+    return riverGroup;
+}
+
+// SimplexNoise implementation (simplified version)
+// This is a basic implementation to avoid external dependencies
+class SimplexNoise {
+    constructor() {
+        this.grad3 = [
+            [1,1,0],[-1,1,0],[1,-1,0],[-1,-1,0],
+            [1,0,1],[-1,0,1],[1,0,-1],[-1,0,-1],
+            [0,1,1],[0,-1,1],[0,1,-1],[0,-1,-1]
+        ];
+        this.p = [];
+        for (let i = 0; i < 256; i++) {
+            this.p[i] = Math.floor(Math.random() * 256);
+        }
+        
+        // To remove the need for index wrapping, double the permutation table length
+        this.perm = new Array(512);
+        this.gradP = new Array(512);
+        
+        for (let i = 0; i < 512; i++) {
+            this.perm[i] = this.p[i & 255];
+            this.gradP[i] = this.grad3[this.perm[i] % 12];
+        }
+    }
+    
+    // 2D simplex noise
+    noise2D(xin, yin) {
+        // Skew the input space to determine which simplex cell we're in
+        const F2 = 0.5 * (Math.sqrt(3) - 1);
+        const G2 = (3 - Math.sqrt(3)) / 6;
+        
+        const s = (xin + yin) * F2; // Hairy factor for 2D
+        let i = Math.floor(xin + s);
+        let j = Math.floor(yin + s);
+        
+        const t = (i + j) * G2;
+        const X0 = i - t; // Unskew the cell origin back to (x,y) space
+        const Y0 = j - t;
+        const x0 = xin - X0; // The x,y distances from the cell origin
+        const y0 = yin - Y0;
+        
+        // Determine which simplex we are in
+        let i1, j1;
+        if (x0 > y0) {
+            i1 = 1;
+            j1 = 0;
+        } else {
+            i1 = 0;
+            j1 = 1;
+        }
+        
+        // Offsets for corners
+        const x1 = x0 - i1 + G2;
+        const y1 = y0 - j1 + G2;
+        const x2 = x0 - 1 + 2 * G2;
+        const y2 = y0 - 1 + 2 * G2;
+        
+        // Wrap the integer indices at 256
+        const ii = i & 255;
+        const jj = j & 255;
+        
+        // Calculate the contribution from the three corners
+        let t0 = 0.5 - x0 * x0 - y0 * y0;
+        let n0 = 0;
+        
+        if (t0 >= 0) {
+            t0 *= t0;
+            const gi0 = this.gradP[ii + this.perm[jj]];
+            n0 = t0 * t0 * (gi0[0] * x0 + gi0[1] * y0);
+        }
+        
+        let t1 = 0.5 - x1 * x1 - y1 * y1;
+        let n1 = 0;
+        
+        if (t1 >= 0) {
+            t1 *= t1;
+            const gi1 = this.gradP[ii + i1 + this.perm[jj + j1]];
+            n1 = t1 * t1 * (gi1[0] * x1 + gi1[1] * y1);
+        }
+        
+        let t2 = 0.5 - x2 * x2 - y2 * y2;
+        let n2 = 0;
+        
+        if (t2 >= 0) {
+            t2 *= t2;
+            const gi2 = this.gradP[ii + 1 + this.perm[jj + 1]];
+            n2 = t2 * t2 * (gi2[0] * x2 + gi2[1] * y2);
+        }
+        
+        // Add contributions from each corner to get the final noise value
+        // The result is scaled to return values in the interval [-1, 1]
+        return 70 * (n0 + n1 + n2);
+    }
+}
+
+// Add river collision detection and effects to the game loop
+function setupRiverGameplay() {
+    // Skip if we don't have the river path
+    if (!window.gameState || !window.gameState.riverPath) return;
+    
+    // Store the original update function
+    const originalUpdatePlayerPosition = window.updatePlayerPosition;
+    
+    // Override with our modified function
+    window.updatePlayerPosition = function(deltaTime) {
+        // Call the original function first
+        originalUpdatePlayerPosition(deltaTime);
+        
+        // Check for river collision
+        checkRiverCollision();
+    };
+    
+    // Function to check if player is in the river
+    function checkRiverCollision() {
+        // Skip if game is over
+        if (window.gameState.gameOver) return;
+        
+        const player = window.player;
+        const riverPath = window.gameState.riverPath;
+        const riverWidth = window.gameState.riverWidth;
+        
+        // Check each river segment
+        for (let i = 0; i < riverPath.length - 1; i++) {
+            const start = riverPath[i];
+            const end = riverPath[i + 1];
+            
+            // Calculate distance to line segment (river segment)
+            const distanceToRiver = distanceToLineSegment(
+                player.position.x, player.position.z,
+                start.x, start.z,
+                end.x, end.z
+            );
+            
+            // If player is in the river and not jumping high enough
+            if (distanceToRiver < riverWidth/2) {
+                // Add a slight slowing effect in the river
+                if (gameState.playerVelocity.x !== 0 || gameState.playerVelocity.z !== 0) {
+                    // Slow down by 30%
+                    gameState.playerVelocity.x *= 0.4;
+                    gameState.playerVelocity.z *= 0.4;
+                }
+                
+                // Add slight current effect pushing in river direction
+                const direction = new THREE.Vector3(end.x - start.x, 0, end.z - start.z).normalize();
+                player.position.x += direction.x * 0.08;
+                player.position.z += direction.z * 0.08;
+                
+                // Play splash sound if we just entered the river
+                if (!gameState.playerInRiver) {
+                    if (window.soundSystem && window.soundSystem.initialized) {
+                        // Using the existing sound system if available
+                        // We'll create a splash sound function in a moment
+                        playWaterSplashSound();
+                    }
+                }
+                
+                // Mark that player is in river
+                gameState.playerInRiver = true;
+                return;
+            }
+        }
+        
+        // If we got here, player is not in the river
+        gameState.playerInRiver = false;
+    }
+}
+
+// Helper function to calculate distance from point to line segment
+function distanceToLineSegment(px, pz, x1, z1, x2, z2) {
+    const A = px - x1;
+    const B = pz - z1;
+    const C = x2 - x1;
+    const D = z2 - z1;
+    
+    const dot = A * C + B * D;
+    const lenSq = C * C + D * D;
+    let param = -1;
+    
+    if (lenSq !== 0) // in case of 0 length line
+        param = dot / lenSq;
+    
+    let xx, zz;
+    
+    if (param < 0) {
+        xx = x1;
+        zz = z1;
+    } else if (param > 1) {
+        xx = x2;
+        zz = z2;
+    } else {
+        xx = x1 + param * C;
+        zz = z1 + param * D;
+    }
+    
+    const dx = px - xx;
+    const dz = pz - zz;
+    
+    return Math.sqrt(dx * dx + dz * dz);
 }

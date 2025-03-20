@@ -18,6 +18,11 @@ const gameState = {
     pandaAnimations: {} // Storage for different animations
 };
 
+//physics
+const speed = 15.0;
+const jumpForce = 8.5;
+const gravity = 15.0;
+
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
 
@@ -138,9 +143,13 @@ const flagPole = createFlagPole();
 const flagMesh = flagPole.children[1]; // Cache flag reference for animation
 const obstacles = createObstacles();
 
+const river = createRiver();
+setupRiverGameplay();
+
 function initEventListeners() {
     // Input handling
     document.addEventListener('keydown', (event) => {
+        event.preventDefault();
         gameState.keyStates[event.code] = true;
     });
 
@@ -168,10 +177,10 @@ function initEventListeners() {
 // Camera controls
 let cameraAngleHorizontal = 0;
 let cameraAngleVertical = 0;
-const cameraDistance = 7;
+const cameraDistance = 7.5;
 // Add min and max for vertical camera angle to prevent looking below ground
-const MIN_VERTICAL_ANGLE = -Math.PI/8; // Minimum (looking up)
-const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
+const MIN_VERTICAL_ANGLE = -Math.PI/11; // Minimum (looking up)
+const MAX_VERTICAL_ANGLE = Math.PI/4;  // Maximum (looking down, but not below ground)
 const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera() {
@@ -200,11 +209,7 @@ function updateCamera() {
 // Game physics and movement
 function updatePlayerPosition(deltaTime) {
     if (gameState.goalReached) return;
-    
-    const speed = 8.0;
-    const jumpForce = 8.5;
-    const gravity = 15.0;
-    
+        
     // Ground check
     const groundHeight = getTerrainHeight(player.position.x, player.position.z);
     gameState.playerOnGround = player.position.y <= groundHeight + 0.5;

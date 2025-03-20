@@ -41,12 +41,12 @@ class SoundSystem {
             
             // Create master volume control
             this.masterGain = this.audioContext.createGain();
-            this.masterGain.gain.value = 0.5;
+            this.masterGain.gain.value = 0.7;
             this.masterGain.connect(this.audioContext.destination);
             
             // Create separate gain node for music
             this.musicGain = this.audioContext.createGain();
-            this.musicGain.gain.value = 0.3; // Start with lower volume for music
+            this.musicGain.gain.value = 0.5; // Start with lower volume for music
             this.musicGain.connect(this.masterGain);
             
             this.initialized = true;
@@ -114,7 +114,7 @@ class SoundSystem {
     
     // Start playing background music
     startBackgroundMusic() {
-        if (!this.initialized || !this.musicLoaded || this.musicPlaying) return;
+        if (!this.initialized || !this.musicLoaded || this.musicPlaying || this.muted) return;
         
         try {
             console.log("Starting background music");
@@ -241,7 +241,7 @@ class SoundSystem {
         
         // Update master volume
         if (this.masterGain) {
-            this.masterGain.gain.value = this.muted ? 0 : 0.5;
+            this.masterGain.gain.value = this.muted ? 0 : 0.7;
         }
         
         // Update UI
@@ -352,7 +352,7 @@ class SoundSystem {
         this.lastJumpTime = now;
         
         let random = Math.random();
-        let volume = 0.1
+        let volume = 0.08;
         // "Boing" sound with pitch bend -- with variations
         if(random < 0.25){
             this.playTone(400, 0.3, 'sine', volume);
@@ -375,11 +375,11 @@ class SoundSystem {
         
         // Prevent too frequent triggers
         const now = Date.now();
-        if (now - this.lastFootstepTime < 250) return;
+        if (now - this.lastFootstepTime < 100) return;
         this.lastFootstepTime = now;
         
         // Soft footstep sound
-        this.playNoise(0.1, 0.05);
+        this.playNoise(0.04, 0.015);
     }
     
     // Play goal reached sound
@@ -440,6 +440,49 @@ class SoundSystem {
         // Add a noise burst for texture
         this.playNoise(0.1, 0.2, 0.25);
     }
+
+    playWaterSplashSound(){
+        if (!this.initialized || this.muted) return;
+
+        // Create a splash sound using noise and filters
+        try {
+            // Noise burst for splash
+            const bufferSize = this.audioContext.sampleRate * 0.3; // 300ms
+            const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                // Exponential decay
+                const decay = Math.exp(-4 * i / bufferSize);
+                data[i] = (Math.random() * 2 - 1) * decay;
+            }
+            
+            // Create buffer source
+            const noise = this.audioContext.createBufferSource();
+            noise.buffer = buffer;
+            
+            // Create bandpass filter to make it sound "watery"
+            const filter = this.audioContext.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 1200;
+            filter.Q.value = 0.5;
+            
+            // Create gain node for volume
+            const gainNode = this.audioContext.createGain();
+            gainNode.gain.value = 0.2;
+            
+            // Connect nodes
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            // Play sound
+            noise.start();
+        } catch (error) {
+            console.error("Failed to play splash sound:", error);
+        }
+    }
+
 }
 
 // Initialize sound system when the document is ready
@@ -531,4 +574,8 @@ window.playGameOverSound = function() {
 
 window.playEnemyCrushSound = function() {
     if (soundSystem) soundSystem.playEnemyCrushSound();
+};
+
+window.playWaterSplashSound = function() {
+    if (soundSystem) soundSystem.playWaterSplashSound();
 };

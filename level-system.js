@@ -13,8 +13,8 @@ class LevelSystem {
         // Base level settings - we'll calculate harder difficulties from these
         this.baseSettings = {
             enemyCount: 5,           // Base number of enemies
-            enemySpeedWander: 4,     // Base speed when wandering
-            enemySpeedChase: 6,      // Base speed when chasing
+            enemySpeedWander: speed*0.6,     // Base speed when wandering
+            enemySpeedChase: speed*0.8,      // Base speed when chasing
             fogDensity: 0.01,        // Base fog density
             fogDistance: 120,         // Base fog distance
             fogColor: 0xa183e0       // Base fog color
@@ -43,7 +43,7 @@ class LevelSystem {
                 enemySpeedChase: this.baseSettings.enemySpeedChase,
                 fogDensity: 0.01,
                 fogColor: this.baseSettings.fogColor,
-                fogDistance: 120,
+                fogDistance: 150,
                 flagHeight: 25, // Starting flag height
                 terrainHeightMultiplier: 1.0 // Base terrain height
             };
@@ -59,7 +59,7 @@ class LevelSystem {
         
         // Calculate fog: gets thicker (shorter distance) and denser with each level
         // But let's cap the fog at a certain level so the game remains playable
-        const fogDistance = Math.max(30, this.baseSettings.fogDistance - (level - 2) * 5);
+        const fogDistance = Math.max(40, this.baseSettings.fogDistance - (level - 2) * 5);
         const fogDensity = Math.min(0.08, this.baseSettings.fogDensity + (level - 2) * 0.005);
         
         // Darken fog color slightly for higher levels (reduces brightness)

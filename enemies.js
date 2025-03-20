@@ -39,7 +39,7 @@ class EnemyManager {
         let x, z, distanceFromStart;
         do {
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 80 + 30; // Min 30 units from center
+            const distance = Math.random() * 70 + 30; // Min 30 units from center
             x = Math.cos(angle) * distance;
             z = Math.sin(angle) * distance;
             
