@@ -201,7 +201,7 @@ function updateCamera() {
 function updatePlayerPosition(deltaTime) {
     if (gameState.goalReached) return;
     
-    const speed = 7.0;
+    const speed = 8.0;
     const jumpForce = 8.5;
     const gravity = 10.0;
     
