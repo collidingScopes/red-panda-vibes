@@ -151,23 +151,8 @@ class SoundSystem {
     
     // Create sound UI elements
     createSoundUI() {
-        const soundToggle = document.createElement('button');
-        soundToggle.id = 'sound-toggle';
-        soundToggle.textContent = "🔊";
-        soundToggle.title = "Toggle Sound";
-        
-        // Style the button
-        soundToggle.style.position = 'fixed';
-        soundToggle.style.top = '10px';
-        soundToggle.style.right = '70px';
-        soundToggle.style.width = '40px';
-        soundToggle.style.height = '40px';
-        soundToggle.style.fontSize = '20px';
-        soundToggle.style.zIndex = '150';
-        soundToggle.style.borderRadius = '50%';
-        soundToggle.style.background = 'rgba(0, 0, 0, 0.5)';
-        soundToggle.style.color = '#84ffef';
-        soundToggle.style.border = '1px solid #84ffef';
+
+        let soundToggle = document.querySelector("#sound-toggle");
         
         // Add click event
         soundToggle.addEventListener('click', () => {

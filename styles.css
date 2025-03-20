@@ -76,7 +76,7 @@ button {
     color: #a2ff84; /* Neon green */
     border: 1px solid #a2ff84;
     padding: 8px 15px;
-    margin-top: 15px;
+    /* margin-top: 15px; */
     cursor: pointer;
     font-family: 'Courier New', monospace;
     text-transform: uppercase;
@@ -164,8 +164,9 @@ h2, h3 {
 /* Level Indicator */
 #level-indicator {
     position: absolute;
-    top: 10px;
-    right: 10px;
+    top: 5px;
+    left: 50%;
+    transform: translate(-50%, 0);
     background-color: rgba(0, 0, 0, 0.6);
     color: #ffee84; /* Neon yellow */
     padding: 10px 15px;
@@ -400,8 +401,8 @@ h2, h3 {
 /* Camera flip button styles */
 #camera-flip-button {
     position: fixed;
-    top: 10px;
-    left: 10px;
+    top: 5px;
+    left: 5px;
     width: 50px;
     height: 50px;
     font-size: 24px;
@@ -424,24 +425,32 @@ h2, h3 {
     background-color: rgba(132, 255, 239, 0.3);
 }
 
-/* Optimize game UI positioning for different orientations */
+#sound-toggle {
+    position: fixed;
+    top: 5px;
+    right: 5px;
+    width: 50px;
+    height: 50px;
+
+    font-size: 24px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #84ffef; /* Neon cyan */
+    border: 2px solid #84ffef;
+    border-radius: 50%;
+    z-index: 150;
+    cursor: pointer;
+    /* display: flex; */
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); /* Cyan glow */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    transition: background-color 0.2s ease;
+}
+
+/*
 @media screen and (orientation: portrait) {
-    #camera-flip-button {
-        top: 10px;
-        left: 10px;
-    }
     
-    #sound-toggle {
-        top: 10px;
-        right: 70px;
-    }
-    
-    #level-indicator {
-        top: 10px;
-        right: 10px;
-    }
-    
-    /* Adjust instruction message positioning */
     [id^="instruction-message"] {
         top: 25%;
     }
@@ -452,22 +461,7 @@ h2, h3 {
 }
 
 @media screen and (orientation: landscape) {
-    #camera-flip-button {
-        top: 10px;
-        left: 10px;
-    }
-    
-    #sound-toggle {
-        top: 10px;
-        right: 70px;
-    }
-    
-    #level-indicator {
-        top: 10px;
-        right: 10px;
-    }
-    
-    /* Adjust instruction message positioning */
+
     [id^="instruction-message"] {
         top: 20%;
     }
@@ -476,6 +470,7 @@ h2, h3 {
         top: 25%;
     }
 }
+*/
 
 /* Optimize touch targets for mobile */
 button {
