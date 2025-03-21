@@ -615,3 +615,36 @@ button {
     transform: translate(-50%, -50%);
     z-index: 150;
 }
+
+#powerup-status-container {
+    position: fixed;
+    top: 75%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(0, 0, 0, 0.5);
+    color: #84ffef; /* Neon cyan */
+    padding: 5px;
+    border: 2px solid #ffee84; /* Neon yellow */
+    border-radius: 5px;
+    text-align: center;
+    z-index: 125;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    text-transform: uppercase;
+    box-shadow: 0 0 25px rgba(255, 238, 132, 0.7); /* Yellow glow */
+    backdrop-filter: blur(5px);
+    max-width: 400px;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+/*
+container.style.position = 'fixed';
+container.style.bottom = '10px';
+container.style.right = '10px';
+container.style.zIndex = '1000';
+container.style.display = 'flex';
+container.style.flexDirection = 'column';
+container.style.alignItems = 'flex-end';
+container.style.gap = '5px';
+container.style.pointerEvents = 'none'; // Don't block game clicks
+*/

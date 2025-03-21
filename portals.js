@@ -783,7 +783,7 @@ function createPortals() {
     const portals = [];
     const portalCount = portalDestinations.length;
     const mapRadius = 80;
-    let randomDistance = 60;
+    let randomDistance = 70;
     
     // Log confirmation that we have a valid scene
     console.log("Valid THREE.js scene found:", scene);

@@ -3,6 +3,7 @@ console.log("Mobile check:", isMobile);
 
 // Game state
 const gameState = {
+    speed: 12.0,
     currentLevel: 1,
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,
@@ -31,7 +32,7 @@ gameState.trampoline = {
 };
 
 //physics
-const speed = 12.0;
+//let speed = 12.0;
 const jumpForce = 9.5;
 const gravity = 16.0;
 
@@ -302,7 +303,7 @@ function updatePlayerPosition(deltaTime) {
         worldMoveDirection.normalize();
         
         // Calculate new position
-        const moveDelta = worldMoveDirection.clone().multiplyScalar(speed * deltaTime);
+        const moveDelta = worldMoveDirection.clone().multiplyScalar(gameState.speed * deltaTime);
         player.position.add(moveDelta);
 
         // Add this code to play footstep sounds when walking on ground:
@@ -595,6 +596,7 @@ function init() {
 
     gameState.snowSystem = new SnowSystem(scene, player);
     console.log("Snow system initialized in game init");
+
 }
 
 function handleViewportResize() {
