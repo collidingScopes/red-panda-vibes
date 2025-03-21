@@ -33,11 +33,7 @@ class EnemyManager {
     }
     
     // Initialize enemies
-    initialize() {
-        // // Reset kill count when initializing enemies
-        // this.killCount = 0;
-        // this.updateKillCounterDisplay();
-        
+    initialize() {        
         for (let i = 0; i < this.COUNT; i++) {
             this.createEnemy();
         }
@@ -344,8 +340,7 @@ class EnemyManager {
                     userData.wanderTimer = 0;
                     
                     // Generate new random point near current position
-                    // Use a smaller radius for more natural movement
-                    const wanderRadius = 5 + Math.random() * 5; // Variable radius between 5-10
+                    const wanderRadius = 5 + Math.random() * 15; // Variable radius between 5-10
                     
                     // Choose a new direction that's not too different from current direction
                     // This prevents drastic 180° turns that cause the spasming

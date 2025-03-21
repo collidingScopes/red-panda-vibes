@@ -771,6 +771,11 @@ function createPortals() {
             url: "https://threejs.org/", 
             name: "ThreeJS Game Engine", 
             color: 0x9370db // Medium Purple
+        },
+        { 
+            url: "https://vibe-cannon.vercel.app/", 
+            name: "Vibe Cannon", 
+            color: 0x70dbcc
         }
     ];
     
