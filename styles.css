@@ -488,7 +488,8 @@ button {
 .portal-info {
     position: fixed;
     bottom: 10px;
-    right: 10px;
+    left: 50%;
+    transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, 0.7);
     color: #84ffef;
     padding: 8px 12px;

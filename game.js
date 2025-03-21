@@ -814,6 +814,7 @@ function pauseGame() {
             gameState.animationId = null;
         }
 
+        if(window.soundSystem.pauseMusic) soundSystem.pauseMusic();
     }
 }
 
@@ -837,6 +838,7 @@ function unpauseGame() {
             gameState.animationId = requestAnimationFrame(animate);
         }
 
+        if(window.soundSystem.unpauseMusic) soundSystem.unpauseMusic();
     }
 }
 

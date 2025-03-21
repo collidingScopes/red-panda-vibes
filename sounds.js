@@ -266,6 +266,56 @@ class SoundSystem {
         return this.muted;
     }
     
+    // Pause music when game is paused (preserves mute state)
+    pauseMusic() {
+        if (!this.initialized || !this.musicPlaying) return;
+        console.log("pause music function");
+        try {
+            console.log("Pausing background music");
+            
+            // Store current music gain value to restore later
+            this.previousMusicGainValue = this.musicGain.gain.value;
+            
+            // Fade out music
+            if (this.musicGain) {
+                // Smoothly transition volume to zero
+                this.musicGain.gain.setTargetAtTime(0, this.audioContext.currentTime, 0.1);
+            }
+            
+            // Don't actually stop or pause the track - just reduce volume to zero
+            console.log("Music volume reduced to 0");
+        } catch (error) {
+            console.error("Failed to pause music:", error);
+        }
+    }
+    
+    // Unpause music when game resumes
+    unpauseMusic() {
+        if (!this.initialized || !this.musicPlaying || this.muted) return;
+        
+        try {
+            console.log("Unpausing background music");
+            
+            // Restore previous music volume
+            if (this.musicGain) {
+                const targetVolume = this.previousMusicGainValue || 0.5; // Default to 0.5 if no previous value
+                
+                // Smoothly transition back to previous volume
+                this.musicGain.gain.setTargetAtTime(targetVolume, this.audioContext.currentTime, 0.1);
+                
+                console.log(`Music volume restored to ${targetVolume}`);
+            }
+            
+            // Make sure the audio is playing
+            const currentTrack = this.musicTracks[this.currentTrackIndex];
+            if (currentTrack && currentTrack.audio && currentTrack.audio.paused) {
+                currentTrack.audio.play().catch(err => console.error("Error resuming music:", err));
+            }
+        } catch (error) {
+            console.error("Failed to unpause music:", error);
+        }
+    }
+    
     // Helper to create a tone
     playTone(frequency, duration, type = 'sine', volume = 0.5, delay = 0) {
         if (!this.initialized || this.muted) return null;
