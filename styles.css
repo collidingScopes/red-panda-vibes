@@ -363,6 +363,37 @@ h2, h3 {
     animation: fadeIn 0.5s ease-in-out;
 }
 
+#pause-screen-container {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    /* transform: translate(-50%, -50%); */
+    z-index: 200;
+    background-color:rgba(0, 0, 0, 0.6);
+    /* opacity: 0.2; */
+}
+
+#pause-screen {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    /* background-color: rgba(0, 0, 0, 0.5); */
+    color: #84ffef; /* Neon cyan */
+    padding: 20px;
+    border: 2px solid #ffee84; /* Neon yellow */
+    border-radius: 5px;
+    text-align: center;
+    z-index: 201;
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    text-transform: uppercase;
+    box-shadow: 0 0 25px rgba(255, 238, 132, 0.7); /* Yellow glow */
+    backdrop-filter: blur(5px);
+    width: 33%;
+    animation: fadeIn 0.5s ease-in-out;
+}
+
 #start-game-button {
     position: fixed;
     top: 20%;
@@ -448,35 +479,13 @@ h2, h3 {
     transition: background-color 0.2s ease;
 }
 
-/*
-@media screen and (orientation: portrait) {
-    
-    [id^="instruction-message"] {
-        top: 25%;
-    }
-    
-    #start-game-button {
-        top: 30%;
-    }
-}
-
-@media screen and (orientation: landscape) {
-
-    [id^="instruction-message"] {
-        top: 20%;
-    }
-    
-    #start-game-button {
-        top: 25%;
-    }
-}
-*/
-
 /* Optimize touch targets for mobile */
 button {
     min-width: 44px;
     min-height: 44px;
     touch-action: manipulation;
+    font-weight: bold;
+    font-size: 18px;
 }
 
 /* Remove any transitions that might interfere with orientation changes */

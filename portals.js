@@ -125,7 +125,7 @@ class Portal {
             this.portalMaterial = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.4,
+                opacity: 0.5,
                 side: THREE.DoubleSide,
             });
             
@@ -177,30 +177,21 @@ class Portal {
         // Main portal light in center
         this.portalLight = new THREE.PointLight(this.color, 3, 20);
         this.portalLight.position.set(0, 0, 0.5);
-        this.portalLight.intensity = 0.1; // Start dimmed
+        this.portalLight.intensity = 0.3; // Start dimmed
         this.portalGroup.add(this.portalLight);
         
         // Ambient pulsing light
         this.ambientLight = new THREE.PointLight(this.color, 1, 20);
         this.ambientLight.position.set(0, 0, 2);
-        this.ambientLight.intensity = 0.1; // Start dimmed
+        this.ambientLight.intensity = 0.2; // Start dimmed
         this.portalGroup.add(this.ambientLight);
-        
-        // Add glow around portal
-        const glowGeometry = new THREE.RingGeometry(3.5, 5, 32);
-        const glowMaterial = new THREE.MeshBasicMaterial({
-            color: this.color,
-            transparent: true,
-            opacity: 0.3,
-            side: THREE.DoubleSide,
-        });
     }
     
     createSpiralTexture() {
         // Create a canvas for the spiral texture
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256;
+        canvas.width = 512; // Increased resolution for better detail
+        canvas.height = 512;
         const ctx = canvas.getContext('2d');
         
         // Clear with transparent background
@@ -210,45 +201,80 @@ class Portal {
         const centerX = canvas.width / 2;
         const centerY = canvas.height / 2;
         
-        // Create gradient for spiral
-        const gradient = ctx.createRadialGradient(
+        // More vibrant background gradient
+        const bgGradient = ctx.createRadialGradient(
             centerX, centerY, 0,
             centerX, centerY, canvas.width / 2
         );
         
         // Add color stops based on portal color
         const colorObj = new THREE.Color(this.color);
-        gradient.addColorStop(0, 'white');
-        gradient.addColorStop(0.3, colorObj.getStyle());
-        gradient.addColorStop(0.6, 'white');
-        gradient.addColorStop(0.9, colorObj.getStyle());
-        gradient.addColorStop(1, 'rgba(0,0,0,0)');
+        const complementaryColor = new THREE.Color(
+            1 - colorObj.r,
+            1 - colorObj.g,
+            1 - colorObj.b
+        );
         
-        // Draw spiral
-        ctx.fillStyle = gradient;
-        ctx.beginPath();
+        // Background gradient with more contrast
+        bgGradient.addColorStop(0, 'white');
+        bgGradient.addColorStop(0.4, colorObj.getStyle());
+        bgGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.8)');
+        bgGradient.addColorStop(0.9, complementaryColor.getStyle());
+        bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
         
-        for (let i = 0; i < 1000; i++) {
-            const angle = (i / 30);
-            const radius = (i / 1000) * (canvas.width / 2);
+        // Fill background
+        ctx.fillStyle = bgGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Draw multiple spiral arms for more visual interest
+        for (let arm = 0; arm < 3; arm++) {
+            const armOffset = (Math.PI * 2 / 3) * arm;
+            ctx.beginPath();
             
-            const x = centerX + Math.cos(angle) * radius;
-            const y = centerY + Math.sin(angle) * radius;
+            // Create gradient for this spiral arm
+            const spiralGradient = ctx.createLinearGradient(
+                centerX - canvas.width/2, centerY - canvas.height/2,
+                centerX + canvas.width/2, centerY + canvas.height/2
+            );
             
-            if (i === 0) {
-                ctx.moveTo(x, y);
+            // Alternate colors for each arm for more visual interest
+            if (arm % 2 === 0) {
+                spiralGradient.addColorStop(0, 'white');
+                spiralGradient.addColorStop(0.5, colorObj.getStyle());
+                spiralGradient.addColorStop(1, 'white');
             } else {
-                ctx.lineTo(x, y);
+                spiralGradient.addColorStop(0, colorObj.getStyle());
+                spiralGradient.addColorStop(0.5, 'white');
+                spiralGradient.addColorStop(1, colorObj.getStyle());
             }
+            
+            ctx.strokeStyle = spiralGradient;
+            ctx.lineWidth = 8; // Thicker lines for better visibility
+            
+            // Draw spiral with more iterations and tighter spacing
+            for (let i = 0; i < 1500; i++) {
+                const angle = (i / 20) + armOffset;
+                const radius = (i / 1500) * (canvas.width / 1.8);
+                
+                const x = centerX + Math.cos(angle) * radius;
+                const y = centerY + Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            
+            ctx.stroke();
         }
         
-        ctx.fill();
         return new THREE.CanvasTexture(canvas);
     }
     
     createParticles() {
         // Create particle system for the swirling effect
-        const particleCount = 200;
+        const particleCount = 400;
         const particles = new THREE.BufferGeometry();
         
         // Create arrays for particle positions
@@ -281,7 +307,7 @@ class Portal {
             size: 0.15,
             vertexColors: true,
             transparent: true,
-            opacity: 0.1,
+            opacity: 0.15,
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });
@@ -385,8 +411,8 @@ class Portal {
         this.fadeIn(this.labelSprite.material, 0.8);
         
         // Increase light intensity
-        this.portalLight.intensity = 2.0;
-        this.ambientLight.intensity = 0.8;
+        this.portalLight.intensity = 8.2;
+        this.ambientLight.intensity = 1.2;
         
         console.log(`Portal "${this.name}" animation started`);
     }
@@ -416,8 +442,8 @@ class Portal {
         this.portalCenter.rotation.z += deltaTime * 0.5 * (1 + proximityFactor);
         
         // Pulse the ambient light
-        const time = performance.now() * 0.003;
-        this.ambientLight.intensity = 0.8 + Math.sin(time * 3) * 0.3 * proximityFactor;
+        const time = performance.now() * 0.002;
+        this.ambientLight.intensity = 1.2 + Math.sin(time * 2) * 0.4 * proximityFactor;
         
         // Rotate inner ring in opposite direction
         this.innerRing.rotation.z -= deltaTime * 0.25;
@@ -501,17 +527,11 @@ class Portal {
 
         // Remove this portal from the global portals array
         this.removeFromPortalsArray();
+        // Hide portal UI elements
+        updatePortalUI(false, "");
 
-        // Pause the game if those functions exist
-        if (window.gameState) {
-            window.gameState.portalPaused = true;
-            
-            // If the game has a pauseGame function, use it
-            if (window.pauseGame && typeof window.pauseGame === 'function') {
-                window.pauseGame();
-            }
-        }
-        
+        resetAllKeyStates();
+        pauseGame();
 
     }
     
@@ -596,16 +616,13 @@ class Portal {
 // Update UI when near a portal
 function updatePortalUI(isNearPortal, portalName) {
     const infoElement = document.getElementById('portal-info');
-    const indicatorElement = document.getElementById('portal-indicator');
     
-    if (infoElement && indicatorElement) {
+    if (infoElement) {
         if (isNearPortal) {
             infoElement.textContent = `${portalName} Nearby`;
             infoElement.classList.add('visible');
-            indicatorElement.classList.add('visible');
         } else {
             infoElement.classList.remove('visible');
-            indicatorElement.classList.remove('visible');
         }
     }
 }
@@ -761,7 +778,7 @@ function createPortals() {
     const portals = [];
     const portalCount = portalDestinations.length;
     const mapRadius = 80;
-    let randomDistance = 40;
+    let randomDistance = 60;
     
     // Log confirmation that we have a valid scene
     console.log("Valid THREE.js scene found:", scene);
@@ -886,4 +903,86 @@ function removeAllPortals() {
     updatePortalUI(false, "");
     
     console.log("All portals successfully removed");
+}
+
+// Main keystate reset function
+function resetAllKeyStates() {
+    console.log("Resetting all key states");
+    
+    // Reset keys in common input handler patterns
+    if (window.inputHandler || window.input || window.gameInput) {
+        const inputHandler = window.inputHandler || window.input || window.gameInput;
+        
+        if (inputHandler) {
+            // Reset keys object
+            if (inputHandler.keys && typeof inputHandler.keys === 'object') {
+                console.log("Resetting keys in input handler");
+                Object.keys(inputHandler.keys).forEach(key => {
+                    inputHandler.keys[key] = false;
+                });
+            }
+            
+            // Reset specific common key state properties
+            const keyProps = ['isJumping', 'jump', 'forward', 'backward', 'left', 'right', 
+                             'moveForward', 'moveBackward', 'moveLeft', 'moveRight', 
+                             'space', 'shift', 'ctrl', 'alt'];
+            
+            keyProps.forEach(prop => {
+                if (typeof inputHandler[prop] !== 'undefined') {
+                    inputHandler[prop] = false;
+                }
+            });
+        }
+    }
+    
+    // Reset global key state object
+    if (window.keyState && typeof window.keyState === 'object') {
+        console.log("Resetting global keyState object");
+        Object.keys(window.keyState).forEach(key => {
+            window.keyState[key] = false;
+        });
+    }
+    
+    // Reset our own key state tracker
+    if (window._portalKeyStates && typeof window._portalKeyStates === 'object') {
+        Object.keys(window._portalKeyStates).forEach(key => {
+            window._portalKeyStates[key] = false;
+        });
+    }
+    
+    // Dispatch key up events for common movement keys
+    const commonKeys = ['w', 'a', 's', 'd', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    
+    commonKeys.forEach(key => {
+        // Create and dispatch a keyup event
+        const keyupEvent = new KeyboardEvent('keyup', {
+            key: key,
+            code: key.length === 1 ? 'Key' + key.toUpperCase() : key,
+            bubbles: true
+        });
+        
+        document.dispatchEvent(keyupEvent);
+        window.dispatchEvent(keyupEvent);
+        
+        // Also dispatch to canvas if it exists
+        const canvas = document.querySelector('canvas');
+        if (canvas) {
+            canvas.dispatchEvent(keyupEvent);
+        }
+    });
+    
+    // Reset player state
+    if (window.player) {
+        // Reset common player movement properties
+        if (window.player.isJumping !== undefined) window.player.isJumping = false;
+        if (window.player.jumping !== undefined) window.player.jumping = false;
+        if (window.player.jump !== undefined) window.player.jump = false;
+        
+        // Reset velocity if it exists and is in a jump
+        if (window.player.velocity) {
+            if (window.player.velocity.y > 0) {
+                window.player.velocity.y = 0;
+            }
+        }
+    }
 }

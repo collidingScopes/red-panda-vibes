@@ -803,9 +803,9 @@ function pauseGame() {
         gameState.gamePaused = true;
         
         // Show pause screen UI
-        const pauseScreen = document.getElementById('pause-screen');
-        if (pauseScreen) {
-            pauseScreen.classList.remove('hidden');
+        const pauseScreenContainer = document.getElementById('pause-screen-container');
+        if (pauseScreenContainer) {
+            pauseScreenContainer.classList.remove('hidden');
         }
 
         // Cancel animation frame to stop the game loop
@@ -827,9 +827,9 @@ function unpauseGame() {
         gameState.gamePaused = false;
         
         // Hide pause screen UI
-        const pauseScreen = document.getElementById('pause-screen');
-        if (pauseScreen) {
-            pauseScreen.classList.add('hidden');
+        const pauseScreenContainer = document.getElementById('pause-screen-container');
+        if (pauseScreenContainer) {
+            pauseScreenContainer.classList.add('hidden');
         }
 
         // Restart animation loop

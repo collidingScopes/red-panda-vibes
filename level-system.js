@@ -44,7 +44,7 @@ class LevelSystem {
                 fogDensity: 0.005,
                 fogColor: this.baseSettings.fogColor,
                 fogDistance: 150,
-                flagHeight: 25, // Starting flag height
+                flagHeight: 30, // Starting flag height
                 terrainHeightMultiplier: 1.0 // Base terrain height
             };
         }
