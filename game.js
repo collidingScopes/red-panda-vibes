@@ -3,6 +3,7 @@ console.log("Mobile check:", isMobile);
 
 // Game state
 const gameState = {
+    currentLevel: 1,
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,
     keyStates: {},
@@ -382,7 +383,7 @@ function updatePlayerPosition(deltaTime) {
         gameState.goalReached = true;
 
         // Hide all tutorial messages if this is level 1
-        if (gameState.levelSystem && gameState.levelSystem.currentLevel === 1) {
+        if (gameState.levelSystem && gameState.currentLevel === 1) {
             cancelAllTutorials();
         }
 
@@ -438,7 +439,7 @@ function resetGame() {
     
     // If level system exists, reset current level
     if (gameState.levelSystem) {
-        gameState.levelSystem.applyLevelSettings(gameState.levelSystem.currentLevel);
+        gameState.levelSystem.applyLevelSettings(gameState.currentLevel);
     }
     
     // Reset enemy manager

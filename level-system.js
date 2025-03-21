@@ -7,8 +7,7 @@ class LevelSystem {
         this.flagPole = flagPole;
         
         // Level settings
-        this.currentLevel = 1;
-        // Remove maxLevel as we now have infinite levels
+        //gameState.currentLevel = gameState.currentLevel;
         
         // Base level settings - we'll calculate harder difficulties from these
         this.baseSettings = {
@@ -29,7 +28,7 @@ class LevelSystem {
     
     // Initialize level
     initialize() {
-        this.applyLevelSettings(this.currentLevel);
+        this.applyLevelSettings(gameState.currentLevel);
         this.updateLevelIndicator();
     }
     
@@ -70,7 +69,7 @@ class LevelSystem {
         const fogColor = (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b);
         
         // NEW: Shrink flag pole with each level (minimum 5 units)
-        const flagHeight = Math.max(7, 25 - (level - 1) * 1.5);
+        const flagHeight = Math.max(7, 30 - (level - 1) * 1.5);
         
         // NEW: Increase terrain height multiplier with each level
         const terrainHeightMultiplier = 1.0 + Math.min(1.8, (level - 1) * 0.05);
@@ -176,7 +175,7 @@ class LevelSystem {
     createLevelIndicator() {
         const levelIndicator = document.createElement('div');
         levelIndicator.id = 'level-indicator';
-        levelIndicator.innerHTML = `<span>Level ${this.currentLevel}</span>`;
+        levelIndicator.innerHTML = `<span>Level ${gameState.currentLevel}</span>`;
         document.body.appendChild(levelIndicator);
     }
     
@@ -184,7 +183,7 @@ class LevelSystem {
     updateLevelIndicator() {
         const indicator = document.getElementById('level-indicator');
         if (indicator) {
-            indicator.innerHTML = `<span>Level ${this.currentLevel}</span>`;
+            indicator.innerHTML = `<span>Level ${gameState.currentLevel}</span>`;
         }
     }
     
@@ -199,8 +198,8 @@ class LevelSystem {
     // Advance to next level
     advanceToNextLevel() {
         // Always advance to the next level
-        this.currentLevel++;
-        this.applyLevelSettings(this.currentLevel);
+        gameState.currentLevel++;
+        this.applyLevelSettings(gameState.currentLevel);
         this.updateLevelIndicator();
     
         // Add this line to play level up sound:
@@ -231,7 +230,7 @@ class LevelSystem {
         // Update level status
         const statusEl = document.getElementById('level-status');
         if (statusEl) {
-            statusEl.innerHTML = `<p>Get ready for Level ${this.currentLevel + 1}!</p>`;
+            statusEl.innerHTML = `<p>Get ready for Level ${gameState.currentLevel + 1}!</p>`;
             document.getElementById('next-level-button').textContent = 'Next Level';
         }
         
@@ -246,8 +245,8 @@ class LevelSystem {
     
     // Restart the entire game
     restartGame() {
-        this.currentLevel = 1;
-        this.applyLevelSettings(this.currentLevel);
+        gameState.currentLevel = 1;
+        this.applyLevelSettings(gameState.currentLevel);
         this.updateLevelIndicator();
         
         // Reset game state

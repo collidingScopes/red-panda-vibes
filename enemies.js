@@ -254,7 +254,7 @@ class EnemyManager {
 
     checkJumpKill() {
         // Skip if we're on level 1 (no enemies) or game is over
-        if ((gameState.levelSystem && gameState.levelSystem.currentLevel === 1) || this.gameOver) {
+        if ((gameState.levelSystem && gameState.currentLevel === 1) || this.gameOver) {
             return;
         }
         
@@ -448,7 +448,7 @@ class EnemyManager {
     // Check if any enemy has caught the player
     checkPlayerCaught() {
         // Skip enemy collision check if we're on level 1 (no enemies)
-        if (gameState.levelSystem && gameState.levelSystem.currentLevel === 1) return;
+        if (gameState.levelSystem && gameState.currentLevel === 1) return;
         
         for (const enemy of this.enemies) {
             const distanceToPlayer = enemy.position.distanceTo(this.player.position);
@@ -471,7 +471,7 @@ class EnemyManager {
         
         // Save high score to localStorage
         const highScore = localStorage.getItem('redPandaHighScore') || 0;
-        const currentScore = gameState.levelSystem ? gameState.levelSystem.currentLevel : 1;
+        const currentScore = gameState.levelSystem ? gameState.currentLevel : 1;
         
         if (currentScore > highScore) {
             localStorage.setItem('redPandaHighScore', currentScore);
