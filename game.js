@@ -18,6 +18,16 @@ const gameState = {
     pandaAnimations: {} // Storage for different animations
 };
 
+// Add trampoline properties to gameState
+gameState.trampoline = {
+    object: null,
+    bounceForce: 30, // Much stronger than normal jump
+    cooldown: false,
+    bounceSound: null,
+    bounceAnimation: null,
+    lastBounceTime: 0
+};
+
 //physics
 const speed = 12.0;
 const jumpForce = 9.5;
@@ -413,6 +423,7 @@ function checkCollisions() {
 }
 
 function resetGame() {
+    console.log("reset game");
     // Reset game over state
     gameState.gameOver = false;
     
@@ -450,6 +461,12 @@ function resetGame() {
     if (gameState.snowSystem) {
         gameState.snowSystem.dispose();
         gameState.snowSystem = new SnowSystem(scene, player);
+    }
+
+    // Remove old trampoline
+    if (gameState.trampoline && gameState.trampoline.object) {
+        scene.remove(gameState.trampoline.object);
+        gameState.trampoline.object = null;
     }
 }
 

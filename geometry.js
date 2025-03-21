@@ -674,7 +674,7 @@ function createRiver() {
     
     // River settings
     const riverWidth = 15.0;           // Width of the river
-    const riverDepth = -0.8;            // Depth of the river below terrain
+    const riverDepth = -0.7;            // Depth of the river below terrain
     const curveSegments = 20;          // Number of segments to create the smooth curve
     const curveResolution = 100;       // Resolution of points along the curve
     const mapRadius = 150;             // Approximate radius of walkable area
