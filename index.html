@@ -102,7 +102,16 @@
         <div class="keyboard-hint">[Press ENTER to try again]</div>
     </div>
 
+    <div id="pause-screen" class="level-warning hidden">
+        <h2>Game Paused</h2>
+        <button id="unpause-button">Return to Game</button>
+    </div>
+
     <div id="fps-counter">FPS: </div>
+
+    <!-- Add these UI elements to indicate portal activation -->
+    <div class="portal-info" id="portal-info">Portal Nearby</div>
+    <div class="portal-indicator" id="portal-indicator"></div>
 
     <a target="_blank" href="https://jam.pieter.com" style="font-family: 'system-ui', sans-serif; position: fixed; bottom: -1px; right: -1px; padding: 7px; font-size: 14px; font-weight: bold; background: #fff; color: #000; text-decoration: none; z-index: 10; border-top-left-radius: 12px; z-index: 10000; border: 1px solid #fff;">🕹️ Vibe Jam 2025</a>
     
@@ -117,10 +126,12 @@
     <script src="level-system.js" defer></script>
     <script src="enemies.js" defer></script>
     <script src="game.js" defer></script>
-    <script src="trampoline.js" defer></script>
     <script src="mobile-controls.js" defer></script>
     <!-- Load sounds.js without defer -->
     <script src="sounds.js"></script>
+
+    <script src="trampoline.js" defer></script>
+    <script src="portals.js" defer></script>
 
 </body>
 </html>

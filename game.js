@@ -6,6 +6,7 @@ const gameState = {
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,
     keyStates: {},
+    gamePaused: false,
     goalReached: false,
     enemyManager: null,
     levelSystem: null, // Add the level system reference
@@ -503,6 +504,9 @@ function disposeMaterial(material) {
 let lastTime = 0;
 
 function animate(currentTime) {
+    // Don't animate if game is paused
+    if (gameState.gamePaused) return;
+    
     // Store the animation ID so we can cancel it
     gameState.animationId = requestAnimationFrame(animate);
     
@@ -544,6 +548,7 @@ function animate(currentTime) {
     
     renderer.render(scene, camera);
 }
+
 // Initialize the game
 function init() {
     // Set up event listeners
@@ -775,6 +780,56 @@ class SnowSystem {
         }
     }
 }
+
+// Pause Game Function
+function pauseGame() {
+    // Only pause if the game is running
+    if (!gameState.gamePaused && !gameState.gameOver && !gameState.goalReached) {
+        console.log("Game paused");
+        
+        // Set pause state
+        gameState.gamePaused = true;
+        
+        // Show pause screen UI
+        const pauseScreen = document.getElementById('pause-screen');
+        if (pauseScreen) {
+            pauseScreen.classList.remove('hidden');
+        }
+
+        // Cancel animation frame to stop the game loop
+        if (gameState.animationId) {
+            cancelAnimationFrame(gameState.animationId);
+            gameState.animationId = null;
+        }
+
+    }
+}
+
+// Unpause Game Function
+function unpauseGame() {
+    if (gameState.gamePaused) {
+        console.log("Game unpaused");
+        
+        // Reset pause state
+        gameState.gamePaused = false;
+        
+        // Hide pause screen UI
+        const pauseScreen = document.getElementById('pause-screen');
+        if (pauseScreen) {
+            pauseScreen.classList.add('hidden');
+        }
+
+        // Restart animation loop
+        if (!gameState.animationId) {
+            lastTime = performance.now();
+            gameState.animationId = requestAnimationFrame(animate);
+        }
+
+    }
+}
+
+// Event listener for the unpause button
+document.getElementById('unpause-button').addEventListener('click', unpauseGame);
 
 // Start the game
 init();
