@@ -753,8 +753,8 @@ function createPortals() {
             color: 0xff00ff // Magenta
         },
         { 
-            url: "https://github.com/collidingScopes/red-panda-vibes", 
-            name: "Panda Source Code", 
+            url: "https://schermutseling.com/", 
+            name: "Schermutseling",
             color: 0xa020f0 // Purple
         },
         { 
