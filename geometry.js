@@ -891,8 +891,14 @@ function setupRiverGameplay() {
             }
         }
         
-        // If within river width, player is in the river
-        if (closestDist < riverWidth / 2) {
+        // Check BOTH horizontal distance AND vertical position
+        // Only apply river physics if:
+        // 1. The player is horizontally within the river width
+        // 2. The player is vertically close to the river surface (within a small threshold)
+        const verticalDistanceToRiver = Math.abs(player.position.y - closestPoint.y);
+        const verticalThreshold = 1.5; // Adjust this value as needed
+        
+        if (closestDist < riverWidth / 2 && verticalDistanceToRiver < verticalThreshold) {
             // Add slowing effect
             if (gameState.playerVelocity.x !== 0 || gameState.playerVelocity.z !== 0) {
                 // Slow down movement
