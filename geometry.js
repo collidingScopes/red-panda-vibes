@@ -496,58 +496,6 @@ function createFlagPole() {
     return group;
 }
 
-// Create pastel neon styled obstacles
-function createObstacles() {
-    const obstacles = [];
-    
-    // Create reusable geometries
-    const stemGeometry = new THREE.BoxGeometry(0.1, 1.5, 0.1);
-    const flowerGeometry = new THREE.SphereGeometry(0.4, 8, 8);
-
-    // Create glowing flowers
-    const stemMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0x84ffa2,
-        // emissive: 0x84ffa2,
-        // emissiveIntensity: 0.4
-    });
-    
-    for (let i = 0; i < 200; i++) {
-        const flowerGroup = createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial);
-        
-        const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 90 + 5;
-        
-        const x = Math.cos(angle) * distance;
-        const z = Math.sin(angle) * distance;
-        
-        const terrainHeight = getTerrainHeight(x, z);
-        flowerGroup.position.set(x, terrainHeight, z);
-        
-        scene.add(flowerGroup);
-    }
-    
-    // Create pastel-styled trees
-    for (let i = 0; i < 25; i++) {
-        const tree = createPastelTree();
-        
-        // Position trees randomly around the map
-        const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 80 + 15;
-        
-        const x = Math.cos(angle) * distance;
-        const z = Math.sin(angle) * distance;
-        
-        // Make sure trees are on the terrain
-        const terrainHeight = getTerrainHeight(x, z);
-        tree.position.set(x, terrainHeight, z);
-        
-        scene.add(tree);
-        obstacles.push(tree);
-    }
-    
-    return obstacles;
-}
-
 function createPastelTree() {
     const treeGroup = new THREE.Group();
     
@@ -590,47 +538,137 @@ function createPastelTree() {
 function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
     const flowerGroup = new THREE.Group();
     
-    // Create stem
-    const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+    // Create stem - thinner and slightly curved
+    const stem = new THREE.Mesh(
+        new THREE.BoxGeometry(0.1, 2.0, 0.1), // Slightly taller, thinner stem
+        new THREE.MeshStandardMaterial({ 
+            color: 0x228B22, // Darker green for stem
+            roughness: 0.7,
+            metalness: 0.1
+        })
+    );
+    
     // Position stem with bottom at y=0
-    stem.position.y = 0.5; // Half of the stem height (1.5/2)
+    stem.position.y = 0.6;
+    
+    // Add a slight curve to the stem
+    stem.rotation.z = Math.random() * 0.6 - 0.3;
     flowerGroup.add(stem);
     
-    // Create flower head(s)
-    const flowerCount = Math.floor(Math.random() * 3) + 1;
-    for (let i = 0; i < flowerCount; i++) {
-        // Create a random pastel color for each flower
-        const hue = Math.random() * 0.6 + 0.2; // Pastel range
-        const saturation = Math.random() * 0.6 + 0.2;
-        const lightness = Math.random() * 0.6 + 0.2;
+    // Create leaves (1-2 small leaves on the stem)
+    const leafCount = Math.floor(Math.random() * 2) + 1;
+    
+    for (let i = 0; i < leafCount; i++) {
+        // Create a simple leaf shape
+        const leafShape = new THREE.Shape();
+        leafShape.moveTo(0, 0);
+        leafShape.lineTo(0.3, 0.15);
+        leafShape.lineTo(0.6, 0);
+        leafShape.lineTo(0.3, -0.15);
+        leafShape.lineTo(0, 0);
         
-        const color = new THREE.Color().setHSL(hue, saturation, lightness);
-        
-        const flowerMaterial = new THREE.MeshStandardMaterial({ 
-            color: color,
-            emissive: color,
-            emissiveIntensity: 0.7
+        const leafGeometry = new THREE.ShapeGeometry(leafShape);
+        const leafMaterial = new THREE.MeshStandardMaterial({ 
+            color: 0x32CD32, // Bright green
+            roughness: 0.7,
+            side: THREE.DoubleSide
         });
         
-        const flower = new THREE.Mesh(flowerGeometry, flowerMaterial);
+        const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
         
-        // Position flower above the stem
-        // CHANGE THIS VALUE to adjust how high the flowers float
-        const floatHeight = 0.2; // Additional floating height
+        // Position leaf along the stem
+        leaf.position.y = 0.5 + i * 0.8;
         
-        // Position flower at the top of the stem (1.5) plus the floating height
-        flower.position.y = 1 + floatHeight;
+        // Random rotation around the stem
+        const angle = Math.random() * Math.PI * 2;
+        leaf.position.x = Math.cos(angle) * 0.2;
+        leaf.position.z = Math.sin(angle) * 0.2;
         
-        // Add some random offset for multiple flowers
-        if (flowerCount > 1) {
-            flower.position.x = (Math.random() - 0.5) * 0.9;
-            flower.position.z = (Math.random() - 0.5) * 0.9;
-        }
+        // Orient the leaf outward
+        leaf.rotation.y = -angle;
+        leaf.rotation.x = Math.PI / 2;
         
-        flowerGroup.add(flower);
+        flowerGroup.add(leaf);
     }
     
+    // Create the flower petals
+    const centerRadius = 0.7;
+    
+    // Choose a random flower color for each flower (one color per flower)
+    // Array of vibrant flower colors
+    const flowerColors = [
+        0xFF5555, // Red
+        0xFF9500, // Orange
+        0xFFD500, // Golden yellow
+        0xFF55FF, // Pink
+        0xAA55FF, // Purple
+        0x55AAFF, // Blue
+        0x55FFAA, // Mint
+        0xFF5599  // Rose
+    ];
+    
+    // Randomly select one color for this flower
+    const centerColor = new THREE.Color(flowerColors[Math.floor(Math.random() * flowerColors.length)]);
+    
+    // Create the center of the flower (yellow circle)
+    const centerGeometry = new THREE.CircleGeometry(centerRadius, 8);
+    const centerMaterial = new THREE.MeshStandardMaterial({
+        color: centerColor,
+        side: THREE.DoubleSide,
+        roughness: 0.7
+    });
+    
+    const center = new THREE.Mesh(centerGeometry, centerMaterial);
+    center.rotation.x = -Math.PI / 2 + Math.PI*Math.random()/6; // Lay flat
+    center.position.y = 1.6; // Position at top of stem
+    flowerGroup.add(center);
+
+    // Add a slight random rotation to the whole flower for variety
+    flowerGroup.rotation.y = Math.random() * Math.PI * 2;
+    
     return flowerGroup;
+}
+
+// Updated obstacles creation function to use our new flower style
+function createObstacles() {
+    const obstacles = [];
+    
+    // Create glowing flowers with the new style
+    for (let i = 0; i < 200; i++) {
+        const flowerGroup = createNeonFlowerPatch();
+        
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 90 + 5;
+        
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        
+        const terrainHeight = getTerrainHeight(x, z);
+        flowerGroup.position.set(x, terrainHeight, z);
+        
+        scene.add(flowerGroup);
+    }
+    
+    // Create pastel-styled trees (unchanged)
+    for (let i = 0; i < 25; i++) {
+        const tree = createPastelTree();
+        
+        // Position trees randomly around the map
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 80 + 15;
+        
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        
+        // Make sure trees are on the terrain
+        const terrainHeight = getTerrainHeight(x, z);
+        tree.position.set(x, terrainHeight, z);
+        
+        scene.add(tree);
+        obstacles.push(tree);
+    }
+    
+    return obstacles;
 }
 
 function createRiver() {
