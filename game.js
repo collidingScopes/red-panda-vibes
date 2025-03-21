@@ -198,8 +198,8 @@ const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera() {
     // Update camera angles based on arrow key inputs
-    if (gameState.keyStates['ArrowLeft']) window.cameraAngleHorizontal += 0.04;
-    if (gameState.keyStates['ArrowRight']) window.cameraAngleHorizontal -= 0.04;
+    if (gameState.keyStates['ArrowLeft']) window.cameraAngleHorizontal += 0.03;
+    if (gameState.keyStates['ArrowRight']) window.cameraAngleHorizontal -= 0.03;
     // Apply the min/max vertical angle limits
     if (gameState.keyStates['ArrowUp']) window.cameraAngleVertical = Math.max(window.cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
     if (gameState.keyStates['ArrowDown']) window.cameraAngleVertical = Math.min(window.cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
@@ -608,18 +608,6 @@ function handleViewportResize() {
     // Maintain pixelated look
     renderer.setPixelRatio(pixelRatio);
 }
-
-let startGameButton = document.querySelector("#start-game-button");
-/*
-startGameButton.addEventListener("click", () => {
-    gameState.gameStarted = true;
-    startGameButton.classList.add("hidden");
-    
-    setTimeout(() => {
-        showTutorialMessages();
-    }, 4000);
-});
-*/
 
 function showTutorialMessages() {
     // Message IDs in order
