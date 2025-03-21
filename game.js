@@ -469,6 +469,18 @@ function resetGame() {
         scene.remove(gameState.trampoline.object);
         gameState.trampoline.object = null;
     }
+
+    // Remove old portals and create new ones
+    if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
+        window.removeAllPortals();
+        
+        // Create new portals after a short delay
+        setTimeout(() => {
+            if (window.createPortals && typeof window.createPortals === 'function') {
+                window.createPortals();
+            }
+        }, 1000);
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly

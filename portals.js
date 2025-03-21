@@ -747,7 +747,7 @@ function createPortals() {
         },
         { 
             url: "https://firstpersonflappy.com/", 
-            name: "First Person Flappy Bird", 
+            name: "First Person Flappy", 
             color: 0x8a2be2 // Blue Violet
         },
         { 
@@ -857,16 +857,33 @@ window.addPortal = function(position, url, name, color) {
 };
 
 // Function to remove all portals
-window.removeAllPortals = function() {
-    if (!window.__portals) return;
+function removeAllPortals() {
+    if (!window.__portals || !window.__portals.length) return;
     
+    console.log(`Removing all portals (${window.__portals.length} total)`);
+    
+    // Get scene
     const scene = getGameScene();
-    if (!scene) return;
-    
-    for (const portal of window.__portals) {
-        scene.remove(portal.portalGroup);
+    if (!scene) {
+        console.error("Cannot remove portals: scene not found");
+        return;
     }
     
+    // Remove each portal from scene and dispose resources
+    for (const portal of window.__portals) {
+        try {
+            scene.remove(portal.portalGroup);
+            portal.disposePortalResources();
+        } catch (e) {
+            console.error(`Error removing portal "${portal.name}":`, e);
+        }
+    }
+    
+    // Clear the portals array
     window.__portals = [];
-    console.log("All portals removed");
-};
+    
+    // Hide portal UI elements
+    updatePortalUI(false, "");
+    
+    console.log("All portals successfully removed");
+}
