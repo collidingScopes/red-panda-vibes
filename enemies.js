@@ -220,7 +220,7 @@ class EnemyManager {
                 const progress = elapsed / duration;
                 
                 // Scale the ring
-                const scale = 0.5 + progress * 10;
+                const scale = 0.5 + progress * 15;
                 ring.scale.set(scale, scale, scale);
                 
                 // Fade out
