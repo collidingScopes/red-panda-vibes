@@ -222,14 +222,6 @@ updatePlayerPosition = function(deltaTime) {
     }
 };
 
-// Initialize the trampoline when the game starts
-document.getElementById('start-game-button').addEventListener('click', () => {
-    // Add a slight delay to make sure the game is fully initialized
-    setTimeout(() => {
-        initTrampoline();
-    }, 1000);
-});
-
 // Properly handle level transitions and cleanup
 if (gameState.levelSystem) {
     // Hook into level completion

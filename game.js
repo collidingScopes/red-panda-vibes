@@ -610,6 +610,7 @@ function handleViewportResize() {
 }
 
 let startGameButton = document.querySelector("#start-game-button");
+/*
 startGameButton.addEventListener("click", () => {
     gameState.gameStarted = true;
     startGameButton.classList.add("hidden");
@@ -618,6 +619,7 @@ startGameButton.addEventListener("click", () => {
         showTutorialMessages();
     }, 4000);
 });
+*/
 
 function showTutorialMessages() {
     // Message IDs in order
