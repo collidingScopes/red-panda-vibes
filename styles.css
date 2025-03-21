@@ -164,12 +164,12 @@ h2, h3 {
 /* Level Indicator */
 #level-indicator {
     position: absolute;
-    top: 5px;
+    top: 4px;
     left: 50%;
     transform: translate(-50%, 0);
     background-color: rgba(0, 0, 0, 0.6);
     color: #ffee84; /* Neon yellow */
-    padding: 10px 15px;
+    padding: 6px 12px;
     border: 2px solid #84ffef; /* Neon cyan */
     border-radius: 5px;
     z-index: 100;
@@ -184,6 +184,25 @@ h2, h3 {
 #level-indicator span {
     font-weight: bold;
     text-shadow: 0 0 5px rgba(255, 238, 132, 0.7); /* Yellow glow */
+}
+
+#enemy-kill-counter {
+    position: absolute;
+    top: 40px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    background-color: rgba(0, 0, 0, 0.4);
+    color: #fff9d5; /* Neon yellow */
+    padding: 5px 10px;
+    /* border: 2px solid #84ffef; */
+    /* border-radius: 5px; */
+    z-index: 100;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 12px;
+    box-shadow: 0 0 15px rgba(132, 255, 239, 0.5); /* Cyan glow */
+    backdrop-filter: blur(5px);
 }
 
 /* Level Complete Screen */

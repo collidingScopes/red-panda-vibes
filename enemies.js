@@ -14,6 +14,9 @@ class EnemyManager {
         this.SPEED_CHASE = 6; // Speed when chasing the player
         this.KILL_DISTANCE = 1.5; // How close an enemy needs to be to catch the player
         
+        // Add kill counter property
+        this.killCount = 0;
+        
         // Reusable vectors to optimize performance
         this.tempVector = new THREE.Vector3();
         this.targetVector = new THREE.Vector3();
@@ -24,10 +27,17 @@ class EnemyManager {
         
         // Create game over screen (hidden initially)
         this.createGameOverScreen();
+        
+        // Initialize the kill counter display
+        this.updateKillCounterDisplay();
     }
     
     // Initialize enemies
     initialize() {
+        // // Reset kill count when initializing enemies
+        // this.killCount = 0;
+        // this.updateKillCounterDisplay();
+        
         for (let i = 0; i < this.COUNT; i++) {
             this.createEnemy();
         }
@@ -147,9 +157,22 @@ class EnemyManager {
         return blobGroup;
     }
     
-    // 1. First, add a method to EnemyManager class to kill a single enemy
+    // Update the kill counter display
+    updateKillCounterDisplay() {
+        const counterElement = document.getElementById('enemy-kill-counter');
+        if (counterElement) {
+            counterElement.textContent = `Monsters smushed: ${this.killCount}`;
+        }
+    }
+    
     // Add this method to the EnemyManager class
     killEnemy(enemy) {
+        // Increment kill counter
+        this.killCount++;
+        
+        // Update the counter display
+        this.updateKillCounterDisplay();
+        
         // Create an explosion effect at the enemy's position
         this.createDeathEffect(enemy.position.clone());
         
@@ -476,6 +499,12 @@ class EnemyManager {
         for (const enemy of this.enemies) {
             this.scene.remove(enemy);
             this.disposeEnemy(enemy);
+        }
+
+        // Reset kill counter when starting a new game
+        if(this.gameOver){
+            this.killCount = 0;
+            this.updateKillCounterDisplay();
         }
         
         this.enemies = [];

@@ -17,7 +17,7 @@ function createTrampoline() {
     });
     
     const frameBase = new THREE.Mesh(frameGeometry, frameMaterial);
-    frameBase.position.y = 0.25;
+    frameBase.position.y = 0.45;
     frameBase.castShadow = true;
     frameBase.receiveShadow = true;
     
@@ -35,7 +35,7 @@ function createTrampoline() {
     });
     
     const bouncySurface = new THREE.Mesh(surfaceGeometry, surfaceMaterial);
-    bouncySurface.position.y = 1; // Slightly above the base
+    bouncySurface.position.y = 1.2; // Slightly above the base
     bouncySurface.castShadow = true;
     
     // Add legs to the trampoline

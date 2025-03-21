@@ -463,7 +463,7 @@ function createFlagPole() {
     
     // Create a full bamboo stalk that goes all the way to the ground
     const bambooHeight = 25; // Total height
-    const bambooRadius = 0.7;
+    const bambooRadius = 1;
 
     // Add node rings at positions matching the image
     const nodePositions = [3, 7, 11, 15]; // Positions from bottom
@@ -480,9 +480,10 @@ function createFlagPole() {
     });
     
     // Add a light to highlight the bamboo
-    const bambooLight = new THREE.PointLight(0x00ff00, 1.5, 15); // Green light
-    bambooLight.position.y = bambooHeight / 2; // Position at middle of bamboo
-    bambooLight.castShadow = false;
+    const bambooLight = new THREE.PointLight(0x00ff00, 2.5, 15); // More natural green glow
+    bambooLight.position.y = bambooHeight/2; // Position at middle of bamboo
+
+    bambooLight.castShadow = true;
     group.add(bambooLight);
     
     // Position the bamboo stalk far away from the starting point
@@ -516,8 +517,9 @@ function createPastelTree() {
     const foliageColor = COLORS.foliage[Math.floor(Math.random() * COLORS.foliage.length)];
     
     // Tree foliage - rounded cone for soft look
-    let treeHeight = 5+Math.random()*5
-    const foliageGeometry = new THREE.ConeGeometry(2, treeHeight, 8); // More sides for smoother look
+    let treeHeight = 4+Math.random()*4;
+    let treeWidth = 1+Math.random()*4;
+    const foliageGeometry = new THREE.ConeGeometry(treeWidth, treeHeight, 8); // More sides for smoother look
     const foliageMaterial = new THREE.MeshStandardMaterial({ 
         color: foliageColor,
         roughness: 0.7,
@@ -562,9 +564,9 @@ function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
         // Create a simple leaf shape
         const leafShape = new THREE.Shape();
         leafShape.moveTo(0, 0);
-        leafShape.lineTo(0.3, 0.15);
-        leafShape.lineTo(0.6, 0);
-        leafShape.lineTo(0.3, -0.15);
+        leafShape.lineTo(0.4, 0.15);
+        leafShape.lineTo(0.8, 0);
+        leafShape.lineTo(0.4, -0.15);
         leafShape.lineTo(0, 0);
         
         const leafGeometry = new THREE.ShapeGeometry(leafShape);
@@ -680,7 +682,7 @@ function createRiver() {
     // River settings
     const riverWidth = 15.0;           // Width of the river
     const riverDepth = -0.7;            // Depth of the river below terrain
-    const curveSegments = 20;          // Number of segments to create the smooth curve
+    const curveSegments = 60;          // Number of segments to create the smooth curve
     const curveResolution = 100;       // Resolution of points along the curve
     const mapRadius = 150;             // Approximate radius of walkable area
     const waterColor = 0x0049ff;       // Bright turquoise color for better visibility
