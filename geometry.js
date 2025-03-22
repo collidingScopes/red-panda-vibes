@@ -537,7 +537,7 @@ function createPastelTree() {
     return treeGroup;
 }
 
-function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
+function createNeonFlowerPatch() {
     const flowerGroup = new THREE.Group();
     
     // Create stem - thinner and slightly curved
@@ -545,8 +545,8 @@ function createNeonFlowerPatch(stemGeometry, flowerGeometry, stemMaterial) {
         new THREE.BoxGeometry(0.1, 2.0, 0.1), // Slightly taller, thinner stem
         new THREE.MeshStandardMaterial({ 
             color: 0x228B22, // Darker green for stem
-            roughness: 0.7,
-            metalness: 0.1
+            //roughness: 0.7,
+            //metalness: 0.1
         })
     );
     
@@ -636,7 +636,7 @@ function createObstacles() {
     const obstacles = [];
     
     // Create glowing flowers with the new style
-    for (let i = 0; i < 200; i++) {
+    for (let i = 0; i < 150; i++) {
         const flowerGroup = createNeonFlowerPatch();
         
         const angle = Math.random() * Math.PI * 2;
@@ -651,8 +651,8 @@ function createObstacles() {
         scene.add(flowerGroup);
     }
     
-    // Create pastel-styled trees (unchanged)
-    for (let i = 0; i < 25; i++) {
+    // Create pastel-styled trees
+    for (let i = 0; i < 20; i++) {
         const tree = createPastelTree();
         
         // Position trees randomly around the map
@@ -682,8 +682,8 @@ function createRiver() {
     // River settings
     const riverWidth = 15.0;           // Width of the river
     const riverDepth = -0.7;            // Depth of the river below terrain
-    const curveSegments = 60;          // Number of segments to create the smooth curve
-    const curveResolution = 100;       // Resolution of points along the curve
+    const curveSegments = 80;          // Number of segments to create the smooth curve
+    const curveResolution = 80;       // Resolution of points along the curve
     const mapRadius = 150;             // Approximate radius of walkable area
     const waterColor = 0x0049ff;       // Bright turquoise color for better visibility
     
@@ -707,7 +707,7 @@ function createRiver() {
         
         // Generate control points for the curve
         // We'll create several points along the way with some randomness
-        const numControlPoints = 6;
+        const numControlPoints = 4;
         for (let i = 1; i <= numControlPoints; i++) {
             const t = i / (numControlPoints + 1);
             

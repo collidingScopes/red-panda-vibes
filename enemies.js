@@ -17,6 +17,9 @@ class EnemyManager {
         // Add kill counter property
         this.killCount = 0;
         
+        // Add invisibility property
+        this.playerIsInvisible = false;
+        
         // Reusable vectors to optimize performance
         this.tempVector = new THREE.Vector3();
         this.targetVector = new THREE.Vector3();
@@ -313,8 +316,8 @@ class EnemyManager {
         // Distance to player
         const distanceToPlayer = enemy.position.distanceTo(this.player.position);
         
-        // Update enemy state based on player proximity
-        if (distanceToPlayer < this.DETECTION_RADIUS) {
+        // Update enemy state based on player proximity and invisibility status
+        if (distanceToPlayer < this.DETECTION_RADIUS && !this.playerIsInvisible) {
             // Add this check to play warning sound only when first detecting player:
             if (userData.state !== 'chase') {
                 if (window.playEnemyWarningSound) window.playEnemyWarningSound();
@@ -324,7 +327,7 @@ class EnemyManager {
             // For chase state, target the player directly
             this.targetVector.copy(this.player.position);
         } else {
-            // If was chasing but lost sight, keep moving toward last known position for a while
+            // If was chasing but lost sight or player is invisible, keep moving toward last known position for a while
             if (userData.state === 'chase') {
                 // Only switch back to wander if we're close to where we last saw the player
                 const distanceToTarget = enemy.position.distanceTo(userData.targetPoint);
@@ -447,8 +450,8 @@ class EnemyManager {
     
     // Check if any enemy has caught the player
     checkPlayerCaught() {
-        // Skip enemy collision check if we're on level 1 (no enemies)
-        if (gameState.levelSystem && gameState.currentLevel === 1) return;
+        // Skip enemy collision check if we're on level 1 (no enemies) OR if the player is invisible
+        if (gameState.levelSystem && gameState.currentLevel === 1 || this.playerIsInvisible) return;
         
         for (const enemy of this.enemies) {
             const distanceToPlayer = enemy.position.distanceTo(this.player.position);
@@ -504,6 +507,7 @@ class EnemyManager {
         
         this.enemies = [];
         this.gameOver = false;
+        this.playerIsInvisible = false; // Reset invisibility status
         document.getElementById('game-over-screen').classList.add("hidden");
         
         // Create new enemies

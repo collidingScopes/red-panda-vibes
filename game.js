@@ -60,12 +60,10 @@ const pixelRatio = 1.0; //higher value gives higher quality graphics
 renderer.setPixelRatio(pixelRatio);
 
 const scene = new THREE.Scene();
+scene.fog = new THREE.Fog(0xf8a7e9, 30, 150);
 
 // Apply sunset background
 scene.background = createSunsetBackground();
-
-// Softer pastel fog to match the scene
-scene.fog = new THREE.Fog(0xa183e0, 20, 50);
 
 // Enhanced sunset lighting for more dramatic shadows
 // Warm ambient light for sunset feel
@@ -684,8 +682,8 @@ class SnowSystem {
         this.player = player;
         
         // Snow settings
-        this.COUNT = 1500;      // Number of snowflakes
-        this.AREA_SIZE = 200;    // Area around player to show snow
+        this.COUNT = 1000;      // Number of snowflakes
+        this.AREA_SIZE = 80;    // Area around player to show snow
         this.FALL_SPEED = 3;    // How fast snow falls
         this.DRIFT_SPEED = 0.6; // How much snow drifts horizontally
         this.MIN_SIZE = 0.01;    // Minimum snowflake size
@@ -713,7 +711,7 @@ class SnowSystem {
         
         const material = new THREE.PointsMaterial({
             color: 0xffffff,
-            size: 0.4,
+            size: 0.2,
             opacity: 0.6,
             transparent: true,
             sizeAttenuation: true,

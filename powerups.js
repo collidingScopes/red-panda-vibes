@@ -16,11 +16,21 @@ class PowerupSystem {
                 minCount: 3,  // Minimum number per level
                 maxCount: 6,  // Maximum number per level
                 spawnRadius: {
-                    min: 25,   // Minimum distance from player
-                    max: 100,    // Maximum distance from player
+                    min: 35,   // Minimum distance from player
+                    max: 120,    // Maximum distance from player
                 },
                 color: 0x00ffff, // Cyan color for speed boost
-            }
+            },
+            invisibility: {
+                duration: 10, // duration in seconds
+                minCount: 2,  // Minimum number per level
+                maxCount: 4,  // Maximum number per level
+                spawnRadius: {
+                    min: 25,   // Minimum distance from player
+                    max: 100,  // Maximum distance from player
+                },
+                color: 0xaa55ff, // Purple color for invisibility
+            },
         };
         
         // Active effects on the player
@@ -30,7 +40,12 @@ class PowerupSystem {
                 timeRemaining: 0,
                 originalSpeed: null,
                 progressBar: null
-            }
+            },
+            invisibility: {
+                active: false,
+                timeRemaining: 0,
+                progressBar: null
+            },
         };
         
         // Set up UI elements
@@ -51,6 +66,7 @@ class PowerupSystem {
         
         // Create new powerups for the level
         this.createSpeedBoostPowerups();
+        this.createInvisibilityPowerups();
     }
     
     // Create the UI elements for powerup status
@@ -89,6 +105,37 @@ class PowerupSystem {
             container: speedBoostContainer,
             bar: document.getElementById('speed-boost-progress')
         };
+
+        const invisibilityContainer = document.createElement('div');
+        invisibilityContainer.className = 'powerup-status-item';
+        invisibilityContainer.id = 'invisibility-container';
+        invisibilityContainer.style.display = 'none'; // Hide initially
+        invisibilityContainer.style.borderRadius = '5px';
+        invisibilityContainer.style.padding = '5px 10px';
+        invisibilityContainer.style.color = '#fff';
+        invisibilityContainer.style.fontFamily = 'Arial, sans-serif';
+        invisibilityContainer.style.fontSize = '14px';
+        invisibilityContainer.style.width = '200px';
+        invisibilityContainer.style.marginTop = '10px';
+
+        // Add icon and label
+        invisibilityContainer.innerHTML = `
+            <div style="display: flex; align-items: center; margin-bottom: 3px;">
+                <span style="color: #aa55ff; margin-right: 5px;">👻</span>
+                <span>Invisibility</span>
+            </div>
+            <div class="progress-bar-outer" style="height: 8px; background-color: rgba(255, 255, 255, 0.3); border-radius: 4px; overflow: hidden;">
+                <div id="invisibility-progress" class="progress-bar-inner" style="height: 100%; width: 100%; background-color: #aa55ff; transition: width 0.1s linear;"></div>
+            </div>
+        `;
+
+        container.appendChild(invisibilityContainer);
+
+        // Store reference to the progress bar
+        this.activeEffects.invisibility.progressBar = {
+            container: invisibilityContainer,
+            bar: document.getElementById('invisibility-progress')
+        };
         
         console.log("Powerup UI elements created");
     }
@@ -126,7 +173,7 @@ class PowerupSystem {
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
-        const y = this.getTerrainHeight(x, z) + 1.5; // Float above terrain
+        const y = this.getTerrainHeight(x, z) + 2.5; // Float above terrain
         
         // Create the powerup object
         const powerup = this.createPowerupModel(config.color, config.particleColor);
@@ -181,9 +228,9 @@ class PowerupSystem {
         group.add(light);
         
         // Add animation data
-        group.userData.rotationSpeed = Math.random() * 0.3;
+        group.userData.rotationSpeed = 0.04 + Math.random() * 0.2;
         group.userData.bobHeight = 0.2;
-        group.userData.bobSpeed = Math.random() * 0.3;
+        group.userData.bobSpeed = 0.04 + Math.random() * 0.2;
         group.userData.hoverTime = Math.random() * Math.PI * 2; // Random start time for hovering
         
         return group;
@@ -194,7 +241,7 @@ class PowerupSystem {
         if (!this.player || this.activePowerups.length === 0) return;
         
         const playerPos = this.player.position;
-        const collectionRadius = 2.0; // Distance to collect (increased from 1.5)
+        const collectionRadius = 2.5; // Distance to collect (increased from 1.5)
         
         for (let i = this.activePowerups.length - 1; i >= 0; i--) {
             const powerup = this.activePowerups[i];
@@ -230,6 +277,23 @@ class PowerupSystem {
                     window.soundSystem.playPowerupSound();
                 } else {
                     // Otherwise use a suitable existing sound
+                    if (window.playGoalSound) window.playGoalSound();
+                }
+            }
+        } else if (type === 'invisibility') {
+            this.applyInvisibility();
+            
+            // Play collection sound
+            if (window.soundSystem && window.soundSystem.initialized) {
+                // Play a special invisibility sound effect
+                if (window.playInvisibilitySound) {
+                    window.playInvisibilitySound();
+                } else if (window.soundSystem.playInvisibilitySound) {
+                    window.soundSystem.playInvisibilitySound();
+                } else if (window.soundSystem.playPowerupSound) {
+                    window.soundSystem.playPowerupSound();
+                } else {
+                    // Fallback to another suitable sound
                     if (window.playGoalSound) window.playGoalSound();
                 }
             }
@@ -297,48 +361,7 @@ class PowerupSystem {
     // Animate powerup collection effect
     animateCollection(powerup) {
         if (!this.scene) return;
-        
-        // Create a collection effect (expanding ring)
-        const ringGeometry = new THREE.RingGeometry(0.1, 0.2, 16);
-        const ringMaterial = new THREE.MeshBasicMaterial({
-            color: 0x00ffff, // Use default color in case powerup.children is not available
-            transparent: true,
-            opacity: 1.0,
-            side: THREE.DoubleSide
-        });
-        
-        // Try to get the actual color from the powerup
-        if (powerup.children && powerup.children[0] && powerup.children[0].material) {
-            ringMaterial.color = powerup.children[0].material.color;
-        }
-        
-        const ring = new THREE.Mesh(ringGeometry, ringMaterial);
-        ring.position.copy(powerup.position);
-        ring.rotation.x = Math.PI / 2; // Lay flat
-        this.scene.add(ring);
-        
-        // Animate ring then remove
-        let scale = 1;
-        let opacity = 1;
-        
-        const expandRing = () => {
-            scale += 0.15;
-            opacity -= 0.03;
-            
-            ring.scale.set(scale, scale, scale);
-            ringMaterial.opacity = opacity;
-            
-            if (opacity > 0) {
-                requestAnimationFrame(expandRing);
-            } else {
-                this.scene.remove(ring);
-                ringGeometry.dispose();
-                ringMaterial.dispose();
-            }
-        };
-        
-        expandRing();
-        
+
         // Remove the powerup from scene with a small delay
         setTimeout(() => {
             this.scene.remove(powerup);
@@ -396,6 +419,33 @@ class PowerupSystem {
                 this.updateSpeedBoostUI();
                 
                 console.log("Speed boost expired, speed reverted to normal");
+            }
+        }
+
+        if (this.activeEffects.invisibility.active) {
+            // Make sure deltaTime is reasonable (cap it at 0.1 seconds)
+            const limitedDeltaTime = 1/60; //assume 60fps
+            
+            // Reduce the timer
+            this.activeEffects.invisibility.timeRemaining -= limitedDeltaTime;
+            
+            // Update UI
+            this.updateInvisibilityUI();
+            
+            // Check if expired
+            if (this.activeEffects.invisibility.timeRemaining <= 0) {
+                // Revert invisibility effect
+                if (window.gameState && window.gameState.enemyManager) {
+                    window.gameState.enemyManager.playerIsInvisible = false;
+                }
+                
+                this.activeEffects.invisibility.active = false;
+                this.activeEffects.invisibility.timeRemaining = 0;
+                
+                // Update UI
+                this.updateInvisibilityUI();
+                
+                console.log("Invisibility expired");
             }
         }
     }
@@ -462,9 +512,125 @@ class PowerupSystem {
             this.activeEffects.speedBoost.timeRemaining = 0;
             this.updateSpeedBoostUI();
         }
+
+        if (this.activeEffects.invisibility.active) {
+            if (window.gameState && window.gameState.enemyManager) {
+                window.gameState.enemyManager.playerIsInvisible = false;
+            }
+            this.activeEffects.invisibility.active = false;
+            this.activeEffects.invisibility.timeRemaining = 0;
+            this.updateInvisibilityUI();
+        }
         
         // Create new powerups
         this.createSpeedBoostPowerups();
+        this.createInvisibilityPowerups();
+    }
+
+    createInvisibilityPowerups() {
+        const config = this.config.invisibility;
+        
+        // Decide how many to create
+        const count = Math.floor(Math.random() * (config.maxCount - config.minCount + 1)) + config.minCount;
+        
+        console.log(`Attempting to create ${count} invisibility powerups`);
+        
+        for (let i = 0; i < count; i++) {
+            const powerup = this.createInvisibilityPowerup();
+            if (powerup) {
+                console.log(`Invisibility powerup ${i+1} created at position:`, 
+                    powerup.position.x, powerup.position.y, powerup.position.z);
+            }
+        }
+    }
+    
+    // Add this method to create a single invisibility powerup:
+    createInvisibilityPowerup() {
+        if (!this.scene || !this.getTerrainHeight) {
+            console.error("Scene or getTerrainHeight not available");
+            return null;
+        }
+        
+        const config = this.config.invisibility;
+        
+        // Find a random position on the map
+        const angle = Math.random() * Math.PI * 2;
+        const distance = config.spawnRadius.min + Math.random() * (config.spawnRadius.max - config.spawnRadius.min);
+        
+        const x = Math.cos(angle) * distance;
+        const z = Math.sin(angle) * distance;
+        const y = this.getTerrainHeight(x, z) + 1.5; // Float above terrain
+        
+        // Create the powerup object
+        const powerup = this.createPowerupModel(config.color);
+        powerup.position.set(x, y, z);
+        powerup.userData.type = 'invisibility';
+        powerup.userData.collected = false;
+        powerup.userData.initialY = y; // Set initial Y for hover animation
+        
+        // Add to scene and track it
+        this.scene.add(powerup);
+        this.activePowerups.push(powerup);
+        
+        return powerup;
+    }
+    
+    // Add method to apply invisibility effect
+    applyInvisibility() {
+        const config = this.config.invisibility;
+        
+        // If already active, just extend the duration
+        if (this.activeEffects.invisibility.active) {
+            this.activeEffects.invisibility.timeRemaining = config.duration;
+            this.updateInvisibilityUI();
+            return;
+        }
+        
+        // Set active state
+        this.activeEffects.invisibility.active = true;
+        this.activeEffects.invisibility.timeRemaining = config.duration;
+        
+        // Apply the effect to enemies (make them wander instead of chase)
+        if (window.gameState && window.gameState.enemyManager) {
+            window.gameState.enemyManager.playerIsInvisible = true;
+        }
+        
+        // Show UI
+        this.updateInvisibilityUI();
+        
+        console.log(`Invisibility activated! (${config.duration} seconds)`);
+    }
+    
+    // Add method to update invisibility UI
+    updateInvisibilityUI() {
+        const effect = this.activeEffects.invisibility;
+        
+        if (!effect.progressBar || !effect.progressBar.container || !effect.progressBar.bar) {
+            // UI elements might not be ready, recreate them
+            this.createPowerupUI();
+            
+            // If still not available, return
+            if (!effect.progressBar || !effect.progressBar.container || !effect.progressBar.bar) {
+                console.warn("Invisibility UI elements not available");
+                return;
+            }
+        }
+        
+        if (effect.active) {
+            // Show container
+            document.querySelector("#powerup-status-container").classList.remove("hidden");
+            effect.progressBar.container.style.display = 'block';
+            
+            // Update progress
+            const percentage = (effect.timeRemaining / this.config.invisibility.duration) * 100;
+            effect.progressBar.bar.style.width = `${percentage}%`;
+        } else {
+            // Hide container if no active effects
+            if (!this.activeEffects.speedBoost.active) {
+                document.querySelector("#powerup-status-container").classList.add("hidden");
+            }
+            effect.progressBar.container.style.display = 'none';
+        }
     }
 }
 
@@ -630,6 +796,36 @@ if (window.soundSystem) {
             
         } catch (error) {
             console.error("Error playing powerup sound:", error);
+        }
+    };
+}
+
+// Add invisibility sound effect if using soundSystem
+if (window.soundSystem) {
+    window.soundSystem.playInvisibilitySound = function() {
+        if (!this.initialized || this.muted) return;
+        
+        try {
+            // Create a mysterious sound effect
+            const baseFreq = 200;
+            
+            // Play a descending series of notes for a "disappearing" effect
+            for (let i = 0; i < 4; i++) {
+                const freq = baseFreq + (3 - i) * 100; // Descending frequency
+                const delay = i * 0.1; // Short delay between notes
+                this.playTone(freq, 0.2, 'sine', 0.2, delay);
+            }
+            
+            // Add a shimmer effect
+            setTimeout(() => {
+                const shimmerNotes = [1200, 1500, 1800, 2000, 1700];
+                shimmerNotes.forEach((freq, i) => {
+                    this.playTone(freq, 0.1, 'sine', 0.1, i * 0.07);
+                });
+            }, 400);
+            
+        } catch (error) {
+            console.error("Error playing invisibility sound:", error);
         }
     };
 }

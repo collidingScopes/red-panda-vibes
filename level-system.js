@@ -14,9 +14,6 @@ class LevelSystem {
             enemyCount: 5,           // Base number of enemies
             enemySpeedWander: gameState.speed*0.6,     // Base speed when wandering
             enemySpeedChase: gameState.speed*0.8,      // Base speed when chasing
-            fogDensity: 0.01,        // Base fog density
-            fogDistance: 150,         // Base fog distance
-            fogColor: 0xa183e0       // Base fog color
         };
         
         // Create level indicator UI
@@ -40,9 +37,6 @@ class LevelSystem {
                 enemyCount: 0,
                 enemySpeedWander: this.baseSettings.enemySpeedWander,
                 enemySpeedChase: this.baseSettings.enemySpeedChase,
-                fogDensity: 0.005,
-                fogColor: this.baseSettings.fogColor,
-                fogDistance: 150,
                 flagHeight: 30, // Starting flag height
                 terrainHeightMultiplier: 1.0 // Base terrain height
             };
@@ -56,18 +50,6 @@ class LevelSystem {
         const enemySpeedWander = this.baseSettings.enemySpeedWander * speedMultiplier;
         const enemySpeedChase = this.baseSettings.enemySpeedChase * speedMultiplier;
         
-        // Calculate fog: gets thicker (shorter distance) and denser with each level
-        // But let's cap the fog at a certain level so the game remains playable
-        const fogDistance = Math.max(40, this.baseSettings.fogDistance - (level - 2) * 5);
-        const fogDensity = Math.min(0.08, this.baseSettings.fogDensity + (level - 2) * 0.005);
-        
-        // Darken fog color slightly for higher levels (reduces brightness)
-        const fogColorValue = parseInt(this.baseSettings.fogColor.toString(16), 16);
-        const r = ((fogColorValue >> 16) & 255) - Math.min(50, (level - 2) * 2);
-        const g = ((fogColorValue >> 8) & 255) - Math.min(50, (level - 2) * 2);
-        const b = (fogColorValue & 255) - Math.min(50, (level - 2) * 2);
-        const fogColor = (Math.max(0, r) << 16) | (Math.max(0, g) << 8) | Math.max(0, b);
-        
         // NEW: Shrink flag pole with each level (minimum 5 units)
         const flagHeight = Math.max(7, 30 - (level - 1) * 1.5);
         
@@ -78,9 +60,6 @@ class LevelSystem {
             enemyCount,
             enemySpeedWander,
             enemySpeedChase,
-            fogDensity,
-            fogColor,
-            fogDistance,
             flagHeight,
             terrainHeightMultiplier
         };
@@ -89,9 +68,6 @@ class LevelSystem {
     // Apply settings for the current level
     applyLevelSettings(level) {
         const settings = this.calculateLevelSettings(level);
-        
-        // Update fog settings
-        this.scene.fog = new THREE.Fog(settings.fogColor, 20, settings.fogDistance);
         
         // Update enemy count and speed
         this.enemyManager.COUNT = settings.enemyCount;
