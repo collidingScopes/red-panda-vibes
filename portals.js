@@ -1,11 +1,38 @@
 // Enhanced Portal System for Red Panda Vibes
 // Creates functional fantasy-styled portals that open URLs when activated
 
-// Wait for the document to be fully loaded
-document.addEventListener('DOMContentLoaded', function() {
-    console.log("Portal system initializing...");
-    initPortalSystem();
-});
+// Portal destination URLs
+const portalDestinations = [
+    { 
+        url: "https://fly.pieter.com", 
+        name: "Fly.Pieter.com", 
+    },
+    { 
+        url: "https://schermutseling.com/", 
+        name: "Schermutseling",
+    },
+    { 
+        url: "https://vector-tango.scobel.dev/", 
+        name: "Vector. Tango.", 
+    },
+    { 
+        url: "https://firstpersonflappy.com/", 
+        name: "First Person Flappy", 
+    },
+    { 
+        url: "https://threejs.org/", 
+        name: "ThreeJS Game Engine", 
+    },
+    { 
+        url: "https://vibe-cannon.vercel.app/", 
+        name: "Vibe Cannon", 
+    },
+    { 
+        url: "https://www.ourcade.ai/", 
+        name: "Ourcade.ai", 
+    },
+];
+let numPortalsPerLevel = 4;
 
 function initPortalSystem() {
     console.log("Waiting for game initialization...");
@@ -144,7 +171,7 @@ class Portal {
             // Get terrain height at position and place portal upright
             let terrainHeight = 0;
             try {
-                terrainHeight = getTerrainHeightAt(this.position.x, this.position.z);
+                terrainHeight = getTerrainHeight(this.position.x, this.position.z);
             } catch (e) {
                 console.warn("Could not get terrain height, using default", e);
                 // Default fallback height
@@ -370,14 +397,14 @@ class Portal {
         const dz = playerPosition.z - this.portalGroup.position.z;
         const distanceToPlayer = Math.sqrt(dx * dx + dy * dy + dz * dz);
         
-        // Make portal face player for better visibility
-        this.facePlayer(playerPosition);
-        
         // Animation phase - activate when player is getting close
         if (distanceToPlayer < this.animationStartRadius) {
             if (!this.isAnimating) {
                 this.startPortalAnimation();
             }
+
+            // Make portal face player for better visibility
+            this.facePlayer(playerPosition);
             
             // Update animations
             this.updatePortalAnimation(deltaTime, distanceToPlayer);
@@ -629,89 +656,11 @@ function updatePortalUI(isNearPortal, portalName) {
 
 // Helper function to get the game scene
 function getGameScene() {
-    // Check for various scene references
-    if (window.scene) return window.scene;
-    if (window.__scene) return window.__scene;
-    if (window.gameState && window.gameState.scene) return window.gameState.scene;
-    
-    // Try to find the scene in the renderer
-    const canvas = document.querySelector('canvas');
-    if (canvas && canvas.__renderer && canvas.__renderer.scene) {
-        return canvas.__renderer.scene;
-    }
-    
-    // Try to find it as a property in THREE
-    if (window.THREE && window.THREE.Scene && window.THREE.Scene.current) {
-        return window.THREE.Scene.current;
-    }
-    
-    // Last resort: search for the scene in the window object
-    const findScene = function(obj, depth = 0) {
-        if (depth > 3 || !obj) return null; // Limit recursion depth
-        
-        // Check if this object is a THREE.Scene
-        if (obj.type === 'Scene' && 
-            obj.isScene && 
-            typeof obj.add === 'function') {
-            return obj;
-        }
-        
-        // Check direct properties
-        for (const key in obj) {
-            try {
-                const value = obj[key];
-                if (value && value.type === 'Scene' && 
-                    value.isScene && 
-                    typeof value.add === 'function') {
-                    return value;
-                }
-            } catch (e) {
-                // Skip properties that can't be accessed
-            }
-        }
-        
-        return null;
-    };
-    
-    // First check if scene is directly in window
-    const windowScene = findScene(window);
-    if (windowScene) return windowScene;
-    
-    // Check if scene is in the global game object
-    if (window.game) {
-        const gameScene = findScene(window.game);
-        if (gameScene) return gameScene;
-    }
-    
-    // As a last resort, try accessing scene from the global renderer
-    if (window.renderer && window.renderer.scenes && window.renderer.scenes.length > 0) {
-        return window.renderer.scenes[0];
-    }
-    
+    if(scene) return scene;
+
     // Log error with more context
     console.error("Scene not found. Available globals:", Object.keys(window).filter(k => typeof window[k] === 'object' && window[k] !== null).join(', '));
     return null;
-}
-
-// Helper function to get the player
-function getGamePlayer() {
-    // Try to access the player from common global variables
-    return window.player || (window.gameState ? window.gameState.player : null);
-}
-
-// Helper to get terrain height at a position
-function getTerrainHeightAt(x, z) {
-    // First try to use the game's getTerrainHeight function if available
-    if (window.getTerrainHeight) {
-        return window.getTerrainHeight(x, z);
-    }
-    
-    // Fallback: simple terrain height approximation
-    return Math.max(0, (
-        Math.sin(x * 0.03) * Math.cos(z * 0.03) * 12 + 
-        Math.sin(x * 0.07 + z * 0.05) * 4 +
-        Math.sin(x * 0.1 + 1.5) * Math.cos(z * 0.08 + 2.3) * 5
-    ) * 0.7);
 }
 
 // Create the portals
@@ -744,46 +693,15 @@ function createPortals() {
         console.error("Cannot create portals: THREE.js scene not available. Portals will not work.");
         return [];
     }
-    
-    // Portal destinations with meaningful URLs
-    const portalDestinations = [
-        { 
-            url: "https://fly.pieter.com", 
-            name: "Fly.Pieter.com", 
-            color: 0xff00ff // Magenta
-        },
-        { 
-            url: "https://schermutseling.com/", 
-            name: "Schermutseling",
-            color: 0xa020f0 // Purple
-        },
-        { 
-            url: "https://vector-tango.scobel.dev/", 
-            name: "Vector. Tango.", 
-            color: 0x9400d3 // Dark Violet
-        },
-        { 
-            url: "https://firstpersonflappy.com/", 
-            name: "First Person Flappy", 
-            color: 0x8a2be2 // Blue Violet
-        },
-        { 
-            url: "https://threejs.org/", 
-            name: "ThreeJS Game Engine", 
-            color: 0x9370db // Medium Purple
-        },
-        { 
-            url: "https://vibe-cannon.vercel.app/", 
-            name: "Vibe Cannon", 
-            color: 0x70dbcc
-        }
-    ];
-    
+        
     // Calculate positions in a circle around the map
     const portals = [];
-    const portalCount = portalDestinations.length;
+    const portalCount = numPortalsPerLevel;
     const mapRadius = 80;
     let randomDistance = 80;
+    let portalDestinationsCopy = portalDestinations.slice();
+    let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy,portalCount);
+    console.log("Selected portals for this level: "+selectedPortalDestinations);
     
     // Log confirmation that we have a valid scene
     console.log("Valid THREE.js scene found:", scene);
@@ -802,9 +720,9 @@ function createPortals() {
             // Create the portal
             const portal = new Portal(
                 position,
-                portalDestinations[i].url,
-                portalDestinations[i].color,
-                portalDestinations[i].name
+                selectedPortalDestinations[i].url,
+                COLORS.neon[Math.floor((COLORS.neon.length-1)*Math.random())],
+                selectedPortalDestinations[i].name
             );
             
             portals.push(portal);
@@ -840,7 +758,7 @@ function setupPortalUpdates(portals) {
         }
         
         // Get player position
-        const player = getGamePlayer();
+        const player = window.player;
         if (player && player.position) {
             // Update each portal
             for (const portal of portals) {
@@ -910,84 +828,16 @@ function removeAllPortals() {
     console.log("All portals successfully removed");
 }
 
-// Main keystate reset function
-function resetAllKeyStates() {
-    console.log("Resetting all key states");
+function getRandomUniqueValues(array, count) {
+    // Clone the array to avoid modifying the original
+    const shuffled = [...array];
     
-    // Reset keys in common input handler patterns
-    if (window.inputHandler || window.input || window.gameInput) {
-        const inputHandler = window.inputHandler || window.input || window.gameInput;
-        
-        if (inputHandler) {
-            // Reset keys object
-            if (inputHandler.keys && typeof inputHandler.keys === 'object') {
-                console.log("Resetting keys in input handler");
-                Object.keys(inputHandler.keys).forEach(key => {
-                    inputHandler.keys[key] = false;
-                });
-            }
-            
-            // Reset specific common key state properties
-            const keyProps = ['isJumping', 'jump', 'forward', 'backward', 'left', 'right', 
-                             'moveForward', 'moveBackward', 'moveLeft', 'moveRight', 
-                             'space', 'shift', 'ctrl', 'alt'];
-            
-            keyProps.forEach(prop => {
-                if (typeof inputHandler[prop] !== 'undefined') {
-                    inputHandler[prop] = false;
-                }
-            });
-        }
+    // Fisher-Yates shuffle algorithm
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
     }
     
-    // Reset global key state object
-    if (window.keyState && typeof window.keyState === 'object') {
-        console.log("Resetting global keyState object");
-        Object.keys(window.keyState).forEach(key => {
-            window.keyState[key] = false;
-        });
-    }
-    
-    // Reset our own key state tracker
-    if (window._portalKeyStates && typeof window._portalKeyStates === 'object') {
-        Object.keys(window._portalKeyStates).forEach(key => {
-            window._portalKeyStates[key] = false;
-        });
-    }
-    
-    // Dispatch key up events for common movement keys
-    const commonKeys = ['w', 'a', 's', 'd', ' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
-    
-    commonKeys.forEach(key => {
-        // Create and dispatch a keyup event
-        const keyupEvent = new KeyboardEvent('keyup', {
-            key: key,
-            code: key.length === 1 ? 'Key' + key.toUpperCase() : key,
-            bubbles: true
-        });
-        
-        document.dispatchEvent(keyupEvent);
-        window.dispatchEvent(keyupEvent);
-        
-        // Also dispatch to canvas if it exists
-        const canvas = document.querySelector('canvas');
-        if (canvas) {
-            canvas.dispatchEvent(keyupEvent);
-        }
-    });
-    
-    // Reset player state
-    if (window.player) {
-        // Reset common player movement properties
-        if (window.player.isJumping !== undefined) window.player.isJumping = false;
-        if (window.player.jumping !== undefined) window.player.jumping = false;
-        if (window.player.jump !== undefined) window.player.jump = false;
-        
-        // Reset velocity if it exists and is in a jump
-        if (window.player.velocity) {
-            if (window.player.velocity.y > 0) {
-                window.player.velocity.y = 0;
-            }
-        }
-    }
+    // Return the first 'count' elements
+    return shuffled.slice(0, count);
 }
