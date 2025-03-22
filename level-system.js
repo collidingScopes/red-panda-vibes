@@ -6,9 +6,6 @@ class LevelSystem {
         this.player = player;
         this.flagPole = flagPole;
         
-        // Level settings
-        //gameState.currentLevel = gameState.currentLevel;
-        
         // Base level settings - we'll calculate harder difficulties from these
         this.baseSettings = {
             enemyCount: 5,           // Base number of enemies
@@ -51,8 +48,9 @@ class LevelSystem {
         const enemySpeedChase = this.baseSettings.enemySpeedChase * speedMultiplier;
         
         // NEW: Shrink flag pole with each level (minimum 5 units)
-        const flagHeight = Math.max(7, 30 - (level - 1) * 1.5);
-        
+        //const flagHeight = Math.max(7, 30 - (level - 1) * 1.5);
+        const flagHeight = 30;
+
         // NEW: Increase terrain height multiplier with each level
         const terrainHeightMultiplier = 1.0 + Math.min(1.8, (level - 1) * 0.05);
         
@@ -85,7 +83,7 @@ class LevelSystem {
         this.updateTerrainHeight(settings.terrainHeightMultiplier);
         
         // Reposition the flag for this level (further away for higher levels)
-        const distance = 50 + (level * 10); // Increase distance with level
+        const distance = 50 + (level * 7); // Increase distance with level
         const angle = Math.random() * Math.PI * 2; // Random angle for variety
         
         const x = Math.cos(angle) * distance;

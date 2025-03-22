@@ -177,13 +177,13 @@ class Portal {
         // Main portal light in center
         this.portalLight = new THREE.PointLight(this.color, 3, 20);
         this.portalLight.position.set(0, 0, 0.5);
-        this.portalLight.intensity = 0.3; // Start dimmed
+        this.portalLight.intensity = 0.0; // Start dimmed
         this.portalGroup.add(this.portalLight);
         
         // Ambient pulsing light
         this.ambientLight = new THREE.PointLight(this.color, 1, 20);
         this.ambientLight.position.set(0, 0, 2);
-        this.ambientLight.intensity = 0.2; // Start dimmed
+        this.ambientLight.intensity = 0.0; // Start dimmed
         this.portalGroup.add(this.ambientLight);
     }
     
@@ -252,9 +252,9 @@ class Portal {
             ctx.lineWidth = 8; // Thicker lines for better visibility
             
             // Draw spiral with more iterations and tighter spacing
-            for (let i = 0; i < 1500; i++) {
-                const angle = (i / 20) + armOffset;
-                const radius = (i / 1500) * (canvas.width / 1.8);
+            for (let i = 0; i < 600; i++) {
+                const angle = (i / 10) + armOffset;
+                const radius = (i / 600) * (canvas.width / 1.8);
                 
                 const x = centerX + Math.cos(angle) * radius;
                 const y = centerY + Math.sin(angle) * radius;
@@ -274,7 +274,7 @@ class Portal {
     
     createParticles() {
         // Create particle system for the swirling effect
-        const particleCount = 400;
+        const particleCount = 250;
         const particles = new THREE.BufferGeometry();
         
         // Create arrays for particle positions
@@ -304,10 +304,10 @@ class Portal {
         
         // Material for the particles
         const particleMaterial = new THREE.PointsMaterial({
-            size: 0.15,
+            size: 0.14,
             vertexColors: true,
             transparent: true,
-            opacity: 0.15,
+            opacity: 0.25,
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });

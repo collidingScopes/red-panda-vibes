@@ -200,10 +200,10 @@ class PowerupSystem {
             color: color,
             emissive: color,
             emissiveIntensity: 1.0, // Increased from 0.8
-            roughness: 0.2,
-            metalness: 0.9,
+            roughness: 0.5,
+            metalness: 0.5,
             transparent: true,  // Make it transparent
-            opacity: 0.7        // Set opacity to 70%
+            opacity: 0.6        // Set opacity to 70%
         });
         const gem = new THREE.Mesh(gemGeometry, gemMaterial);
         group.add(gem);

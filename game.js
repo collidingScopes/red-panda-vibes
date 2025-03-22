@@ -682,7 +682,7 @@ class SnowSystem {
         this.player = player;
         
         // Snow settings
-        this.COUNT = 1000;      // Number of snowflakes
+        this.COUNT = 900;      // Number of snowflakes
         this.AREA_SIZE = 80;    // Area around player to show snow
         this.FALL_SPEED = 3;    // How fast snow falls
         this.DRIFT_SPEED = 0.6; // How much snow drifts horizontally
@@ -712,7 +712,7 @@ class SnowSystem {
         const material = new THREE.PointsMaterial({
             color: 0xffffff,
             size: 0.2,
-            opacity: 0.6,
+            opacity: 0.65,
             transparent: true,
             sizeAttenuation: true,
             depthWrite: false,
