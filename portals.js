@@ -217,17 +217,16 @@ class Portal {
     }
     
     createPortalLights() {
-        // Main portal light in center
-        this.portalLight = new THREE.PointLight(this.color, 3, 20);
-        this.portalLight.position.set(0, 0, 0.5);
-        this.portalLight.intensity = 0.0; // Start dimmed
-        this.portalGroup.add(this.portalLight);
+        let lightColor = COLORS.neon[Math.floor((COLORS.neon.length-1)*Math.random())];
+        let lightColor2 = COLORS.neon[Math.floor((COLORS.neon.length-1)*Math.random())];
+
         
-        // Ambient pulsing light
-        this.ambientLight = new THREE.PointLight(this.color, 1, 20);
-        this.ambientLight.position.set(0, 0, 2);
-        this.ambientLight.intensity = 0.0; // Start dimmed
-        this.portalGroup.add(this.ambientLight);
+        // Main portal light in center
+        this.portalLight = new THREE.PointLight(lightColor, 3, 20);
+        this.portalLight.position.set(0, 0, 0.5);
+        this.portalLight.intensity = 0.1; // Start dimmed
+        this.portalGroup.add(this.portalLight);
+
     }
     
     createSpiralTexture() {
@@ -454,8 +453,7 @@ class Portal {
         this.fadeIn(this.labelSprite.material, 0.8);
         
         // Increase light intensity
-        this.portalLight.intensity = 8.2;
-        this.ambientLight.intensity = 1.2;
+        this.portalLight.intensity = 2;
         
         console.log(`Portal "${this.name}" animation started`);
     }
@@ -470,7 +468,6 @@ class Portal {
         
         // Decrease light intensity
         this.portalLight.intensity = 0.1;
-        this.ambientLight.intensity = 0.1;
     }
     
     fadeIn(material, targetOpacity) {
@@ -486,7 +483,7 @@ class Portal {
         
         // Pulse the ambient light
         const time = performance.now() * 0.002;
-        this.ambientLight.intensity = 1.2 + Math.sin(time * 2) * 0.4 * proximityFactor;
+        this.portalLight.intensity = 0.7 + Math.sin(time * 1) * 1.5;
         
         // Rotate inner ring in opposite direction
         this.innerRing.rotation.z -= deltaTime * 0.25;
@@ -647,7 +644,6 @@ class Portal {
             this.labelSprite = null;
             this.portalGroup = null;
             this.portalLight = null;
-            this.ambientLight = null;
             
             console.log(`Portal "${this.name}" resources disposed`);
         } catch (e) {

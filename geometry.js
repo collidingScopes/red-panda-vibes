@@ -50,7 +50,8 @@ const createSunsetBackground = () => {
 // PASTEL NEON STYLED TERRAIN SYSTEM
 function createTerrain() {
     // Create a large flat base with soft gradient
-    const baseGeometry = new THREE.BoxGeometry(400, 1, 400);
+    const terrainSize = 400;
+    const baseGeometry = new THREE.BoxGeometry(terrainSize, 1, terrainSize);
     // Create a gradient material for the base
     const baseTexture = createTerrainBaseTexture();
     const baseMaterial = new THREE.MeshStandardMaterial({
@@ -65,8 +66,7 @@ function createTerrain() {
     scene.add(baseTerrain);
     
     // Create the actual terrain with hills using many small box segments
-    const segmentSize = 2;
-    const terrainSize = 220;
+    const segmentSize = 4;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
     
