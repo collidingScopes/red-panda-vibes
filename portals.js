@@ -481,7 +481,7 @@ class Portal {
         // Rotate portal center
         this.portalCenter.rotation.z += deltaTime * 0.5 * (1 + proximityFactor);
         
-        // Pulse the ambient light
+        // Pulse the light
         const time = performance.now() * 0.002;
         this.portalLight.intensity = 0.7 + Math.sin(time * 1) * 1.5;
         

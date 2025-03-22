@@ -4,8 +4,18 @@
 let cameraFlipButton = document.getElementById("camera-flip-button");
 // Add touch event for camera flip
 cameraFlipButton.addEventListener('touchstart', (e) => {
-    mobileCameraTurn();
+    mobileCameraTurnLeft();
     e.preventDefault(); // Prevent default behavior
+
+    // Visual feedback for button
+    cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
+
+    // Reset button color after a delay
+    setTimeout(() => {
+        cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        isRotating = false;
+    }, 300);
+
 }, { passive: false });
 
 // Animation settings for smooth rotations
@@ -13,8 +23,10 @@ const ROTATION_DURATION = 500; // Duration of rotation animation in ms
 const ROTATION_STEPS = 20; // Number of steps for smoother animation
 let isRotating = false; // Flag to prevent multiple rotations at once
 
-// Enhanced camera and character rotation function with animation
-function mobileCameraTurn() {
+/**
+ * Enhanced mobileCameraTurnRight function with a callback when rotation completes
+ */
+function mobileCameraTurnRight() {
     if (isRotating) return; // Prevent multiple simultaneous rotations
     
     isRotating = true;
@@ -26,10 +38,7 @@ function mobileCameraTurn() {
     // Store player's current rotation
     const startPlayerRotation = window.player.rotation.y;
     const targetPlayerRotation = startPlayerRotation + Math.PI/2;
-    
-    // Visual feedback for button
-    cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
-    
+
     // Start time for animation
     const startTime = performance.now();
     
@@ -61,13 +70,72 @@ function mobileCameraTurn() {
                 window.player.rotation.y = targetPlayerRotation;
             }
             
-            // Reset button color after a delay
+            console.log(`Camera and player rotated to ${targetAngle}`);
+            
+            // Important: Reset isRotating flag when animation completes
             setTimeout(() => {
-                cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
                 isRotating = false;
-            }, 300);
+            }, 50); // Small delay to prevent accidental immediate re-triggering
+        }
+    }
+    
+    // Start the animation
+    requestAnimationFrame(animateRotation);
+}
+
+/**
+ * Enhanced mobileCameraTurnLeft function with a callback when rotation completes
+ */
+function mobileCameraTurnLeft() {
+    if (isRotating) return; // Prevent multiple simultaneous rotations
+    
+    isRotating = true;
+    
+    // Calculate target angle (90 degrees clockwise)
+    const startAngle = window.cameraAngleHorizontal;
+    const targetAngle = (startAngle + Math.PI/2) % (Math.PI * 2);
+    
+    // Store player's current rotation
+    const startPlayerRotation = window.player.rotation.y;
+    const targetPlayerRotation = startPlayerRotation - Math.PI/2; // Fixed - was incorrect in original
+
+    // Start time for animation
+    const startTime = performance.now();
+    
+    // Animation function
+    function animateRotation(currentTime) {
+        const elapsedTime = currentTime - startTime;
+        const progress = Math.min(elapsedTime / ROTATION_DURATION, 1);
+        
+        // Use easeInOutQuad for smoother animation
+        const easeProgress = progress < 0.5 
+            ? 2 * progress * progress 
+            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
+        
+        // Update camera angle with smooth transition
+        window.cameraAngleHorizontal = startAngle + (Math.PI/2 * easeProgress);
+        
+        // Update player rotation to match camera movement
+        if (window.player) {
+            window.player.rotation.y = startPlayerRotation - (Math.PI/2 * easeProgress);
+        }
+        
+        // Continue animation if not complete
+        if (progress < 1) {
+            requestAnimationFrame(animateRotation);
+        } else {
+            // Ensure final values are exact
+            window.cameraAngleHorizontal = targetAngle;
+            if (window.player) {
+                window.player.rotation.y = targetPlayerRotation;
+            }
             
             console.log(`Camera and player rotated to ${targetAngle}`);
+            
+            // Important: Reset isRotating flag when animation completes
+            setTimeout(() => {
+                isRotating = false;
+            }, 200); // Small delay to prevent accidental immediate re-triggering
         }
     }
     
@@ -78,7 +146,7 @@ function mobileCameraTurn() {
 class MobileControls {
     // Constants for configuration
     static DEBUG = false;                // Set to true to enable debug logging
-    static MOVEMENT_DEADZONE = 20;       // Pixels of movement to ignore
+    static MOVEMENT_DEADZONE = 10;       // Pixels of movement to ignore
     static MOVEMENT_SCALE = 0.015;       // Scaling factor for touch movement
     static JUMP_DURATION = 100;          // Ms for jump touch duration
     static MAX_INIT_WAIT = 10000;        // Max time to wait for game initialization (ms)
@@ -110,6 +178,9 @@ class MobileControls {
         this.moveCurrentY = 0;
         this.jumpTriggered = false;
         this.activeTouches = new Map(); // Track all active touches by ID
+        
+        // New tracking variables for camera rotation via drag
+        this.dragThreshold = 20; // Minimum horizontal drag distance to trigger rotation
         
         // Cache DOM elements
         this.instructionsElement = document.getElementById('instructions');
@@ -391,7 +462,7 @@ class MobileControls {
     }
 
     /**
-     * Handles touch movement for player control - updated for multi-touch
+     * Handles touch movement for player control - updated for multi-touch and drag rotation
      * @param {TouchEvent} event - The touch move event
      */
     handleTouchMove(event) {
@@ -406,6 +477,11 @@ class MobileControls {
             // Update the touch data in our map
             if (this.activeTouches.has(touch.identifier)) {
                 const touchData = this.activeTouches.get(touch.identifier);
+                
+                // Store previous X position before updating
+                const previousX = touchData.currentX;
+                
+                // Update touch data
                 touchData.currentX = touch.clientX;
                 touchData.currentY = touch.clientY;
                 
@@ -413,6 +489,11 @@ class MobileControls {
                 if (touch.identifier === this.moveTouchId) {
                     this.moveCurrentX = touch.clientX;
                     this.moveCurrentY = touch.clientY;
+                    
+                    // Check for horizontal drag gesture
+                    this.checkForDragRotation(previousX, touch.clientX);
+                    
+                    // Update player movement
                     this.updateMovement();
                 }
             }
@@ -421,6 +502,55 @@ class MobileControls {
         // Prevent default behavior to avoid scrolling
         if (!this.isUIElement(event.target)) {
             event.preventDefault();
+        }
+    }
+
+    /**
+     * Improved checkForDragRotation method for the MobileControls class
+     * This allows for continuous camera rotation during drag gestures
+     */
+    checkForDragRotation(previousX, currentX) {
+        // If already rotating, don't trigger another rotation
+        if (isRotating) return;
+        
+        // Calculate the horizontal drag distance
+        const dragDistance = currentX - previousX;
+        
+        // Check if drag exceeds threshold
+        if (Math.abs(dragDistance) >= this.dragThreshold) {
+            // Determine which rotation to trigger
+            if (dragDistance > 0) {
+                // Dragging right
+                this.log("Detected right drag, rotating camera right");
+                mobileCameraTurnRight();
+                
+                // Reset the movement touch start position after rotation
+                // This allows for consecutive rotations
+                this.moveStartX = this.moveCurrentX;
+                this.moveStartY = this.moveCurrentY;
+                
+                // Update the start position in the active touches map
+                if (this.activeTouches.has(this.moveTouchId)) {
+                    const touchData = this.activeTouches.get(this.moveTouchId);
+                    touchData.startX = touchData.currentX;
+                    touchData.startY = touchData.currentY;
+                }
+            } else {
+                // Dragging left
+                this.log("Detected left drag, rotating camera left");
+                mobileCameraTurnLeft();
+                
+                // Reset the movement touch start position after rotation
+                this.moveStartX = this.moveCurrentX;
+                this.moveStartY = this.moveCurrentY;
+                
+                // Update the start position in the active touches map
+                if (this.activeTouches.has(this.moveTouchId)) {
+                    const touchData = this.activeTouches.get(this.moveTouchId);
+                    touchData.startX = touchData.currentX;
+                    touchData.startY = touchData.currentY;
+                }
+            }
         }
     }
 
