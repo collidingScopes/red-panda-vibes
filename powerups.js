@@ -7,14 +7,22 @@ class PowerupSystem {
         
         // Collection of active powerups on the map
         this.activePowerups = [];
-        
+
+        // Add animation distance threshold
+        this.animationConfig = {
+            proximityThreshold: 50, // Distance at which powerups start animating
+            optimizationEnabled: true // Toggle to enable/disable optimization
+        };
+
+        this.collectionRadius = 3; // Distance to collect
+
         // Power-up configuration
         this.config = {
             speedBoost: {
                 duration: 10, // duration in seconds
                 multiplier: 2.0, // Speed multiplier
-                minCount: 2,  // Minimum number per level
-                maxCount: 4,  // Maximum number per level
+                minCount: 3,  // Minimum number per level
+                maxCount: 5,  // Maximum number per level
                 spawnRadius: {
                     min: 35,   // Minimum distance from player
                     max: 120,    // Maximum distance from player
@@ -23,8 +31,8 @@ class PowerupSystem {
             },
             invisibility: {
                 duration: 10, // duration in seconds
-                minCount: 1,  // Minimum number per level
-                maxCount: 3,  // Maximum number per level
+                minCount: 2,  // Minimum number per level
+                maxCount: 4,  // Maximum number per level
                 spawnRadius: {
                     min: 35,   // Minimum distance from player
                     max: 120,  // Maximum distance from player
@@ -67,6 +75,13 @@ class PowerupSystem {
         // Create new powerups for the level
         this.createSpeedBoostPowerups();
         this.createInvisibilityPowerups();
+    }
+
+    // Add a method to adjust animation settings
+    adjustAnimationSettings(proximityThreshold, enabled = true) {
+        this.animationConfig.proximityThreshold = proximityThreshold || this.animationConfig.proximityThreshold;
+        this.animationConfig.optimizationEnabled = enabled;
+        console.log(`Powerup animation optimization ${enabled ? 'enabled' : 'disabled'}, threshold: ${this.animationConfig.proximityThreshold}`);
     }
     
     // Create the UI elements for powerup status
@@ -203,7 +218,7 @@ class PowerupSystem {
             roughness: 0.5,
             metalness: 0.5,
             transparent: true,  // Make it transparent
-            opacity: 0.6        // Set opacity to 70%
+            opacity: 0.6,
         });
         const gem = new THREE.Mesh(gemGeometry, gemMaterial);
         group.add(gem);
@@ -221,12 +236,7 @@ class PowerupSystem {
             wireframeMaterial
         );
         group.add(wireframe);
-        
-        // Add a stronger point light for glow effect
-        const light = new THREE.PointLight(color, 1.0, 10); // Increased intensity and range
-        light.position.set(0, 0, 0);
-        group.add(light);
-        
+
         // Add animation data
         group.userData.rotationSpeed = 0.04 + Math.random() * 0.2;
         group.userData.bobHeight = 0.2;
@@ -241,7 +251,6 @@ class PowerupSystem {
         if (!this.player || this.activePowerups.length === 0) return;
         
         const playerPos = this.player.position;
-        const collectionRadius = 2.5; // Distance to collect (increased from 1.5)
         
         for (let i = this.activePowerups.length - 1; i >= 0; i--) {
             const powerup = this.activePowerups[i];
@@ -252,7 +261,7 @@ class PowerupSystem {
             // Check distance to player
             const distance = powerup.position.distanceTo(playerPos);
             
-            if (distance < collectionRadius) {
+            if (distance < this.collectionRadius) {
                 console.log(`Powerup collected! Distance: ${distance}`);
                 this.collectPowerup(powerup);
             }
@@ -450,22 +459,38 @@ class PowerupSystem {
         }
     }
     
-    // Animate hovering and particle effects for powerups
+    // Animate hovering and particle effects for powerups -- only when nearby player
     animatePowerups() {
+        // Skip animation if player isn't available
+        if (!this.player) return;
+        
+        const playerPos = this.player.position;
         const time = performance.now() / 1000;
         
         this.activePowerups.forEach(powerup => {
             if (powerup.userData.collected) return;
             
-            // Rotate the powerup
-            powerup.rotation.y += powerup.userData.rotationSpeed;
+            // Calculate distance to player
+            const distance = powerup.position.distanceTo(playerPos);
             
-            // Bob up and down
-            powerup.userData.hoverTime += powerup.userData.bobSpeed;
-            const initialY = powerup.userData.initialY || powerup.position.y;
-            powerup.position.y = initialY + 
-                                Math.sin(powerup.userData.hoverTime) * powerup.userData.bobHeight;
-            
+            // Only animate if within proximity threshold or if optimization is disabled
+            if (!this.animationConfig.optimizationEnabled || 
+                distance < this.animationConfig.proximityThreshold) {
+                
+                // Rotate the powerup
+                powerup.rotation.y += powerup.userData.rotationSpeed;
+                
+                // Bob up and down
+                powerup.userData.hoverTime += powerup.userData.bobSpeed;
+                const initialY = powerup.userData.initialY || powerup.position.y;
+                powerup.position.y = initialY + 
+                                    Math.sin(powerup.userData.hoverTime) * powerup.userData.bobHeight;
+
+            } else {
+
+                // Reset position to initial height to avoid position jumps when coming back into view
+                powerup.position.y = powerup.userData.initialY || powerup.position.y;
+            }
         });
     }
     
