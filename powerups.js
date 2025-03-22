@@ -13,8 +13,8 @@ class PowerupSystem {
             speedBoost: {
                 duration: 10, // duration in seconds
                 multiplier: 2.0, // Speed multiplier
-                minCount: 3,  // Minimum number per level
-                maxCount: 6,  // Maximum number per level
+                minCount: 2,  // Minimum number per level
+                maxCount: 4,  // Maximum number per level
                 spawnRadius: {
                     min: 35,   // Minimum distance from player
                     max: 120,    // Maximum distance from player
@@ -23,11 +23,11 @@ class PowerupSystem {
             },
             invisibility: {
                 duration: 10, // duration in seconds
-                minCount: 2,  // Minimum number per level
-                maxCount: 4,  // Maximum number per level
+                minCount: 1,  // Minimum number per level
+                maxCount: 3,  // Maximum number per level
                 spawnRadius: {
-                    min: 25,   // Minimum distance from player
-                    max: 100,  // Maximum distance from player
+                    min: 35,   // Minimum distance from player
+                    max: 120,  // Maximum distance from player
                 },
                 color: 0xaa55ff, // Purple color for invisibility
             },
