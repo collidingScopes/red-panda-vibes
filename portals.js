@@ -31,6 +31,18 @@ const portalDestinations = [
         url: "https://www.ourcade.ai/", 
         name: "Ourcade.ai", 
     },
+    {
+        url: "https://blockbusters.louiebacaj.com/",
+        name: "Block Busters",
+    },
+    {
+        url: "https://raceviberz.com/",
+        name: "Race Viberz",
+    },
+    {
+        url: "https://glider-sim.com/",
+        name: "Glider Simulator",
+    },
 ];
 let numPortalsPerLevel = 4;
 
