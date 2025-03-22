@@ -22,7 +22,7 @@ cameraFlipButton.addEventListener('touchstart', (e) => {
 const ROTATION_DURATION = 400; // Duration of rotation animation in ms
 const ROTATION_STEPS = 20; // Number of steps for smoother animation
 let isRotating = false; // Flag to prevent multiple rotations at once
-
+let cameraRotationAngle = Math.PI/4; //45 degree turns
 /**
  * Enhanced mobileCameraTurnRight function with a callback when rotation completes
  */
@@ -33,11 +33,11 @@ function mobileCameraTurnRight() {
     
     // Calculate target angle (60 degrees clockwise)
     const startAngle = window.cameraAngleHorizontal;
-    const targetAngle = (startAngle - Math.PI/3) % (Math.PI * 2);
+    const targetAngle = (startAngle - cameraRotationAngle) % (Math.PI * 2);
     
     // Store player's current rotation
     const startPlayerRotation = window.player.rotation.y;
-    const targetPlayerRotation = startPlayerRotation + Math.PI/3;
+    const targetPlayerRotation = startPlayerRotation + cameraRotationAngle;
 
     // Start time for animation
     const startTime = performance.now();
@@ -53,11 +53,11 @@ function mobileCameraTurnRight() {
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
         
         // Update camera angle with smooth transition
-        window.cameraAngleHorizontal = startAngle - (Math.PI/3 * easeProgress);
+        window.cameraAngleHorizontal = startAngle - (cameraRotationAngle * easeProgress);
         
         // Update player rotation to match camera movement
         if (window.player) {
-            window.player.rotation.y = startPlayerRotation + (Math.PI/3 * easeProgress);
+            window.player.rotation.y = startPlayerRotation + (cameraRotationAngle * easeProgress);
         }
         
         // Continue animation if not complete
@@ -93,11 +93,11 @@ function mobileCameraTurnLeft() {
     
     // Calculate target angle (60 degrees clockwise)
     const startAngle = window.cameraAngleHorizontal;
-    const targetAngle = (startAngle + Math.PI/3) % (Math.PI * 2);
+    const targetAngle = (startAngle + cameraRotationAngle) % (Math.PI * 2);
     
     // Store player's current rotation
     const startPlayerRotation = window.player.rotation.y;
-    const targetPlayerRotation = startPlayerRotation - Math.PI/3; // Fixed - was incorrect in original
+    const targetPlayerRotation = startPlayerRotation - cameraRotationAngle; // Fixed - was incorrect in original
 
     // Start time for animation
     const startTime = performance.now();
@@ -113,11 +113,11 @@ function mobileCameraTurnLeft() {
             : 1 - Math.pow(-2 * progress + 2, 2) / 2;
         
         // Update camera angle with smooth transition
-        window.cameraAngleHorizontal = startAngle + (Math.PI/3 * easeProgress);
+        window.cameraAngleHorizontal = startAngle + (cameraRotationAngle * easeProgress);
         
         // Update player rotation to match camera movement
         if (window.player) {
-            window.player.rotation.y = startPlayerRotation - (Math.PI/3 * easeProgress);
+            window.player.rotation.y = startPlayerRotation - (cameraRotationAngle * easeProgress);
         }
         
         // Continue animation if not complete
