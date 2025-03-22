@@ -43,6 +43,10 @@ const portalDestinations = [
         url: "https://glider-sim.com/",
         name: "Glider Simulator",
     },
+    {
+        url: "https://pixelblast.xyz/",
+        name: "Pixel Blast",
+    },
 ];
 let numPortalsPerLevel = 4;
 
