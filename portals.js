@@ -47,6 +47,11 @@ const portalDestinations = [
         url: "https://pixelblast.xyz/",
         name: "Pixel Blast",
     },
+    {
+        url: "https://www.hotairvibe.com/",
+        name: "Hot Air Vibe",
+    },
+    
 ];
 let numPortalsPerLevel = 4;
 
