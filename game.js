@@ -149,7 +149,7 @@ window.setPandaModel = function(model, animations) {
 };
 
 // Create the map
-const terrain = createTerrain();
+gameState.terrain = createTerrain();
 const flagPole = createFlagPole();
 const flagMesh = flagPole.children[1]; // Cache flag reference for animation
 const obstacles = createObstacles();
@@ -836,10 +836,36 @@ function unpauseGame() {
 // Event listener for the unpause button
 document.getElementById('unpause-button').addEventListener('click', unpauseGame);
 
+function regenerateTerrain() {
+    // Remove old terrain from scene
+    if (gameState.terrain) {
+        scene.remove(gameState.terrain);
+        
+        // Properly dispose of all geometries and materials
+        gameState.terrain.traverse((child) => {
+            if (child.geometry) {
+                child.geometry.dispose();
+            }
+            if (child.material) {
+                if (Array.isArray(child.material)) {
+                    child.material.forEach(material => material.dispose());
+                } else {
+                    child.material.dispose();
+                }
+            }
+        });
+    }
+    
+    // Create new terrain
+    gameState.terrain = createTerrain();
+    scene.add(gameState.terrain);
+}
+
 // Start the game
 init();
 window.camera = camera;
 window.player = player;
+window.regenerateTerrain = regenerateTerrain;
 
 // Expose camera angles to global scope for mobile camera flip button
 window.cameraAngleHorizontal = cameraAngleHorizontal;

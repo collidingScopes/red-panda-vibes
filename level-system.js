@@ -142,7 +142,10 @@ class LevelSystem {
         // Store the current multiplier for use in the terrain height calculation
         window.terrainHeightMultiplier = multiplier;
         
-        // The getTerrainHeight function uses this global variable
+        // Regenerate the visible terrain geometry
+        if (window.regenerateTerrain) {
+            window.regenerateTerrain();
+        }
     }
     
     // Create level indicator UI
