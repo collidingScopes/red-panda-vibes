@@ -56,7 +56,7 @@ const portalDestinations = [
         name: "Shadowhold",
     },
 ];
-let numPortalsPerLevel = 4;
+let numPortalsPerLevel = 2;
 
 function initPortalSystem() {
     console.log("Waiting for game initialization...");
