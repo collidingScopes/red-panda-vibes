@@ -541,38 +541,85 @@ class Portal {
     activate() {
         // Only trigger if player is actually moving through the portal
         if (!this.isAnimating) return;
-        
-        console.log(`Portal "${this.name}" activated! Opening ${this.url}`);
-        
+       
+        console.log(`Portal "${this.name}" activated! Opening ${ this.url}`);
+       
         // Play portal sound if available
         if (window.soundSystem && window.soundSystem.initialized) {
-            // Create ascending tones for portal activation
-            window.soundSystem.playTone(300, 0.1, 'sine', 0.3);
-            window.soundSystem.playTone(450, 0.15, 'sine', 0.3, 0.1);
-            window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
-            window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
+        // Create ascending tones for portal activation
+        window.soundSystem.playTone(300, 0.1, 'sine', 0.3);
+        window.soundSystem.playTone(450, 0.15, 'sine', 0.3, 0.1);
+        window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
+        window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
         }
-
-        // Create and click a link element
+       
+        // Function to detect if we're in an in-app browser
+        const isInAppBrowser = () => {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        return (
+        ua.includes("Instagram") ||
+        ua.includes("FBAN") || // Facebook
+        ua.includes("FBAV") || // Facebook
+        ua.includes("Twitter") ||
+        ua.includes("Line") ||
+        ua.includes("MicroMessenger") || // WeChat
+        /Mobi/.test(ua) && !/Safari/.test(ua) // Mobile but not Safari
+        );
+        };
+       
+        // Ensure URL has protocol
+        let targetUrl = this.url;
+        if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
+        targetUrl = "https://" + targetUrl;
+        }
+       
+        // Try different methods to open the URL
+        try {
+        // First attempt: Use window.open
+        const newWindow = window.open(targetUrl, "_blank");
+        if (newWindow) {
+        console.log(`Successfully opened ${targetUrl} with window .open`);
+        } else {
+        throw new Error("window.open failed");
+        }
+        } catch (e) {
+        console.warn(`window.open failed: ${e.message}. Falling back to link method.`);
+       
+        // Fallback: Create and click a link element
         const link = document.createElement('a');
-        link.href = this.url;
+        link.href = targetUrl;
         link.target = "_blank";
-        link.rel = "noopener";
+        link.rel = "noopener noreferrer"; // Security best practice
         document.body.appendChild(link);
+       
+        // For in-app browsers, sometimes triggering a real click event works better
+        if (isInAppBrowser()) {
+        const clickEvent = new Event('click', {
+        bubbles: true,
+        cancelable: true
+        });
+        link.dispatchEvent(clickEvent);
+        } else {
         link.click();
-        document.body.removeChild(link);
-        
+        }
+       
+        // Clean up after a short delay
+        setTimeout(() => {
+            document.body.removeChild(link);
+            }, 100);
+        }
+       
         // Remove this portal from the scene
         this.removeFromScene();
-
+       
         // Remove this portal from the global portals array
         this.removeFromPortalsArray();
+       
         // Hide portal UI elements
         updatePortalUI(false, "");
-
+       
         resetAllKeyStates();
         pauseGame();
-
     }
     
     // Add these helper methods to the Portal class
