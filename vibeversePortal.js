@@ -388,6 +388,7 @@ class VibeversePortal {
         
         // For Twitter/X browser, use location change instead of window.open
         if (isInAppBrowser) {
+            console.log("in app browser detected");
             // Create a modal to inform the user what's happening
             const modal = document.createElement('div');
             modal.style.position = 'fixed';
