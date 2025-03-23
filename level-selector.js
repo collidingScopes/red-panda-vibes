@@ -91,7 +91,7 @@
             }
 
             initPortalSystem();
-
+            initVibeversePortalSystem();
         });
         
     }
