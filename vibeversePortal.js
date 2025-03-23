@@ -377,7 +377,9 @@ class VibeversePortal {
         resetAllKeyStates();
         
         // Open portal URL in a new tab
-        const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/";
+        //const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/";
+        // Open portal URL in a new tab with the updated parameters
+        const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&avatar_url=avatar_url=https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/panda3DModel6.glb&ref=https://collidingscopes.github.io/red-panda-vibes/";
         window.open(portalUrl, '_blank');
         
         // Play portal sound if available
