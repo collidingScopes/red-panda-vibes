@@ -11,7 +11,6 @@ window.createRiver = function() {
     const curveSegments = 80;          // Number of segments to create the smooth curve
     const curveResolution = 80;        // Resolution of points along the curve
     const mapRadius = 150;             // Approximate radius of walkable area
-    const waterColor = 0x0072b5;       // Rich blue color for better realism
     
     // Create a spline curve for the river path
     const generateRiverPath = () => {
@@ -123,7 +122,7 @@ window.createRiver = function() {
                 ctx.beginPath();
                 const amplitude = amplitudeRange[0] + Math.random() * (amplitudeRange[1] - amplitudeRange[0]);
                 const frequency = frequencyRange[0] + Math.random() * (frequencyRange[1] - frequencyRange[0]);
-                const opacity = 0.3 + Math.random() * 0.4;
+                const opacity = 0.6 + Math.random() * 0.4;
                 
                 ctx.globalAlpha = opacity;
                 
@@ -152,14 +151,14 @@ window.createRiver = function() {
         ctx.strokeStyle = '#80d8ff';
         ctx.lineWidth = 1;
         
-        for (let i = 0; i < 15; i++) {
+        for (let i = 0; i < 30; i++) {
             const x = Math.random() * 1024;
             const y = Math.random() * 1024;
-            const radius = 10 + Math.random() * 40;
+            const radius = 10 + Math.random() * 80;
             const startAngle = Math.random() * Math.PI * 2;
             const endAngle = startAngle + Math.PI * 1.5 + Math.random() * Math.PI * 0.5;
             
-            ctx.globalAlpha = 0.3 + Math.random() * 0.3;
+            ctx.globalAlpha = 0.6 + Math.random() * 0.3;
             ctx.beginPath();
             ctx.arc(x, y, radius, startAngle, endAngle);
             ctx.stroke();
@@ -231,27 +230,6 @@ window.createRiver = function() {
             }
         }
         
-        // Add directional streaks for rapids
-        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
-        
-        for (let i = 0; i < 60; i++) {
-            const x = Math.random() * 1024;
-            const y = Math.random() * 1024;
-            const length = 20 + Math.random() * 60;
-            const angle = -Math.PI / 4 + (Math.random() * Math.PI / 2); // Mostly flow direction
-            
-            ctx.lineWidth = 1 + Math.random() * 3;
-            ctx.globalAlpha = 0.3 + Math.random() * 0.5;
-            
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            ctx.lineTo(
-                x + Math.cos(angle) * length,
-                y + Math.sin(angle) * length
-            );
-            ctx.stroke();
-        }
-        
         ctx.globalAlpha = 1.0;
         
         const texture = new THREE.CanvasTexture(canvas);
@@ -309,58 +287,6 @@ window.createRiver = function() {
             ctx.moveTo(startX, startY);
             ctx.lineTo(endX, endY);
             ctx.stroke();
-        }
-        
-        // Add ripple patterns for swirls and eddies
-        for (let i = 0; i < 80; i++) {
-            const x = Math.random() * 1024;
-            const y = Math.random() * 1024;
-            const radius = 15 + Math.random() * 60;
-            
-            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
-            
-            // Create more dramatic ripples
-            gradient.addColorStop(0, 'rgba(230, 230, 255, 0.9)');
-            gradient.addColorStop(0.3, 'rgba(180, 180, 255, 0.7)');
-            gradient.addColorStop(0.6, 'rgba(80, 80, 255, 0.5)');
-            gradient.addColorStop(1, 'rgba(128, 128, 255, 0)');
-            
-            ctx.fillStyle = gradient;
-            ctx.globalAlpha = 0.7 + Math.random() * 0.3;
-            ctx.beginPath();
-            ctx.arc(x, y, radius, 0, Math.PI * 2);
-            ctx.fill();
-        }
-        
-        // Add white water rapids effect - strong normal variation
-        for (let i = 0; i < 60; i++) {
-            const x = Math.random() * 1024;
-            const y = Math.random() * 1024;
-            const size = 10 + Math.random() * 25;
-            
-            // Create a strong bump for white water
-            ctx.fillStyle = 'rgba(240, 240, 255, 0.9)';
-            ctx.globalAlpha = 0.8;
-            
-            // Create irregular shapes for rapids
-            ctx.beginPath();
-            ctx.moveTo(x, y);
-            for (let j = 0; j < 6; j++) {
-                const angle = j * Math.PI / 3 + Math.random() * 0.5;
-                const distance = size * (0.5 + Math.random() * 0.8);
-                ctx.lineTo(
-                    x + Math.cos(angle) * distance,
-                    y + Math.sin(angle) * distance
-                );
-            }
-            ctx.closePath();
-            ctx.fill();
-            
-            // Add a shadow effect for depth
-            ctx.fillStyle = 'rgba(50, 50, 200, 0.7)';
-            ctx.beginPath();
-            ctx.ellipse(x + 5, y + 5, size * 0.4, size * 0.4, 0, 0, Math.PI * 2);
-            ctx.fill();
         }
         
         // Reset alpha
@@ -467,10 +393,7 @@ window.createRiver = function() {
     // Create and add the main river mesh
     const riverMesh = createRiverMesh();
     riverGroup.add(riverMesh);
-    
-    // Add foam particles along the edges
-    addRiverFoam(riverGroup, riverCurve, riverWidth);
-    
+
     // Add rocks and obstacles in the river for white water rapids effect
     addRiverRocks(riverGroup, riverCurve, riverWidth);
     
@@ -489,98 +412,6 @@ window.createRiver = function() {
     }
     
     return riverGroup;
-}
-
-// Function to add foam particles along river edges for visual interest
-function addRiverFoam(riverGroup, riverCurve, riverWidth) {
-    const foamCount = 150; // Increased foam count for more prominent white water
-    const foamMaterial = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.7
-    });
-    
-    // Create foam group
-    const foamGroup = new THREE.Group();
-    
-    // Add foam throughout the river, with concentration at edges and rapids
-    for (let i = 0; i < foamCount; i++) {
-        // Random position along the river curve
-        const t = Math.random();
-        const point = riverCurve.getPoint(t);
-        
-        // Determine if this is an edge foam or mid-river foam
-        const isEdgeFoam = Math.random() > 0.3; // 70% edge foam
-        
-        // Random side of the river
-        const side = Math.random() > 0.5 ? -1 : 1;
-        
-        // Get tangent and normal at this point
-        const tangent = riverCurve.getTangent(t);
-        const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-        
-        let x, z, foamType;
-        
-        if (isEdgeFoam) {
-            // Position near the edge of the river
-            const edgeFactor = 0.8 + Math.random() * 0.2; // 80-100% of the way to the edge
-            x = point.x + normal.x * (riverWidth / 2) * side * edgeFactor;
-            z = point.z + normal.z * (riverWidth / 2) * side * edgeFactor;
-            foamType = "edge";
-        } else {
-            // Position somewhere in the river
-            const riverPos = Math.random() * 0.8 - 0.4; // -0.4 to 0.4 (middle 80% of river)
-            x = point.x + normal.x * (riverWidth / 2) * riverPos;
-            z = point.z + normal.z * (riverWidth / 2) * riverPos;
-            foamType = "surface";
-        }
-        
-        // Get terrain height at this position
-        const terrainHeight = getTerrainHeight(x, z);
-        const y = terrainHeight - 0.5; // Slightly below water surface
-        
-        // Create foam particle - with different shapes based on type
-        let foamGeometry;
-        const foamSize = 0.1 + Math.random() * 0.4;
-        
-        if (foamType === "edge" || Math.random() > 0.7) {
-            // Sphere for normal foam bubbles
-            foamGeometry = new THREE.SphereGeometry(foamSize, 6, 6);
-        } else {
-            // Flatter shapes for surface foam patches
-            foamGeometry = new THREE.CylinderGeometry(
-                foamSize * 1.5, foamSize * 1.5, foamSize * 0.3, 6, 1
-            );
-            // Rotate to lay flat on water
-            foamGeometry.rotateX(Math.PI / 2);
-        }
-        
-        const foam = new THREE.Mesh(foamGeometry, foamMaterial.clone());
-        foam.material.opacity = 0.5 + Math.random() * 0.5;
-        
-        foam.position.set(x, y, z);
-        
-        // Store original position and other animation data
-        foam.userData = {
-            t: t,                    // Position along the curve
-            side: side,              // Which side of the river
-            foamType: foamType,      // Type of foam (edge or surface)
-            speed: 0.02 + Math.random() * 0.07, // Speed of movement (faster)
-            originalY: y,            // Original y position
-            bobAmount: 0.05 + Math.random() * 0.15, // How much it bobs up and down
-            bobSpeed: 1 + Math.random() * 3, // Speed of bobbing
-            spinSpeed: Math.random() * 2 - 1, // Random rotation
-        };
-        
-        foamGroup.add(foam);
-    }
-    
-    riverGroup.add(foamGroup);
-    
-    // Store foam group for animation
-    if (window.gameState) {
-        window.gameState.riverFoam = foamGroup;
-    }
 }
 
 // Function to add rocks and obstacles in the river for white water rapids effect
@@ -724,39 +555,6 @@ function setupWaterAnimation() {
         };
     }
     
-    // Generate rapids placement
-    const createRapidsPositions = () => {
-        // Check if riverCurve exists and rapids haven't been created yet
-        if (!window.gameState.riverCurve) {
-            console.warn("River curve not available for rapids creation");
-            return; // Exit if no curve exists
-        }
-        
-        if (!window.gameState.rapidPositions) {
-            // Place rapids at intervals along the river
-            const rapidPositions = [];
-            const riverCurve = window.gameState.riverCurve;
-            const numRapids = 8 + Math.floor(Math.random() * 5);
-            
-            for (let i = 0; i < numRapids; i++) {
-                // Distribute rapids along the river
-                const t = 0.1 + (i / numRapids) * 0.8; // Avoid edges
-                const point = riverCurve.getPoint(t);
-                const tangent = riverCurve.getTangent(t);
-                
-                rapidPositions.push({
-                    position: point.clone(),
-                    t: t,
-                    radius: 5 + Math.random() * 10,
-                    intensity: 0.5 + Math.random() * 0.5,
-                    flowDirection: tangent.clone()
-                });
-            }
-            
-            window.gameState.rapidPositions = rapidPositions;
-        }
-    };
-    
     // Create water splash system for rapids
     const createWaterSplashSystem = () => {
         if (!window.gameState.splashSystem) {
@@ -786,278 +584,13 @@ function setupWaterAnimation() {
     };
     
     // Initialize rapids and splash systems
-    createRapidsPositions();
     createWaterSplashSystem();
     
     // Override with our modified function that includes enhanced water animation
     window.updateScene = function(deltaTime) {
         // Call the original update function
         originalUpdateScene(deltaTime);
-        
-        // Update water animations
-        updateWaterAnimations(deltaTime);
     };
-    
-    // Function to update water animations
-    function updateWaterAnimations(deltaTime) {
-        // Skip if game is over or not initialized
-        if (!window.gameState) return;
-        
-        // Update animation times
-        const anim = window.gameState.waterAnimTime;
-        anim.flowTime += deltaTime;
-        anim.waveTime += deltaTime;
-        anim.rapidTime += deltaTime;
-        anim.foamTime += deltaTime;
-        
-        // Animate water texture flow with varying speeds in different areas
-        if (window.gameState.waterTexture) {
-            // Main flow direction
-            window.gameState.waterTexture.offset.y -= 0.03 * deltaTime;
-            
-            // Add some side-to-side motion for more natural flow
-            const sideMotion = Math.sin(anim.flowTime * 0.2) * 0.002;
-            window.gameState.waterTexture.offset.x += sideMotion;
-        }
-        
-        // Animate normal map with more complex motion
-        if (window.gameState.waterNormalMap) {
-            // Main flow direction
-            window.gameState.waterNormalMap.offset.y -= 0.04 * deltaTime;
-            
-            // Add wobble effect
-            const wobbleX = Math.sin(anim.waveTime * 0.5) * 0.003;
-            const wobbleY = Math.cos(anim.waveTime * 0.3) * 0.002;
-            
-            window.gameState.waterNormalMap.offset.x += wobbleX + (0.01 * deltaTime);
-            window.gameState.waterNormalMap.offset.y += wobbleY;
-        }
-        
-        // Animate foam texture if it exists
-        if (window.gameState.foamTexture) {
-            window.gameState.foamTexture.offset.y -= 0.05 * deltaTime;
-            
-            // Animate scale slightly for more dynamic feel
-            const scaleWobble = 1 + Math.sin(anim.foamTime * 0.4) * 0.05;
-            window.gameState.foamTexture.repeat.set(6, 1.5 * scaleWobble);
-        }
-        
-        // Animate foam particles with more dynamic behavior
-        if (window.gameState.riverFoam) {
-            const foamGroup = window.gameState.riverFoam;
-            const riverCurve = window.gameState.riverCurve;
-            
-            // Skip if no riverCurve available
-            if (!riverCurve) return;
-            
-            foamGroup.children.forEach(foam => {
-                // Vary speed based on position - faster in middle, slower at edges
-                const speedVariation = 1 + (Math.sin(anim.flowTime * 0.3 + foam.userData.t * Math.PI * 2) * 0.3);
-                
-                // Update position along the river
-                foam.userData.t += foam.userData.speed * deltaTime * speedVariation;
-                if (foam.userData.t > 1) foam.userData.t = 0;
-                
-                // Get new position on the curve
-                const point = riverCurve.getPoint(foam.userData.t);
-                
-                // Get tangent and normal at this point
-                const tangent = riverCurve.getTangent(foam.userData.t);
-                const normal = new THREE.Vector3(-tangent.z, 0, tangent.x).normalize();
-                
-                // More dynamic edge movement
-                const time = anim.foamTime * foam.userData.bobSpeed;
-                const edgePulsation = 0.7 + Math.sin(time) * 0.2 + Math.sin(time * 2.7) * 0.1;
-                
-                const x = point.x + normal.x * (window.gameState.riverWidth / 2) * foam.userData.side * edgePulsation;
-                const z = point.z + normal.z * (window.gameState.riverWidth / 2) * foam.userData.side * edgePulsation;
-                
-                // More complex bobbing motion
-                const bobHeight = foam.userData.bobAmount * (1 + Math.sin(time * 1.5) * 0.2);
-                const y = foam.userData.originalY + Math.sin(time) * bobHeight + Math.sin(time * 2.5) * bobHeight * 0.3;
-                
-                // Update foam position
-                foam.position.set(x, y, z);
-                
-                // Vary opacity for more natural look
-                foam.material.opacity = 0.7 + Math.sin(time * 0.8) * 0.3;
-            });
-        }
-        
-        // Dynamic vertex animation for the river surface
-        if (window.gameState.riverMesh) {
-            const mesh = window.gameState.riverMesh;
-            
-            // Make sure we have a valid geometry
-            if (mesh.geometry && mesh.geometry.attributes && mesh.geometry.attributes.position) {
-                const positions = mesh.geometry.attributes.position.array;
-                const vertexCount = positions.length / 3;
-                
-                // Create wave patterns that travel along the river
-                const time = anim.waveTime;
-                
-                // Update a portion of vertices each frame for better performance
-                // Only process a subset of vertices each frame
-                const updateCount = Math.min(100, vertexCount);
-                for (let i = 0; i < updateCount; i++) {
-                    // Choose a random vertex
-                    const vertexIdx = Math.floor(Math.random() * vertexCount);
-                    const idx = vertexIdx * 3 + 1; // Y-coordinate
-                    
-                    // Make sure index is valid
-                    if (idx >= positions.length) continue;
-                    
-                    // Get x and z coordinates for position-based variation
-                    const x = positions[idx - 1];
-                    const z = positions[idx + 1];
-                    
-                    // Create traveling waves
-                    const wavePhase1 = (x * 0.05 + z * 0.05 + time * 0.5) * Math.PI * 2;
-                    const wavePhase2 = (x * 0.02 - z * 0.03 + time * 0.7) * Math.PI * 2;
-                    
-                    // Estimate position in river (0 = edge, 1 = center)
-                    const edgeFactor = 0.5 + Math.sin(vertexIdx / vertexCount * Math.PI) * 0.5;
-                    
-                    // Combine waves with different frequencies
-                    const wave = (Math.sin(wavePhase1) * 0.15 + Math.sin(wavePhase2) * 0.08) * edgeFactor;
-                    
-                    // Set the new height with clamping to prevent extreme values
-                    const originalY = positions[idx];
-                    positions[idx] = originalY * 0.9 + wave * 0.1;
-                }
-                
-                mesh.geometry.attributes.position.needsUpdate = true;
-            }
-        }
-        
-        // Only update rapids if we have all required components
-        if (window.gameState.rapidPositions && window.gameState.splashSystem) {
-            updateRapids(deltaTime);
-        }
-    }
-    
-    // Function to create and update rapids effects
-    function updateRapids(deltaTime) {
-        if (!window.gameState.rapidPositions || !window.gameState.splashSystem) return;
-        
-        const rapids = window.gameState.rapidPositions;
-        const splashSystem = window.gameState.splashSystem;
-        const now = Date.now();
-        
-        // Only proceed if we have valid data
-        if (!Array.isArray(rapids) || rapids.length === 0) return;
-        
-        // Spawn new splashes at rapids locations periodically
-        if (now - splashSystem.lastSpawnTime > 100) { // Every 100ms
-            splashSystem.lastSpawnTime = now;
-            
-            // Pick a random rapid location
-            const rapidIndex = Math.floor(Math.random() * rapids.length);
-            const rapid = rapids[rapidIndex];
-            
-            // Create a new splash at this location if rapid has valid data
-            if (rapid && rapid.position) {
-                createSplashAtRapid(rapid);
-            }
-        }
-        
-        // Update existing splashes
-        const splashes = splashSystem.splashes;
-        for (let i = splashes.length - 1; i >= 0; i--) {
-            const splash = splashes[i];
-            
-            // Update age
-            splash.age += deltaTime;
-            
-            // Remove if too old
-            if (splash.age >= splash.lifetime) {
-                splashSystem.group.remove(splash.mesh);
-                splashes.splice(i, 1);
-                continue;
-            }
-            
-            // Update position based on velocity
-            splash.mesh.position.x += splash.velocity.x * deltaTime;
-            splash.mesh.position.y += splash.velocity.y * deltaTime;
-            splash.mesh.position.z += splash.velocity.z * deltaTime;
-            
-            // Apply gravity
-            splash.velocity.y -= 9.8 * deltaTime;
-            
-            // Update opacity based on age
-            const lifeProgress = splash.age / splash.lifetime;
-            splash.mesh.material.opacity = 0.8 * (1 - lifeProgress);
-            
-            // Scale down over time
-            const scale = 1 - (lifeProgress * 0.5);
-            splash.mesh.scale.set(scale, scale, scale);
-        }
-    }
-    
-    // Function to create a water splash effect at a rapid
-    function createSplashAtRapid(rapid) {
-        if (!window.gameState.splashSystem) return;
-        
-        const splashSystem = window.gameState.splashSystem;
-        
-        // Safety check for required properties
-        if (!rapid.position || !rapid.flowDirection) {
-            console.warn("Invalid rapid data for splash creation");
-            return;
-        }
-        
-        // Number of splash particles to create
-        const particleCount = 1 + Math.floor(Math.random() * 3);
-        
-        for (let i = 0; i < particleCount; i++) {
-            // Random position within the rapid area
-            const randomAngle = Math.random() * Math.PI * 2;
-            const randomRadius = Math.random() * rapid.radius * 0.8;
-            const x = rapid.position.x + Math.cos(randomAngle) * randomRadius;
-            const z = rapid.position.z + Math.sin(randomAngle) * randomRadius;
-            
-            // Get terrain height at this position
-            let terrainHeight = 0;
-            try {
-                terrainHeight = getTerrainHeight(x, z);
-            } catch (e) {
-                // If getTerrainHeight is not available, use the rapid's y position
-                terrainHeight = rapid.position.y;
-            }
-            
-            const y = terrainHeight - 0.3; // Slightly below water surface
-            
-            // Create splash geometry
-            const size = 0.2 + Math.random() * 0.4;
-            const geometry = new THREE.SphereGeometry(size, 4, 4);
-            
-            // Clone material to allow individual opacity
-            const material = splashSystem.material.clone();
-            const mesh = new THREE.Mesh(geometry, material);
-            
-            // Position splash
-            mesh.position.set(x, y, z);
-            
-            // Calculate velocity - mostly up and in flow direction
-            const flowDir = rapid.flowDirection;
-            const speedFactor = 0.5 + Math.random() * rapid.intensity;
-            
-            const splash = {
-                mesh: mesh,
-                lifetime: 0.5 + Math.random() * 0.5,
-                age: 0,
-                velocity: {
-                    x: flowDir.x * speedFactor + (Math.random() * 0.5 - 0.25),
-                    y: 1 + Math.random() * 2,
-                    z: flowDir.z * speedFactor + (Math.random() * 0.5 - 0.25)
-                }
-            };
-            
-            // Add to system
-            splashSystem.group.add(mesh);
-            splashSystem.splashes.push(splash);
-        }
-    }
 }
 
 // Updated river collision detection with splash particles
