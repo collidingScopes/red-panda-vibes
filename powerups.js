@@ -61,15 +61,11 @@ class PowerupSystem {
         this.createPowerupUI();
         
         // Bind methods
-        this.update = this.update.bind(this);
-        
-        console.log("PowerupSystem constructor completed");
+        this.update = this.update.bind(this);        
     }
     
     // Initialize the system at the start of a level
-    initialize() {
-        console.log("PowerupSystem initialize called");
-        
+    initialize() {        
         // Clear any existing powerups
         this.clearAllPowerups();
         
@@ -82,13 +78,10 @@ class PowerupSystem {
     adjustAnimationSettings(proximityThreshold, enabled = true) {
         this.animationConfig.proximityThreshold = proximityThreshold || this.animationConfig.proximityThreshold;
         this.animationConfig.optimizationEnabled = enabled;
-        console.log(`Powerup animation optimization ${enabled ? 'enabled' : 'disabled'}, threshold: ${this.animationConfig.proximityThreshold}`);
     }
     
     // Create the UI elements for powerup status
     createPowerupUI() {
-        console.log("Creating powerup UI elements");
-
         const container = document.querySelector('#powerup-status-container');
 
         // Create speed boost progress element (initially hidden)
@@ -152,8 +145,6 @@ class PowerupSystem {
             container: invisibilityContainer,
             bar: document.getElementById('invisibility-progress')
         };
-        
-        console.log("Powerup UI elements created");
     }
     
     // Create speed boost powerups
@@ -163,14 +154,8 @@ class PowerupSystem {
         // Decide how many to create
         const count = Math.floor(Math.random() * (config.maxCount - config.minCount + 1)) + config.minCount;
         
-        console.log(`Attempting to create ${count} speed boost powerups`);
-        
         for (let i = 0; i < count; i++) {
             const powerup = this.createSpeedBoostPowerup();
-            if (powerup) {
-                console.log(`Speed boost powerup ${i+1} created at position:`, 
-                    powerup.position.x, powerup.position.y, powerup.position.z);
-            }
         }
     }
     
@@ -263,7 +248,6 @@ class PowerupSystem {
             const distance = powerup.position.distanceTo(playerPos);
             
             if (distance < this.collectionRadius) {
-                console.log(`Powerup collected! Distance: ${distance}`);
                 this.collectPowerup(powerup);
             }
         }
@@ -521,12 +505,11 @@ class PowerupSystem {
         
         // Clear array
         this.activePowerups = [];
-        console.log("All powerups cleared");
     }
     
     // Handle level reset
     onLevelReset() {
-        console.log("PowerupSystem: Level reset");
+        //console.log("PowerupSystem: Level reset");
         
         // Clear existing powerups
         this.clearAllPowerups();
@@ -558,15 +541,9 @@ class PowerupSystem {
         
         // Decide how many to create
         const count = Math.floor(Math.random() * (config.maxCount - config.minCount + 1)) + config.minCount;
-        
-        console.log(`Attempting to create ${count} invisibility powerups`);
-        
+                
         for (let i = 0; i < count; i++) {
             const powerup = this.createInvisibilityPowerup();
-            if (powerup) {
-                console.log(`Invisibility powerup ${i+1} created at position:`, 
-                    powerup.position.x, powerup.position.y, powerup.position.z);
-            }
         }
     }
     
@@ -690,14 +667,11 @@ function ensureThreeJsLoaded(callback, maxAttempts = 20, interval = 300) {
 
 // Initialize the powerup system
 function initializePowerupSystem() {
-    console.log("Starting powerup system initialization");
     initPowerupSystemWithGameObjects();
 }
 
 // Initialize with available game objects
-function initPowerupSystemWithGameObjects() {
-    console.log("Initializing powerup system with game objects");
-    
+function initPowerupSystemWithGameObjects() {    
     try {
         // Create powerup system instance
         powerupSystem = new PowerupSystem(
@@ -729,7 +703,6 @@ function initPowerupSystemWithGameObjects() {
             
             // Mark as integrated to prevent double integration
             window.animate.powerupsIntegrated = true;
-            console.log("Powerup system integrated with animation loop");
         }
         
         // Hook into level system for level changes
@@ -750,7 +723,6 @@ function initPowerupSystemWithGameObjects() {
                 
                 // Mark as integrated to prevent double integration
                 window.gameState.levelSystem.powerupsIntegrated = true;
-                console.log("Powerup system integrated with level system");
             }
         }
         
@@ -770,10 +742,7 @@ function initPowerupSystemWithGameObjects() {
             
             // Mark as integrated
             window.resetGame.powerupsIntegrated = true;
-            console.log("Powerup system integrated with game reset");
         }
-        
-        console.log("Powerup system fully initialized and integrated with game");
     } catch (error) {
         console.error("Error initializing powerup system:", error);
     }
@@ -781,13 +750,10 @@ function initPowerupSystemWithGameObjects() {
 
 // Export the initialization function to be called from game.js
 window.initPowerups = function() {
-    console.log("initPowerups called from game.js");
-    
     // Only initialize once
     if (!powerupSystem) {
         initializePowerupSystem();
     } else {
-        console.log("Powerup system already initialized");
     }
 };
 
@@ -858,17 +824,13 @@ if (window.soundSystem) {
 
 // Initialize when the start game button is pressed
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM loaded, setting up powerup initialization with start button");
-    
+
     // Find the start game button
     const startButton = document.getElementById('start-game-button');
     
     if (startButton) {
-        console.log("Found start game button, adding powerup initialization");
-        
         // Add our initialization to the button click event
         startButton.addEventListener('click', () => {
-            console.log("Start button clicked, initializing powerup system");
             
             // Wait a short moment after the button is clicked
             // This gives the game a chance to start and set up THREE.js properly
@@ -885,21 +847,15 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // Backup initialization via window.onload in case start button wasn't found
-window.addEventListener('load', () => {
-    console.log("Window loaded, checking for start game button");
-    
+window.addEventListener('load', () => {    
     // Try again to find the start button
     const startButton = document.getElementById('start-game-button');
     
-    if (startButton && !startButton.powerupListenerAdded) {
-        console.log("Adding powerup initialization to start button (backup)");
-        
+    if (startButton && !startButton.powerupListenerAdded) {        
         startButton.powerupListenerAdded = true;
         
         // Add our initialization to the button click event
-        startButton.addEventListener('click', () => {
-            console.log("Start button clicked (backup handler), initializing powerup system");
-            
+        startButton.addEventListener('click', () => {            
             setTimeout(() => {
                 if (!powerupSystem && !window.powerSystemInitialized) {
                     window.powerSystemInitialized = true;

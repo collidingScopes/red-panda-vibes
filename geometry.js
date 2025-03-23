@@ -43,7 +43,8 @@ function createTerrain() {
     updateBackground([
         { position: 1, color: threeColorToHex(selectedPalette[4]) },
         { position: 0.75, color: threeColorToHex(selectedPalette[3]) },
-        { position: 0.5, color: threeColorToHex(selectedPalette[2]) },
+        { position: 0.6, color: threeColorToHex(selectedPalette[2]) },
+        { position: 0.4, color: threeColorToHex(selectedPalette[2]) },
         { position: 0.25, color: threeColorToHex(selectedPalette[1]) },
         { position: 0, color: threeColorToHex(selectedPalette[0]) },
     ]);
