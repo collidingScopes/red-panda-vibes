@@ -59,6 +59,10 @@ const portalDestinations = [
         url: "https://game-one-two.vercel.app",
         name: "Goose 3D",
     },
+    {
+        url: "https://games.outerreaches.space/shadowhold/",
+        name: "Shadowhold",
+    },
 ];
 let numPortalsPerLevel = 4;
 
@@ -404,7 +408,7 @@ class Portal {
         const material = new THREE.SpriteMaterial({
             map: texture,
             transparent: true,
-            opacity: 0.3 // Start dim
+            opacity: 0.4 // Start dim
         });
         
         // Create the sprite
