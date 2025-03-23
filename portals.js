@@ -81,10 +81,6 @@ function initPortalSystem() {
             // Check if scene would be available
             const scene = getGameScene();
             console.log(`Scene available: ${scene !== null}`);
-            
-            // Check global THREE.js objects
-            console.log("THREE available:", typeof THREE !== 'undefined');
-            console.log("Scene keys:", scene ? Object.keys(scene).join(', ') : 'N/A');
         }
         
         if (canvasExists && gameStarted) {
@@ -136,7 +132,6 @@ class Portal {
             const checkForScene = setInterval(() => {
                 const newScene = getGameScene();
                 if (newScene && this.portalGroup) {
-                    console.log(`Found scene, adding delayed portal ${this.name}`);
                     clearInterval(checkForScene);
                     newScene.add(this.portalGroup);
                 }
@@ -219,7 +214,7 @@ class Portal {
             // Add the portal to the scene if available
             if (scene) {
                 scene.add(this.portalGroup);
-                console.log(`Portal "${this.name}" created at (${this.position.x}, ${this.position.y}, ${this.position.z})`);
+                console.log(`Portal "${this.name}" created`);
             } else {
                 console.log(`Portal "${this.name}" created but waiting for scene to be available`);
             }
@@ -592,7 +587,6 @@ class Portal {
             if (scene && this.portalGroup) {
                 // Remove the portal from the scene
                 scene.remove(this.portalGroup);
-                console.log(`Removed portal "${this.name}" from scene`);
                 
                 // Properly dispose of resources
                 if (this.portalGroup) {
@@ -611,7 +605,6 @@ class Portal {
                 const index = window.__portals.findIndex(portal => portal === this);
                 if (index !== -1) {
                     window.__portals.splice(index, 1);
-                    console.log(`Removed portal "${this.name}" from portals array. Remaining portals: ${window.__portals.length}`);
                 }
             }
         } catch (e) {
@@ -653,8 +646,6 @@ class Portal {
             this.labelSprite = null;
             this.portalGroup = null;
             this.portalLight = null;
-            
-            console.log(`Portal "${this.name}" resources disposed`);
         } catch (e) {
             console.error(`Error disposing portal "${this.name}" resources:`, e);
         }
@@ -685,14 +676,10 @@ function getGameScene() {
 }
 
 // Create the portals
-function createPortals() {
-    console.log("Creating magical portals...");
-    
+function createPortals() {    
     // Verify if scene is available - very important!
     const scene = getGameScene();
-    if (!scene) {
-        console.error("Failed to find scene. Attempting alternative approach...");
-        
+    if (!scene) {        
         // Check if we can access the scene via renderer
         if (window.renderer && typeof window.renderer.render === 'function') {
             // If renderer exists, let's try to inject our scene detection
@@ -700,14 +687,12 @@ function createPortals() {
             const originalRender = window.renderer.render;
             window.renderer.render = function(scene, camera) {
                 if (!window.__scene && scene) {
-                    console.log("Scene detected via renderer hook!");
                     window.__scene = scene;
                     // Try creating portals again after a short delay
                     setTimeout(createPortals, 500);
                 }
                 return originalRender.call(this, scene, camera);
             };
-            console.log("Installed scene detection hook. Will retry portal creation when scene is detected.");
             return [];
         }
         
@@ -722,12 +707,7 @@ function createPortals() {
     let randomDistance = 80;
     let portalDestinationsCopy = portalDestinations.slice();
     let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy,portalCount);
-    console.log("Selected portals for this level: "+selectedPortalDestinations);
-    
-    // Log confirmation that we have a valid scene
-    console.log("Valid THREE.js scene found:", scene);
-    console.log("Scene children count:", scene.children ? scene.children.length : 'unknown');
-    
+        
     for (let i = 0; i < portalCount; i++) {
         // Calculate angle for even distribution
         const angle = (i / portalCount) * Math.PI * 2;
@@ -750,10 +730,7 @@ function createPortals() {
         } catch (e) {
             console.error(`Error creating portal ${i}:`, e);
         }
-    }
-    
-    console.log(`Created ${portals.length} magical portals`);
-    
+    }    
     // Setup update loop for portals
     setupPortalUpdates(portals);
     
@@ -794,28 +771,6 @@ function setupPortalUpdates(portals) {
     // Start the update loop
     requestAnimationFrame(updatePortals);
 }
-
-// Function to add a new portal programmatically
-window.addPortal = function(position, url, name, color) {
-    if (!window.__portals) window.__portals = [];
-    
-    // Default values
-    position = position || { 
-        x: (Math.random() - 0.5) * 160, 
-        y: 0, 
-        z: (Math.random() - 0.5) * 160 
-    };
-    url = url || "https://example.com";
-    name = name || "New Portal";
-    color = color || 0xa020f0;
-    
-    // Create the new portal
-    const portal = new Portal(position, url, color, name);
-    window.__portals.push(portal);
-    
-    console.log(`Added new portal "${name}" at (${position.x}, ${position.y}, ${position.z})`);
-    return portal;
-};
 
 // Function to remove all portals
 function removeAllPortals() {
