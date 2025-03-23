@@ -51,7 +51,10 @@ const portalDestinations = [
         url: "https://www.hotairvibe.com/",
         name: "Hot Air Vibe",
     },
-    
+    {
+        url: "https://metaverse-delta.vercel.app/",
+        name: "Metaverse Delta",
+    },
 ];
 let numPortalsPerLevel = 4;
 
