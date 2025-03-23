@@ -1,4 +1,5 @@
 // Script to ensure the 3D model loader is initialized correctly
+// Enhanced with support for custom avatar URLs from URL parameters
 
 // Wait for DOM and Three.js to load
 document.addEventListener('DOMContentLoaded', () => {
@@ -19,6 +20,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }, 10000);
 });
+
+// Function to parse URL parameters
+function getUrlParameters() {
+    const urlParams = new URLSearchParams(window.location.search);
+    return {
+        avatarUrl: urlParams.get('avatar_url'),
+        username: urlParams.get('username')
+    };
+}
 
 // Alternative initialization method - create the loader manually if needed
 function ensureGLTFLoader() {
@@ -99,11 +109,27 @@ function createRedPandaPlayer() {
     placeholder.castShadow = true;
     playerGroup.add(placeholder);
     
+    // Check for custom avatar URL from URL parameters
+    const params = getUrlParameters();
+    
+    // Store username in gameState if provided
+    if (params.username && window.gameState) {
+        window.gameState.username = params.username;
+        // Display username
+        updateUsernameDisplay(params.username);
+    }
+    
+    // Determine which model to load
+    const modelUrl = params.avatarUrl || 'assets/panda3DModel6.glb';
+    
+    // Log which model is being loaded
+    console.log(`Loading 3D model: ${modelUrl}`);
+    
     // Load the 3D model
     loader.load(
-        'assets/panda3DModel6.glb', // Note: Path corrected to match specified location
+        modelUrl,
         (gltf) => {
-            console.log('Panda model loaded successfully');
+            console.log('Model loaded successfully:', modelUrl);
             
             // Extract animations if available
             const animations = gltf.animations || [];
@@ -113,15 +139,24 @@ function createRedPandaPlayer() {
             
             // Scale the model appropriately
             const model = gltf.scene;
-            model.scale.set(3.0, 3.0, 3.0); // Adjust scale as needed
-            model.rotation.y = -Math.PI/2; //90 degree clockwise turn
+            
+            // Use different scale based on whether it's custom or default
+            if (params.avatarUrl) {
+                // For custom models, use a more conservative scale
+                model.scale.set(1.0, 1.0, 1.0);
+                // Don't apply the rotation by default for custom models
+            } else {
+                // For the default panda model use the original scale
+                model.scale.set(3.0, 3.0, 3.0);
+                model.rotation.y = -Math.PI/2; // 90 degree clockwise turn
+            }
 
             // Center the model
             const box = new THREE.Box3().setFromObject(model);
             const center = box.getCenter(new THREE.Vector3());
             model.position.sub(center); // Center the model
             
-            // Adjust the y-position so the panda stands on the ground
+            // Adjust the y-position so the model stands on the ground
             const size = box.getSize(new THREE.Vector3());
             model.position.y += size.y / 2;
             
@@ -145,25 +180,98 @@ function createRedPandaPlayer() {
             }
         },
         (xhr) => {
-            console.log(`Loading panda model: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+            console.log(`Loading model: ${(xhr.loaded / xhr.total * 100)}% loaded`);
         },
         (error) => {
-            console.error('Error loading panda model:', error);
+            console.error('Error loading model:', error);
             
-            // If model fails to load, use the original block-based panda
-            console.log('Falling back to block-based panda');
-            const fallbackPanda = createBlockPanda();
-            playerGroup.add(fallbackPanda);
-            playerGroup.remove(placeholder);
+            // If custom model fails, try the default model
+            if (params.avatarUrl) {
+                console.log('Custom model failed to load. Trying default model...');
+                
+                loader.load(
+                    'assets/panda3DModel6.glb',
+                    (gltf) => {
+                        console.log('Default model loaded successfully');
+                        
+                        const model = gltf.scene;
+                        model.scale.set(3.0, 3.0, 3.0);
+                        model.rotation.y = -Math.PI/2;
+                        
+                        // Center the model
+                        const box = new THREE.Box3().setFromObject(model);
+                        const center = box.getCenter(new THREE.Vector3());
+                        model.position.sub(center);
+                        
+                        // Adjust the y-position
+                        const size = box.getSize(new THREE.Vector3());
+                        model.position.y += size.y / 2;
+                        
+                        model.traverse((node) => {
+                            if (node.isMesh) {
+                                node.castShadow = true;
+                                node.receiveShadow = true;
+                            }
+                        });
+                        
+                        playerGroup.add(model);
+                        playerGroup.remove(placeholder);
+                        
+                        if (window.setPandaModel) {
+                            window.setPandaModel(model, gltf.animations);
+                        }
+                    },
+                    null,
+                    (secondError) => {
+                        console.error('Default model also failed to load:', secondError);
+                        // Fall back to block panda
+                        fallbackToBlockPanda();
+                    }
+                );
+            } else {
+                // If the default model fails initially, use the block panda
+                fallbackToBlockPanda();
+            }
             
-            // Notify game about fallback (without animations)
-            if (window.setPandaModel) {
-                window.setPandaModel(fallbackPanda, []);
+            function fallbackToBlockPanda() {
+                console.log('Falling back to block-based panda');
+                const fallbackPanda = createBlockPanda();
+                playerGroup.add(fallbackPanda);
+                playerGroup.remove(placeholder);
+                
+                if (window.setPandaModel) {
+                    window.setPandaModel(fallbackPanda, []);
+                }
             }
         }
     );
     
     return playerGroup;
+}
+
+// Create or update an element to display the username
+function updateUsernameDisplay(username) {
+    if (!username) return;
+    
+    let usernameDisplay = document.getElementById('username-display');
+    
+    if (!usernameDisplay) {
+        usernameDisplay = document.createElement('div');
+        usernameDisplay.id = 'username-display';
+        document.body.appendChild(usernameDisplay);
+    }
+    
+    usernameDisplay.textContent = username;
+    usernameDisplay.style.position = 'fixed';
+    usernameDisplay.style.top = '10px';
+    usernameDisplay.style.left = '10px';
+    usernameDisplay.style.color = 'white';
+    usernameDisplay.style.fontFamily = 'system-ui, sans-serif';
+    usernameDisplay.style.padding = '5px 10px';
+    usernameDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+    usernameDisplay.style.borderRadius = '5px';
+    usernameDisplay.style.zIndex = '1000';
+    usernameDisplay.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.5)';
 }
 
 // Create the original block-based panda as fallback
