@@ -10,7 +10,7 @@ class VibeversePortal {
         this.frameGroup = null;
         this.isActive = false;
         this.position = new THREE.Vector3();
-        this.activationDistance = 10;
+        this.activationDistance = 15;
         this.portalLight = null;
         this.portalParticles = null;
         this.clock = new THREE.Clock();
