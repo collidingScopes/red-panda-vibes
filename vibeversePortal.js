@@ -373,14 +373,62 @@ class VibeversePortal {
         if (typeof window.pauseGame === 'function') {
             window.pauseGame();
         }
-
+    
         resetAllKeyStates();
         
-        // Open portal URL in a new tab
-        //const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/";
-        // Open portal URL in a new tab with the updated parameters
-        const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&avatar_url=avatar_url=https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/panda3DModel6.glb&ref=https://collidingscopes.github.io/red-panda-vibes/";
-        window.open(portalUrl, '_blank');
+        // Create portal URL with parameters
+        const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&avatar_url=https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/panda3DModel6.glb&ref=https://collidingscopes.github.io/red-panda-vibes/";
+        
+        // Try to detect if we're in an in-app browser like X/Twitter
+        const isInAppBrowser = 
+            /Twitter/i.test(navigator.userAgent) || 
+            /FB_IAB/i.test(navigator.userAgent) || 
+            /FBAN/i.test(navigator.userAgent) || 
+            /Instagram/i.test(navigator.userAgent);
+        
+        // For Twitter/X browser, use location change instead of window.open
+        if (isInAppBrowser) {
+            // Create a modal to inform the user what's happening
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            modal.style.padding = '20px';
+            modal.style.borderRadius = '10px';
+            modal.style.color = 'white';
+            modal.style.zIndex = '9999';
+            modal.style.textAlign = 'center';
+            modal.style.maxWidth = '80%';
+            
+            modal.innerHTML = `
+                <h2>Portal Activated!</h2>
+                <p>You're being redirected to the Vibeverse portal.</p>
+                <p>Tap anywhere to continue...</p>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // When user taps the modal, redirect them
+            modal.addEventListener('click', function() {
+                // Remove the modal
+                document.body.removeChild(modal);
+                // Direct navigation instead of opening in new tab
+                window.location.href = portalUrl;
+            });
+            
+            // Auto-remove after 5 seconds if no interaction
+            setTimeout(() => {
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                    window.location.href = portalUrl;
+                }
+            }, 5000);
+        } else {
+            // For regular browsers, continue with window.open
+            window.open(portalUrl, '_blank');
+        }
         
         // Play portal sound if available
         if (window.playPortalSound && typeof window.playPortalSound === 'function') {
