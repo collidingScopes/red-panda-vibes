@@ -55,6 +55,10 @@ const portalDestinations = [
         url: "https://metaverse-delta.vercel.app/",
         name: "Metaverse Delta",
     },
+    {
+        url: "https://game-one-two.vercel.app",
+        name: "Goose 3D",
+    },
 ];
 let numPortalsPerLevel = 4;
 
