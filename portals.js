@@ -452,9 +452,9 @@ class Portal {
         this.isAnimating = true;
         
         // Increase opacity of portal elements
-        this.fadeIn(this.portalMaterial, 0.8);
-        this.fadeIn(this.particles.material, 0.7);
-        this.fadeIn(this.labelSprite.material, 0.8);
+        this.fadeIn(this.portalMaterial, 0.9);
+        this.fadeIn(this.particles.material, 0.8);
+        this.fadeIn(this.labelSprite.material, 0.9);
         
         // Increase light intensity
         this.portalLight.intensity = 2;
@@ -490,7 +490,7 @@ class Portal {
         this.portalLight.intensity = 0.7 + Math.sin(time * 1) * 1.5;
         
         // Rotate inner ring in opposite direction
-        this.innerRing.rotation.z -= deltaTime * 0.25;
+        this.innerRing.rotation.z -= deltaTime * 0.5;
         
         // Animate particles
         if (this.particles) {
