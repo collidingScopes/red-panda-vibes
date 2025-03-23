@@ -64,7 +64,7 @@ const portalDestinations = [
         name: "Shadowhold",
     },
     {
-        url: "htt://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/",
+        url: "http://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/",
         name: "Vibeverse Portal",
     },
 ];
