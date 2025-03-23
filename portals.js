@@ -55,10 +55,6 @@ const portalDestinations = [
         url: "https://games.outerreaches.space/shadowhold/",
         name: "Shadowhold",
     },
-    {
-        url: "http://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/",
-        name: "Vibeverse Portal",
-    },
 ];
 let numPortalsPerLevel = 4;
 
