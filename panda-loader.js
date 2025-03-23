@@ -111,6 +111,7 @@ function createRedPandaPlayer() {
     
     // Check for custom avatar URL from URL parameters
     const params = getUrlParameters();
+    console.log("URL params received: "+params);
     
     // Store username in gameState if provided
     if (params.username && window.gameState) {
