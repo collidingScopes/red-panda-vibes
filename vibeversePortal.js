@@ -367,67 +367,74 @@ class VibeversePortal {
     }
     
     activatePortal() {
-        console.log("Portal activated!");
-        
-        // Pause the game
-        if (typeof window.pauseGame === 'function') {
-            window.pauseGame();
-        }
-    
-        resetAllKeyStates();
-        
+
         // Create portal URL with parameters
         const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&avatar_url=https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/panda3DModel6.glb&ref=https://collidingscopes.github.io/red-panda-vibes/";
         
-        // For Twitter/X browser, use location change instead of window.open
-        if (isInAppBrowser()) {
-            console.log("in app browser detected");
-            // Create a modal to inform the user what's happening
-            const modal = document.createElement('div');
-            modal.style.position = 'fixed';
-            modal.style.top = '50%';
-            modal.style.left = '50%';
-            modal.style.transform = 'translate(-50%, -50%)';
-            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-            modal.style.padding = '20px';
-            modal.style.borderRadius = '10px';
-            modal.style.color = 'white';
-            modal.style.zIndex = '9999';
-            modal.style.textAlign = 'center';
-            modal.style.maxWidth = '80%';
-            
-            modal.innerHTML = `
-                <h2>Portal Activated!</h2>
-                <p>You're being redirected to the Vibeverse portal.</p>
-                <p>Tap anywhere to continue...</p>
-            `;
-            
-            document.body.appendChild(modal);
-            
-            // When user taps the modal, redirect them
-            modal.addEventListener('click', function() {
-                // Remove the modal
-                document.body.removeChild(modal);
-                // Direct navigation instead of opening in new tab
-                window.location.href = portalUrl;
-            });
-            
-            // Auto-remove after 5 seconds if no interaction
-            setTimeout(() => {
-                if (document.body.contains(modal)) {
-                    document.body.removeChild(modal);
-                    window.location.href = portalUrl;
-                }
-            }, 5000);
-        } else {
-            // For regular browsers, continue with window.open
-            window.open(portalUrl, '_blank');
-        }
-        
         // Play portal sound if available
-        if (window.playPortalSound && typeof window.playPortalSound === 'function') {
-            window.playPortalSound();
+        if (window.soundSystem && window.soundSystem.initialized) {
+        // Create ascending tones for portal activation
+        window.soundSystem.playTone(300, 0.1, 'sine', 0.3);
+        window.soundSystem.playTone(450, 0.15, 'sine', 0.3, 0.1);
+        window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
+        window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
         }
+       
+        // Function to detect if we're in an in-app browser
+        const isInAppBrowser = () => {
+        const ua = navigator.userAgent || navigator.vendor || window.opera;
+        return (
+        ua.includes("Instagram") ||
+        ua.includes("FBAN") || // Facebook
+        ua.includes("FBAV") || // Facebook
+        ua.includes("Twitter") ||
+        ua.includes("Line") ||
+        ua.includes("MicroMessenger") || // WeChat
+        /Mobi/.test(ua) && !/Safari/.test(ua) // Mobile but not Safari
+        );
+        };
+       
+        // Try different methods to open the URL
+        try {
+        // First attempt: Use window.open
+        const newWindow = window.open(portalUrl, "_blank");
+        if (newWindow) {
+        console.log(`Successfully opened ${portalUrl} with window .open`);
+        } else {
+        throw new Error("window.open failed");
+        }
+        } catch (e) {
+        console.warn(`window.open failed: ${e.message}. Falling back to link method.`);
+       
+        // Fallback: Create and click a link element
+        const link = document.createElement('a');
+        link.href = portalUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer"; // Security best practice
+        document.body.appendChild(link);
+       
+        // For in-app browsers, sometimes triggering a real click event works better
+        if (isInAppBrowser()) {
+        const clickEvent = new Event('click', {
+        bubbles: true,
+        cancelable: true
+        });
+        link.dispatchEvent(clickEvent);
+        } else {
+        link.click();
+        }
+       
+        // Clean up after a short delay
+        setTimeout(() => {
+        document.body.removeChild(link);
+        }, 100);
+        }
+
+        // Hide portal UI elements
+        //updatePortalUI(false, "");
+       
+        resetAllKeyStates();
+        pauseGame();
     }
     
     dispose() {
