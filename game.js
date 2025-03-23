@@ -3,7 +3,7 @@ console.log("Mobile check:", isMobile);
 
 // Game state
 const gameState = {
-    speed: 12.0,
+    speed: 13.0,
     currentLevel: 1,
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,

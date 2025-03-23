@@ -20,10 +20,6 @@ const portalDestinations = [
         name: "First Person Flappy", 
     },
     { 
-        url: "https://threejs.org/", 
-        name: "ThreeJS Game Engine", 
-    },
-    { 
         url: "https://vibe-cannon.vercel.app/", 
         name: "Vibe Cannon", 
     },
@@ -34,10 +30,6 @@ const portalDestinations = [
     {
         url: "https://blockbusters.louiebacaj.com/",
         name: "Block Busters",
-    },
-    {
-        url: "https://raceviberz.com/",
-        name: "Race Viberz",
     },
     {
         url: "https://glider-sim.com/",

@@ -1,4 +1,5 @@
 // Improved Power-ups system for Red Panda platformer
+let floatHeight = 3.5;
 class PowerupSystem {
     constructor(scene, player, getTerrainHeight) {
         this.scene = scene;
@@ -14,7 +15,7 @@ class PowerupSystem {
             optimizationEnabled: true // Toggle to enable/disable optimization
         };
 
-        this.collectionRadius = 3; // Distance to collect
+        this.collectionRadius = 3.5; // Distance to collect
 
         // Power-up configuration
         this.config = {
@@ -188,7 +189,7 @@ class PowerupSystem {
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
-        const y = this.getTerrainHeight(x, z) + 2.5; // Float above terrain
+        const y = this.getTerrainHeight(x, z) + floatHeight; // Float above terrain
         
         // Create the powerup object
         const powerup = this.createPowerupModel(config.color, config.particleColor);
@@ -584,7 +585,7 @@ class PowerupSystem {
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
-        const y = this.getTerrainHeight(x, z) + 1.5; // Float above terrain
+        const y = this.getTerrainHeight(x, z) + floatHeight; // Float above terrain
         
         // Create the powerup object
         const powerup = this.createPowerupModel(config.color);
