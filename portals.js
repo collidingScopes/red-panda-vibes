@@ -552,15 +552,57 @@ class Portal {
             window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
             window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
         }
-        
-        // Create and click a link element
-        const link = document.createElement('a');
-        link.href = this.url;
-        link.target = "_blank";
-        link.rel = "noopener";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+
+        // For Twitter/X browser, use location change instead of window.open
+        if (isInAppBrowser()) {
+            console.log("in app browser detected");
+            // Create a modal to inform the user what's happening
+            const modal = document.createElement('div');
+            modal.style.position = 'fixed';
+            modal.style.top = '50%';
+            modal.style.left = '50%';
+            modal.style.transform = 'translate(-50%, -50%)';
+            modal.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+            modal.style.padding = '20px';
+            modal.style.borderRadius = '10px';
+            modal.style.color = 'white';
+            modal.style.zIndex = '9999';
+            modal.style.textAlign = 'center';
+            modal.style.maxWidth = '80%';
+            
+            modal.innerHTML = `
+                <h2>Portal Activated!</h2>
+                <p>You're being redirected to the Vibeverse portal.</p>
+                <p>Tap anywhere to continue...</p>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // When user taps the modal, redirect them
+            modal.addEventListener('click', function() {
+                // Remove the modal
+                document.body.removeChild(modal);
+                // Direct navigation instead of opening in new tab
+                window.location.href = this.url;
+            });
+            
+            // Auto-remove after 5 seconds if no interaction
+            setTimeout(() => {
+                if (document.body.contains(modal)) {
+                    document.body.removeChild(modal);
+                    window.location.href = this.url;
+                }
+            }, 5000);
+        } else {
+            // Create and click a link element
+            const link = document.createElement('a');
+            link.href = this.url;
+            link.target = "_blank";
+            link.rel = "noopener";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
         
         // Remove this portal from the scene
         this.removeFromScene();
