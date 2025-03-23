@@ -1,13 +1,14 @@
 // Color palette - consolidated repeated color definitions
 const COLORS = {
-    pastel: [0xaae6ff, 0xbba1ff, 0xffaad5, 0xa1ffbb, 0xffe1aa],
     foliage: [0xa1ffcc, 0xe2a1ff, 0xf9a1ff, 0xffa1a1, 0xa1f9ff],
     synthwave: [0xff00ff, 0x00ffff, 0xfe5eff, 0x0652ff, 0xff2a6d],
     cyberpunk: [0xf7f500, 0xff0055, 0x00fffb, 0x7700ff, 0xff8c00],
-    noir: [0x080808, 0x1a1a1a, 0x333333, 0x8c8c8c, 0xffffff],
     forest: [0x1e4d2b, 0x006c67, 0x598c4f, 0x8fac55, 0x2f5233],
     sea: [0x00353f, 0x006273, 0x0097b2, 0x5cd9ff, 0xb8ebff],
-    sunset: [0xff7b00, 0xff5252, 0xffb56b, 0xff3f00, 0x5c0029]
+    sunset: [0xff7b00, 0xff5252, 0xffb56b, 0xff3f00, 0x5c0029],
+    dusk: [0x2c1e4a, 0x512b81, 0x7e4e90, 0xc55ffc, 0x9e8ec8],
+    matrix: [0x003b00, 0x008f11, 0x00ff41, 0x30ff70, 0x95ffb8],
+    desert: [0xc2956e, 0xe3bc9a, 0xd4a76a, 0x8b5d33, 0xf2dba8],
 };
 let selectedPalette = COLORS.synthwave;
 
@@ -88,7 +89,6 @@ function createTerrain() {
                 const hillGeometry = new THREE.BoxGeometry(segmentSize, height, segmentSize);
                 
                 // Choose a pastel color with slight randomization
-                //const baseColor = COLORS.pastel[Math.floor(Math.random() * COLORS.pastel.length)];
                 const baseColor = selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
 
                 // Create a subtle color variation
