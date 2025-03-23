@@ -199,7 +199,7 @@ class EnemyManager {
         // Create particle effect (simple expanding rings)
         const ringCount = 3;
         //const ringColor = 0x84ffef; // Cyan color to match game's theme
-        const ringColor = COLORS.neon[Math.floor(Math.random() * COLORS.neon.length)];
+        const ringColor = COLORS.synthwave[Math.floor(Math.random() * COLORS.synthwave.length)];
             
         for (let i = 0; i < ringCount; i++) {
             // Create ring geometry

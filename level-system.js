@@ -76,16 +76,15 @@ class LevelSystem {
         // Reset player position
         this.player.position.set(0, 50, 0);
         
-        // NEW: Update flag pole height
+        if(level > 1){
+            this.updateTerrainHeight(settings.terrainHeightMultiplier);
+        }
+
         this.updateFlagHeight(settings.flagHeight);
-        
-        // NEW: Update terrain height multiplier
-        this.updateTerrainHeight(settings.terrainHeightMultiplier);
-        
+            
         // Reposition the flag for this level (further away for higher levels)
         const distance = 50 + (level * 7); // Increase distance with level
         const angle = Math.random() * Math.PI * 2; // Random angle for variety
-        
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
         
@@ -112,9 +111,7 @@ class LevelSystem {
         
         // Update the pole height if found
         if (pole) {
-            // Store original y position
-            const originalY = pole.position.y;
-            
+ 
             // We need to modify the geometry to change height
             if (pole.geometry) {
                 pole.geometry.dispose(); // Dispose old geometry to avoid memory leaks
@@ -123,13 +120,7 @@ class LevelSystem {
                 // Update position to keep the pole base at the same height
                 pole.position.y = height / 2;
             }
-            
-            // Adjust the flag position (second child) too
-            const flag = this.flagPole.children[1];
-            if (flag) {
-                flag.position.y = height - 2; // Position near the top of the pole
-            }
-            
+
             // Adjust the light position (if it exists as the third child)
             if (this.flagPole.children[2]) {
                 this.flagPole.children[2].position.y = height - 4;

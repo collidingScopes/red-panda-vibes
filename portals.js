@@ -233,10 +233,7 @@ class Portal {
     }
     
     createPortalLights() {
-        let lightColor = COLORS.neon[Math.floor((COLORS.neon.length-1)*Math.random())];
-        let lightColor2 = COLORS.neon[Math.floor((COLORS.neon.length-1)*Math.random())];
-
-        
+        let lightColor = COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())];
         // Main portal light in center
         this.portalLight = new THREE.PointLight(lightColor, 3, 20);
         this.portalLight.position.set(0, 0, 0.5);
@@ -749,7 +746,7 @@ function createPortals() {
             const portal = new Portal(
                 position,
                 selectedPortalDestinations[i].url,
-                COLORS.neon[Math.floor((COLORS.neon.length-1)*Math.random())],
+                COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())],
                 selectedPortalDestinations[i].name
             );
             

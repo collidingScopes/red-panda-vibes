@@ -1,11 +1,22 @@
 // Color palette - consolidated repeated color definitions
 const COLORS = {
-    neon: [0xff84f0, 0x84ffef, 0xb3ff84, 0xffee84, 0xff84a1],
     pastel: [0xaae6ff, 0xbba1ff, 0xffaad5, 0xa1ffbb, 0xffe1aa],
-    crystal: [0xff9ee6, 0x9eecff, 0xccff9e, 0xffe79e, 0xce9eff],
     foliage: [0xa1ffcc, 0xe2a1ff, 0xf9a1ff, 0xffa1a1, 0xa1f9ff],
-    flower: [0xff84d9, 0x84ffee, 0xa2ff84, 0xffee84, 0xd084ff]
+    synthwave: [0xff00ff, 0x00ffff, 0xfe5eff, 0x0652ff, 0xff2a6d],
+    cyberpunk: [0xf7f500, 0xff0055, 0x00fffb, 0x7700ff, 0xff8c00],
+    noir: [0x080808, 0x1a1a1a, 0x333333, 0x8c8c8c, 0xffffff],
+    forest: [0x1e4d2b, 0x006c67, 0x598c4f, 0x8fac55, 0x2f5233],
+    sea: [0x00353f, 0x006273, 0x0097b2, 0x5cd9ff, 0xb8ebff],
+    sunset: [0xff7b00, 0xff5252, 0xffb56b, 0xff3f00, 0x5c0029]
 };
+let selectedPalette = COLORS.synthwave;
+
+function getRandomPalette() {
+    const paletteNames = Object.keys(COLORS);
+    const randomIndex = Math.floor(Math.random() * paletteNames.length);
+    const randomPaletteName = paletteNames[randomIndex];
+    selectedPalette = COLORS[randomPaletteName];
+}
 
 // Helper function to create canvas elements
 function getCanvas(width, height) {
@@ -24,31 +35,19 @@ window.getTerrainHeight = function(x, z) {
     ) * 0.7 * (window.terrainHeightMultiplier || 1.0));
 };
 
-// Create a gradient background for sunset effect
-const createSunsetBackground = () => {
-    const canvas = getCanvas(2, 512);
-    const context = canvas.getContext('2d');
-    
-    // Create a beautiful sunset gradient (top to bottom)
-    const gradient = context.createLinearGradient(0, 0, 0, 512);
-    gradient.addColorStop(0, '#6b88ff');    // Top: Soft blue
-    gradient.addColorStop(0.3, '#a183e0');  // Upper middle: Soft purple
-    gradient.addColorStop(0.5, '#e18ad4');  // Middle: Pink purple
-    gradient.addColorStop(0.7, '#ffa7a7');  // Lower middle: Light pink
-    gradient.addColorStop(1, '#ffcbb6');    // Bottom: Soft peach
-    
-    context.fillStyle = gradient;
-    context.fillRect(0, 0, 2, 512);
-    
-    const texture = new THREE.CanvasTexture(canvas);
-    texture.needsUpdate = true;
-    texture.repeat.set(1, 1);
-    
-    return texture;
-};
-
 // PASTEL NEON STYLED TERRAIN SYSTEM
 function createTerrain() {
+
+    getRandomPalette(); //assigns a random palette to selectedPalette array
+    if(scene.fog) scene.fog.color.set(selectedPalette[0]);
+    updateBackground([
+        { position: 1, color: threeColorToHex(selectedPalette[4]) },
+        { position: 0.75, color: threeColorToHex(selectedPalette[3]) },
+        { position: 0.5, color: threeColorToHex(selectedPalette[2]) },
+        { position: 0.25, color: threeColorToHex(selectedPalette[1]) },
+        { position: 0, color: threeColorToHex(selectedPalette[0]) },
+    ]);
+
     // Create a large flat base with soft gradient
     const terrainSize = 400;
     const baseGeometry = new THREE.BoxGeometry(terrainSize, 1, terrainSize);
@@ -88,8 +87,9 @@ function createTerrain() {
                 const hillGeometry = new THREE.BoxGeometry(segmentSize, height, segmentSize);
                 
                 // Choose a pastel color with slight randomization
-                const baseColor = COLORS.pastel[Math.floor(Math.random() * COLORS.pastel.length)];
-                
+                //const baseColor = COLORS.pastel[Math.floor(Math.random() * COLORS.pastel.length)];
+                const baseColor = selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
+
                 // Create a subtle color variation
                 const color = new THREE.Color(baseColor);
                 color.r += (Math.random() * 0.1 - 0.05);
@@ -98,24 +98,15 @@ function createTerrain() {
                 
                 const hillMaterial = new THREE.MeshStandardMaterial({
                     color: color,
-                    // roughness: 0.7,
-                    // metalness: 0.1,
-                    // emissive: baseColor,
-                    // emissiveIntensity: 0.05 // Subtle glow
                 });
                 
                 const hill = new THREE.Mesh(hillGeometry, hillMaterial);
                 hill.position.set(posX, height/2, posZ);
                 hill.receiveShadow = true;
-                //hill.castShadow = true;
                 hillsGroup.add(hill);
             }
         }
-    }
-    
-    // Add the neon glow lights
-    //addNeonLights();
-    
+    }    
     return hillsGroup;
 }
 
@@ -130,10 +121,10 @@ function createTerrainBaseTexture() {
         256, 256, 384
     );
     
-    gradient.addColorStop(0, '#a1e6ff'); // Center: Light blue
-    gradient.addColorStop(0.3, '#c4a1ff'); // Middle: Light purple
-    gradient.addColorStop(0.6, '#ffa1e6'); // Outer middle: Pink
-    gradient.addColorStop(1, '#84ffbb'); // Edge: Mint green
+    gradient.addColorStop(0, threeColorToHex(selectedPalette[0])); // Center: Light blue
+    gradient.addColorStop(0.3, threeColorToHex(selectedPalette[1])); // Middle: Light purple
+    gradient.addColorStop(0.6, threeColorToHex(selectedPalette[2])); // Outer middle: Pink
+    gradient.addColorStop(1, threeColorToHex(selectedPalette[3])); // Edge: Mint green
     
     context.fillStyle = gradient;
     context.fillRect(0, 0, 512, 512);
@@ -142,6 +133,36 @@ function createTerrainBaseTexture() {
     texture.needsUpdate = true;
     
     return texture;
+}
+
+function threeColorToHex(threeColor) {
+    // If it's already a THREE.Color object
+    if (threeColor.isColor) {
+      // Convert to hex string and ensure it has the # prefix
+      return '#' + threeColor.getHexString();
+    }
+    
+    // If it's a hex number (like 0xff0000)
+    else if (typeof threeColor === 'number') {
+      // Convert to a hex string and remove the '0x' prefix if present
+      let hexString = threeColor.toString(16);
+      
+      // Pad with zeros if needed to ensure 6 digits
+      while (hexString.length < 6) {
+        hexString = '0' + hexString;
+      }
+      
+      return '#' + hexString;
+    }
+    
+    // If it's already a string, ensure it has the # prefix
+    else if (typeof threeColor === 'string') {
+      return threeColor.startsWith('#') ? threeColor : '#' + threeColor;
+    }
+    
+    // If conversion isn't possible
+    console.error('Unable to convert to hex color:', threeColor);
+    return '#000000'; // Default to black
 }
 
 // Create stylized bamboo stalk (replaces flag pole)
@@ -211,7 +232,7 @@ function createFlagPole() {
     }
     
     // Create a full bamboo stalk that goes all the way to the ground
-    const bambooHeight = 25; // Total height
+    const bambooHeight = 30; // Total height
     const bambooRadius = 1;
 
     // Add node rings at positions matching the image
