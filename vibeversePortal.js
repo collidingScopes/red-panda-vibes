@@ -365,11 +365,11 @@ class VibeversePortal {
             this.isPlayerInPortal = false;
         }
     }
-    
+
     activatePortal() {
 
         // Create portal URL with parameters
-        const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&avatar_url=https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/panda3DModel6.glb&ref=https://collidingscopes.github.io/red-panda-vibes/";
+        const portalUrl = "http://portal.pieter.com/?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/";
         
         // Play portal sound if available
         if (window.soundSystem && window.soundSystem.initialized) {
