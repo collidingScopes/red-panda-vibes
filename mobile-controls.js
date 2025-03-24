@@ -1,25 +1,5 @@
 // Mobile Controls for Red Panda Explorer
 
-// Press button to rotate camera perspective 
-//let cameraFlipButton = document.getElementById("camera-flip-button");
-// Add touch event for camera flip
-/*
-cameraFlipButton.addEventListener('touchstart', (e) => {
-    mobileCameraTurnLeft();
-    e.preventDefault(); // Prevent default behavior
-
-    // Visual feedback for button
-    cameraFlipButton.style.backgroundColor = 'rgba(132, 255, 239, 0.3)';
-
-    // Reset button color after a delay
-    setTimeout(() => {
-        cameraFlipButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-        isRotating = false;
-    }, 300);
-
-}, { passive: false });
-*/
-
 // Animation settings for smooth rotations
 const ROTATION_DURATION = 400; // Duration of rotation animation in ms
 const ROTATION_STEPS = 20; // Number of steps for smoother animation

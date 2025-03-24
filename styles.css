@@ -653,7 +653,7 @@ button {
     text-transform: uppercase;
     letter-spacing: 1px;
     /* box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); Cyan glow */
-    font-size: 14px;
+    font-size: 13px;
     text-decoration: none;
     transition: all 0.3s ease;
 }
