@@ -169,7 +169,7 @@ window.cameraDistance = 7.5;
 
 // Add min and max for vertical camera angle to prevent looking below ground
 const MIN_VERTICAL_ANGLE = -Math.PI/11; // Minimum (looking up)
-const MAX_VERTICAL_ANGLE = Math.PI/4;  // Maximum (looking down, but not below ground)
+const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
 const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera() {
@@ -187,7 +187,7 @@ function updateCamera() {
     // Update camera position using player's position without cloning
     camera.position.x = player.position.x + horizontalDistance * Math.sin(window.cameraAngleHorizontal);
     camera.position.z = player.position.z + horizontalDistance * Math.cos(window.cameraAngleHorizontal);
-    camera.position.y = player.position.y + 2.5 + verticalDistance; // 2.5 is a height offset
+    camera.position.y = player.position.y + 4.5 + verticalDistance; // 2.5 is a height offset
     
     // Reuse the target vector
     cameraTarget.copy(player.position);
