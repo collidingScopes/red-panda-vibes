@@ -105,7 +105,7 @@ class ChangingRoom {
         cabinetGroup.add(frontRod);
         
         // Create much larger hanging sign with bigger text
-        const signGeometry = new THREE.PlaneGeometry(10, 2);
+        const signGeometry = new THREE.PlaneGeometry(12, 4);
         const signMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xF5F5DC, // Beige color
             side: THREE.DoubleSide
@@ -117,8 +117,8 @@ class ChangingRoom {
         
         // Add text to the sign - MUCH LARGER TEXT
         const canvas = document.createElement('canvas');
-        canvas.width = 256; // Higher resolution
-        canvas.height = 128;
+        canvas.width = 240; // Higher resolution
+        canvas.height = 80;
         const context = canvas.getContext('2d');
         
         // Clear background
@@ -127,11 +127,11 @@ class ChangingRoom {
         
         // Add border
         context.strokeStyle = 'black';
-        context.lineWidth = 12;
-        context.strokeRect(6, 6, canvas.width - 8, canvas.height - 8);
+        context.lineWidth = 8;
+        context.strokeRect(4, 4, canvas.width - 8, canvas.height - 8);
         
         // Add text with much bigger font
-        context.font = 'bold 30px Helvetica, Arial'; // MUCH LARGER FONT
+        context.font = 'bold 28px Helvetica, Arial'; // MUCH LARGER FONT
         context.fillStyle = 'black';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
