@@ -68,12 +68,12 @@ updateBackground(nightSky);
 
 // Enhanced sunset lighting for more dramatic shadows
 // Warm ambient light for sunset feel
-const ambientLight = new THREE.AmbientLight(0xffe0c0, 0.6); // Warm amber glow
+const ambientLight = new THREE.AmbientLight(0xffe0c0, 0.9); // Warm amber glow
 scene.add(ambientLight);
 
 // Strong directional light with warm sunset color
 const directionalLight = new THREE.DirectionalLight(0xff9966, 1.2); // Warm orange sunset
-directionalLight.position.set(-30, 20, 30); // Position to create dramatic shadows
+directionalLight.position.set(-25, 20, 30); // Position to create dramatic shadows
 directionalLight.castShadow = true;
 directionalLight.shadow.mapSize.width = 2048;
 directionalLight.shadow.mapSize.height = 2048;
@@ -82,15 +82,17 @@ directionalLight.shadow.camera.far = 500;
 directionalLight.shadow.camera.left = -100;
 directionalLight.shadow.camera.right = 100;
 directionalLight.shadow.camera.top = 100;
-directionalLight.shadow.camera.bottom = -100;
+directionalLight.shadow.camera.bottom = -20;
 // Increase shadow darkness for more contrast
-directionalLight.shadow.bias = -0.001;
+directionalLight.shadow.bias = 0.001;
 scene.add(directionalLight);
 
+/*
 // Add a secondary light for dramatic effect - cool blue to complement warm light
 const secondaryLight = new THREE.DirectionalLight(0x84b9ff, 0.6); // Bluish light
 secondaryLight.position.set(50, 30, -30);
 scene.add(secondaryLight);
+*/
 
 // Create the red panda player
 const player = createRedPandaPlayer();

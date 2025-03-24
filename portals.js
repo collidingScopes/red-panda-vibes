@@ -1,71 +1,5 @@
 // Enhanced Portal System for Red Panda Vibes
 // Creates functional fantasy-styled portals that open URLs when activated
-
-// Portal destination URLs
-const portalDestinations = [
-    /*
-    { 
-        url: "https://fly.pieter.com", 
-        name: "Fly.Pieter.com", 
-    },
-    { 
-        url: "https://schermutseling.com/", 
-        name: "Schermutseling",
-    },
-    { 
-        url: "https://vector-tango.scobel.dev/", 
-        name: "Vector. Tango.", 
-    },
-    { 
-        url: "https://firstpersonflappy.com/", 
-        name: "First Person Flappy", 
-    },
-    { 
-        url: "https://vibe-cannon.vercel.app/", 
-        name: "Vibe Cannon", 
-    },
-    { 
-        url: "https://www.ourcade.ai/", 
-        name: "Ourcade.ai", 
-    },
-    {
-        url: "https://blockbusters.louiebacaj.com/",
-        name: "Block Busters",
-    },
-    {
-        url: "https://glider-sim.com/",
-        name: "Glider Simulator",
-    },
-    {
-        url: "https://pixelblast.xyz/",
-        name: "Pixel Blast",
-    },
-    {
-        url: "https://www.hotairvibe.com/",
-        name: "Hot Air Vibe",
-    },
-    {
-        url: "https://metaverse-delta.vercel.app/",
-        name: "Metaverse Delta",
-    },
-    {
-        url: "https://quack.kyzo.io/",
-        name: "Quack Goose",
-    },
-    {
-        url: "https://games.outerreaches.space/shadowhold/",
-        name: "Shadowhold",
-    },
-    */
-    {
-        url: "https://metaverse-delta.vercel.app/",
-        name: "Metaverse Delta",
-    },
-    {
-        url: "https://vibejam.netlify.app/",
-        name: "Vibe Jam",
-    },
-];
 let numPortalsPerLevel = 2;
 let urlParams = "?portal=true&username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
 urlParams += "&avatar_url=http://collidingscopes.github.io/red-panda-vibes/assets/panda3DModel7.glb";
@@ -232,13 +166,7 @@ class Portal {
     }
     
     createPortalLights() {
-        let lightColor = COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())];
-        // Main portal light in center
-        this.portalLight = new THREE.PointLight(lightColor, 3, 20);
-        this.portalLight.position.set(0, 0, 0.5);
-        this.portalLight.intensity = 0.1; // Start dimmed
-        this.portalGroup.add(this.portalLight);
-
+        this.portalLight = null; // Don't create initially
     }
     
     createSpiralTexture() {
@@ -457,8 +385,14 @@ class Portal {
     }
     
     startPortalAnimation() {
+        if (!this.portalLight) {
+            let lightColor = COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())];
+            this.portalLight = new THREE.PointLight(lightColor, 2, 20);
+            this.portalLight.position.set(0, 0, 0.5);
+            this.portalGroup.add(this.portalLight);
+        }
         this.isAnimating = true;
-        
+
         // Increase opacity of portal elements
         this.fadeIn(this.portalMaterial, 0.9);
         this.fadeIn(this.particles.material, 0.8);
@@ -471,6 +405,12 @@ class Portal {
     }
     
     stopPortalAnimation() {
+        /*
+        if (this.portalLight) {
+            this.portalGroup.remove(this.portalLight);
+            this.portalLight = null;
+        }
+        */
         this.isAnimating = false;
         
         // Decrease opacity of portal elements
@@ -479,7 +419,7 @@ class Portal {
         this.fadeIn(this.labelSprite.material, 0.1);
         
         // Decrease light intensity
-        this.portalLight.intensity = 0.1;
+        this.portalLight.intensity = 0.0;
     }
     
     fadeIn(material, targetOpacity) {
