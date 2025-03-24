@@ -1,9 +1,10 @@
 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 console.log("Mobile check:", isMobile);
+if(isMobile) document.querySelector("#enemy-kill-counter").classList.add("hidden");
 
 // Game state
 const gameState = {
-    speed: 13.0,
+    speed: 16.0,
     currentLevel: 1,
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,
@@ -249,10 +250,10 @@ function updatePlayerPosition(deltaTime) {
     // Movement direction (in camera space)
     const moveDirection = new THREE.Vector3(0, 0, 0);
     
-    if (gameState.keyStates['KeyW']) moveDirection.z = 0.5;
-    if (gameState.keyStates['KeyS']) moveDirection.z = -0.5;
-    if (gameState.keyStates['KeyA']) moveDirection.x = 0.5;
-    if (gameState.keyStates['KeyD']) moveDirection.x = -0.5;
+    if (gameState.keyStates['KeyW']) moveDirection.z = 1.0;
+    if (gameState.keyStates['KeyS']) moveDirection.z = -1.0;
+    if (gameState.keyStates['KeyA']) moveDirection.x = 1.0;
+    if (gameState.keyStates['KeyD']) moveDirection.x = -1.0;
     
     moveDirection.normalize();
     
