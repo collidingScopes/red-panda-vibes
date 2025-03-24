@@ -187,6 +187,24 @@ class MobileControls {
         
         // Start connecting to the game with a safety timeout
         this.connectToGameWithTimeout();
+
+        // Initialize camera angles for mobile
+        // Check if we're in portrait mode
+        const isPortrait = window.innerWidth / window.innerHeight < 1;
+        
+        // Set default camera angle for mobile
+        window.cameraAngleHorizontal = Math.PI/4; // 45 degrees
+        
+        // Set vertical angle based on orientation
+        if (isPortrait) {
+            // In portrait, look more from above to see more of the scene
+            window.cameraAngleVertical = Math.PI/12;
+        } else {
+            // In landscape, use normal angle
+            window.cameraAngleVertical = 0;
+        }
+        
+        this.log(`Mobile detected, setting initial camera angles: horizontal=${window.cameraAngleHorizontal}, vertical=${window.cameraAngleVertical}`);
     }
 
     /**
@@ -258,22 +276,28 @@ class MobileControls {
         window.camera.aspect = window.innerWidth / window.innerHeight;
         window.camera.updateProjectionMatrix();
         
-        // NEW CODE: Adjust camera distance based on aspect ratio
+        // Get current viewport dimensions and aspect ratio
         const currentAspect = window.innerWidth / window.innerHeight;
+        const isPortrait = currentAspect < 1;
         const baseAspect = 16 / 9; // Reference aspect ratio (landscape)
-        const baseDistance = 7.5;  // Your original camera distance
+        const baseDistance = 7.5;  // Original camera distance
         
-        // Calculate new distance: 
-        // - In portrait mode (aspect < 1), increase distance to show more of the scene
-        // - In landscape mode (aspect > baseAspect), keep distance normal or slightly decrease
+        // Calculate new camera distance: 
         let aspectFactor;
-        if (currentAspect < 1) {
-            // Portrait mode - increase distance (lower value = more increase)
-            aspectFactor = 0.7 + (0.3 * currentAspect); // Will be between 0.7-1.0 for portrait
+        
+        if (isPortrait) {
+            // ENHANCED PORTRAIT MODE: Increase distance more aggressively for portrait
+            // The narrower the aspect ratio (more extreme portrait), the more we pull back
+            // Scale from 0.5 (very narrow portrait) to 0.9 (almost square)
+            //const portraitFactor = Math.max(0.5, Math.min(0.9, currentAspect));
+            //aspectFactor = 2.0 * portraitFactor; // Double the base distance for extreme portrait
+            aspectFactor = 1.5;
+            this.log(`Portrait mode detected - setting camera factor: ${aspectFactor}`);
         } else if (currentAspect > baseAspect) {
-            // Very wide landscape - can slightly reduce distance
-            aspectFactor = 1.0 - (0.1 * (currentAspect - baseAspect) / baseAspect);
-            aspectFactor = Math.max(aspectFactor, 0.9); // Don't go below 0.9
+            // Wide landscape - can slightly reduce distance
+            //aspectFactor = 1.0 - (0.1 * (currentAspect - baseAspect) / baseAspect);
+            //aspectFactor = Math.max(aspectFactor, 0.9); // Don't go below 0.9
+            aspectFactor = 1.0;
         } else {
             // Normal landscape - use base distance
             aspectFactor = 1.0;
@@ -282,7 +306,15 @@ class MobileControls {
         // Set the new camera distance
         window.cameraDistance = baseDistance * aspectFactor;
         
-        this.log(`Adjusted camera distance to ${window.cameraDistance} (aspect: ${currentAspect})`);
+        /*
+        // For extreme portrait mode, also adjust vertical camera angle to see more of the scene
+        if (isPortrait && currentAspect < 0.7) {
+            // Adjust vertical camera angle to look more from above in extreme portrait
+            window.cameraAngleVertical = Math.PI/8; // Look more downward
+        }
+        */
+        
+        this.log(`Adjusted camera distance to ${window.cameraDistance} (aspect: ${currentAspect}, portrait: ${isPortrait})`);
         
         // Maintain pixel ratio setting
         if (window.pixelRatio) {
