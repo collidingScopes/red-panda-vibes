@@ -15,8 +15,8 @@ class VibeversePortal {
         this.portalParticles = null;
         this.clock = new THREE.Clock();
         this.portalShaderMaterial = null;
-        this.portalWidth = 18;
-        this.portalHeight = 18;
+        this.portalWidth = 15;
+        this.portalHeight = 15;
         this.portalIndicator = document.getElementById('portal-indicator');
         this.portalInfo = document.getElementById('portal-info');
         this.isPlayerInPortal = false;
@@ -259,7 +259,7 @@ class VibeversePortal {
         context.fillRect(0, 0, canvas.width, canvas.height);
         
         // Add text
-        context.font = 'bold 100px Helvetica, Arial, sans-serif';
+        context.font = 'bold 120px Helvetica, Arial, sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         
