@@ -13,6 +13,7 @@ class LevelWarnings {
             4: "Keep exploring! There are trampolines and portals to other worlds... 🔮",
             5: "Tip: you can smush your enemies by jumping on top of their heads! 🦘",
             6: "Tip: find the speed / invisibility powerups to escape from monsters 👻",
+            7: "What level can you reach? My personal best was level 24 😎",
         };
         
         // Track whether we've shown warnings for specific levels
