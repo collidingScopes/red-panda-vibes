@@ -176,7 +176,7 @@ h2, h3 {
     font-family: 'Courier New', monospace;
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-size: 16px;
+    font-size: 15px;
     box-shadow: 0 0 15px rgba(132, 255, 239, 0.5); /* Cyan glow */
     backdrop-filter: blur(5px);
 }
@@ -188,7 +188,7 @@ h2, h3 {
 
 #enemy-kill-counter {
     position: absolute;
-    top: 40px;
+    top: 38px;
     left: 50%;
     transform: translate(-50%, 0);
     background-color: rgba(0, 0, 0, 0.4);
@@ -300,9 +300,9 @@ h2, h3 {
 }
 
 #restart-game-button {
-    background-color: rgba(10, 10, 30, 0.7);
+    background-color: rgba(10, 10, 30, 0.8);
     color: #a2ff84; /* Neon green */
-    border: 1px solid #a2ff84;
+    border: 2px solid #a2ff84;
     padding: 10px 20px;
     margin-top: 20px;
     font-size: 16px;
@@ -433,9 +433,9 @@ h2, h3 {
     text-align: center;
     z-index: 150;
     font-family: 'Courier New', monospace;
-    font-size: 18px;
+    font-size: 28px;
     text-transform: uppercase;
-    box-shadow: 0 0 25px rgba(255, 238, 132, 0.7); /* Yellow glow */
+    box-shadow: 0 0 25px rgba(255, 238, 132, 0.9); /* Yellow glow */
     backdrop-filter: blur(5px);
     max-width: 200px;
     animation: fadeIn 0.5s ease-in-out;

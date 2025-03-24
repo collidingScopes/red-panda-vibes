@@ -313,9 +313,6 @@ class ChangingRoom {
                 // Update message with current character
                 this.updateChangingMessage(newModel.name);
             },
-            (xhr) => {
-                console.log(`Loading model: ${(xhr.loaded / xhr.total * 100)}% loaded`);
-            },
             (error) => {
                 console.error('Error loading model:', error);
             }
