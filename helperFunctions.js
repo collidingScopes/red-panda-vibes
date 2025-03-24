@@ -30,6 +30,13 @@ function addOverlayClass() {
           instructionsScreen.style.display = 'none';
           //return;
         }
+
+        const startGameButton = document.getElementById('start-game-button');
+        if (startGameButton && startGameButton.style.display !== 'none' && !gameState.gameStarted) {
+          startGameButton.click();
+          //startGameButton.style.display = 'none';
+          return;
+        }
         
         // Level complete screen
         const levelCompleteScreen = document.getElementById('level-complete-content');
