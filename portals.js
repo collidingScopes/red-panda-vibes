@@ -67,6 +67,7 @@ const portalDestinations = [
     },
 ];
 let numPortalsPerLevel = 2;
+let urlParams = "?portal=true&username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
 
 function initPortalSystem() {
     console.log("Waiting for game initialization...");
@@ -585,21 +586,16 @@ class Portal {
        
         // Try different methods to open the URL
         try {
-        // First attempt: Use window.open
-        const newWindow = window.open(targetUrl, "_blank");
-        if (newWindow) {
-        console.log(`Successfully opened ${targetUrl} with window .open`);
-        } else {
-        throw new Error("window.open failed");
-        }
+            // First attempt: Use window.open
+            window.location.href = targetUrl;
         } catch (e) {
-        console.warn(`window.open failed: ${e.message}. Falling back to link method.`);
-       
+            console.warn(`window.open failed: ${e.message}. Falling back to link method.`);
+        }
         // Fallback: Create and click a link element
         const link = document.createElement('a');
         link.href = targetUrl;
-        link.target = "_blank";
-        link.rel = "noopener noreferrer"; // Security best practice
+        //link.target = "_blank";
+        link.rel = "noopener";
         document.body.appendChild(link);
        
         // For in-app browsers, sometimes triggering a real click event works better
@@ -616,9 +612,8 @@ class Portal {
         // Clean up after a short delay
         setTimeout(() => {
             document.body.removeChild(link);
-            }, 100);
-        }
-       
+        }, 100);
+        
         // Remove this portal from the scene
         this.removeFromScene();
        
@@ -760,7 +755,6 @@ function createPortals() {
     let randomDistance = 80;
     let portalDestinationsCopy = portalDestinations.slice();
     let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy,portalCount);
-    let urlParams = "?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
 
     for (let i = 0; i < portalCount; i++) {
         // Calculate angle for even distribution
