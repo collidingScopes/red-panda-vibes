@@ -1,8 +1,9 @@
 // Mobile Controls for Red Panda Explorer
 
 // Press button to rotate camera perspective 
-let cameraFlipButton = document.getElementById("camera-flip-button");
+//let cameraFlipButton = document.getElementById("camera-flip-button");
 // Add touch event for camera flip
+/*
 cameraFlipButton.addEventListener('touchstart', (e) => {
     mobileCameraTurnLeft();
     e.preventDefault(); // Prevent default behavior
@@ -17,6 +18,7 @@ cameraFlipButton.addEventListener('touchstart', (e) => {
     }, 300);
 
 }, { passive: false });
+*/
 
 // Animation settings for smooth rotations
 const ROTATION_DURATION = 400; // Duration of rotation animation in ms
@@ -636,6 +638,9 @@ class MobileControls {
                target.closest('#game-over-screen') ||
                target.closest('#camera-flip-button') ||
                target.closest('#sound-toggle') ||
+               target.closest('#level-select') ||
+               target.closest('#level-select-container') ||
+               target.closest('#feedback-button') ||
                target.closest('#level-indicator');
     }
     

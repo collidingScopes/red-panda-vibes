@@ -99,8 +99,8 @@ h2, h3 {
 
 #fps-counter {
     position: absolute;
-    bottom: 10px;
-    left: 10px;
+    top: 5px;
+    left: 5px;
     color: white;
     font-family: 'Courier New', monospace;
     background-color: rgba(0, 0, 0, 0.5);
@@ -637,14 +637,29 @@ button {
     animation: fadeIn 0.5s ease-in-out;
 }
 
-/*
-container.style.position = 'fixed';
-container.style.bottom = '10px';
-container.style.right = '10px';
-container.style.zIndex = '1000';
-container.style.display = 'flex';
-container.style.flexDirection = 'column';
-container.style.alignItems = 'flex-end';
-container.style.gap = '5px';
-container.style.pointerEvents = 'none'; // Don't block game clicks
-*/
+/* Twitter/X Feedback Button Styles - Added to match the game's cyberpunk/neon aesthetic */
+#feedback-button {
+    position: fixed;
+    bottom: 0px;
+    left: 0px;
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white; /* Neon cyan to match game's theme */
+    padding: 7px;
+    border: 2px solid white;
+    border-radius: 0px;
+    z-index: 150;
+    cursor: pointer;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    /* box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); Cyan glow */
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+#feedback-button:hover {
+    background-color: rgba(132, 255, 239, 0.2); /* Cyan tint */
+    color: #ffffff;
+    box-shadow: 0 0 15px rgba(132, 255, 239, 0.8); /* Enhanced cyan glow */
+}
