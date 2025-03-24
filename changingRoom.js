@@ -30,7 +30,7 @@ class ChangingRoom {
         const cabinetGroup = new THREE.Group();
 
         // Cabinet body - MUCH LARGER SIZE
-        let cabinetHeight = 9;
+        let cabinetHeight = 8;
         const cabinetGeometry = new THREE.BoxGeometry(7, cabinetHeight, 7);
         const cabinetMaterial = new THREE.MeshStandardMaterial({ color: 0x808080 }); // Gray
         const cabinet = new THREE.Mesh(cabinetGeometry, cabinetMaterial);
@@ -111,7 +111,7 @@ class ChangingRoom {
             side: THREE.DoubleSide
         });
         const sign = new THREE.Mesh(signGeometry, signMaterial);
-        sign.position.set(0, cabinetHeight+2, 3.6);
+        sign.position.set(0, cabinetHeight+1.5, 4.0);
         sign.rotation.x = Math.PI * 0.05; // Slightly tilted forward
         cabinetGroup.add(sign);
         
