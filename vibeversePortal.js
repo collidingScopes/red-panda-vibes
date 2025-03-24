@@ -214,7 +214,7 @@ class VibeversePortal {
         
         // Signboard dimensions
         const signboardWidth = this.portalWidth + 2;
-        const signboardHeight = 4; // Height of the signboard
+        const signboardHeight = 3; // Height of the signboard
         const signboardDepth = 0.5;
         const signboardOffsetY = 0; // Space between portal top and signboard bottom
         
@@ -251,15 +251,15 @@ class VibeversePortal {
         const context = canvas.getContext('2d');
         
         // Make canvas size larger for better resolution
-        canvas.width = 1200;
-        canvas.height = 256;
+        canvas.width = 600;
+        canvas.height = 150;
         
         // Clear background with a dark color
         context.fillStyle = '#222222';
         context.fillRect(0, 0, canvas.width, canvas.height);
         
         // Add text
-        context.font = 'bold 120px Helvetica, Arial, sans-serif';
+        context.font = 'bold 56px Helvetica, Arial, sans-serif';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         

@@ -363,7 +363,7 @@ h2, h3 {
 
 .level-warning {
     position: fixed;
-    top: 20%;
+    top: 15%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, 0.5);
@@ -380,6 +380,13 @@ h2, h3 {
     backdrop-filter: blur(5px);
     max-width: 400px;
     animation: fadeIn 0.5s ease-in-out;
+    line-height: 1;
+}
+
+.level-warning > p{
+    padding: 0;
+    line-height: 1;
+    margin: 8px;
 }
 
 #pause-screen-container {

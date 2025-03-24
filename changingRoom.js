@@ -105,7 +105,7 @@ class ChangingRoom {
         cabinetGroup.add(frontRod);
         
         // Create much larger hanging sign with bigger text
-        const signGeometry = new THREE.PlaneGeometry(6, 2);
+        const signGeometry = new THREE.PlaneGeometry(10, 2);
         const signMaterial = new THREE.MeshStandardMaterial({ 
             color: 0xF5F5DC, // Beige color
             side: THREE.DoubleSide
@@ -117,8 +117,8 @@ class ChangingRoom {
         
         // Add text to the sign - MUCH LARGER TEXT
         const canvas = document.createElement('canvas');
-        canvas.width = 800; // Higher resolution
-        canvas.height = 300;
+        canvas.width = 256; // Higher resolution
+        canvas.height = 128;
         const context = canvas.getContext('2d');
         
         // Clear background
@@ -128,10 +128,10 @@ class ChangingRoom {
         // Add border
         context.strokeStyle = 'black';
         context.lineWidth = 12;
-        context.strokeRect(6, 6, canvas.width - 12, canvas.height - 12);
+        context.strokeRect(6, 6, canvas.width - 8, canvas.height - 8);
         
         // Add text with much bigger font
-        context.font = 'bold 90px Helvetica, Arial'; // MUCH LARGER FONT
+        context.font = 'bold 30px Helvetica, Arial'; // MUCH LARGER FONT
         context.fillStyle = 'black';
         context.textAlign = 'center';
         context.textBaseline = 'middle';
@@ -156,48 +156,16 @@ class ChangingRoom {
         // Store mesh and add to scene
         this.changingRoomMesh = cabinetGroup;
         this.scene.add(this.changingRoomMesh);
-        
-        // Create particle effect inside the changing room
-        this.createChangingEffect();
     }
-    
-    // Create particle effect for when player is inside
-    createChangingEffect() {
-        // Create a simple particle system
-        const particleCount = 120; // Much more particles for much larger room
-        const particleGeometry = new THREE.BufferGeometry();
-        const particlePositions = new Float32Array(particleCount * 3);
-        
-        // Generate random positions within the changing room
-        for (let i = 0; i < particleCount; i++) {
-            const i3 = i * 3;
-            particlePositions[i3] = (Math.random() - 0.5) * 5;  // x - wider spread
-            particlePositions[i3 + 1] = Math.random() * 10 + 1; // y (above floor) - taller
-            particlePositions[i3 + 2] = (Math.random() - 0.5) * 5; // z - wider spread
-        }
-        
-        particleGeometry.setAttribute('position', new THREE.BufferAttribute(particlePositions, 3));
-        
-        const particleMaterial = new THREE.PointsMaterial({
-            color: 0x88FFFF,
-            size: 0.2,
-            transparent: true,
-            opacity: 0.7,
-            blending: THREE.AdditiveBlending
-        });
-        
-        this.particles = new THREE.Points(particleGeometry, particleMaterial);
-        this.changingRoomMesh.add(this.particles);
-        this.particles.visible = false; // Hide initially
-    }
+
 
     // Place the changing room at a random location on the terrain
     placeRandomly() {
         // Define placement area boundaries (adjust based on your map)
-        const minX = -100;
-        const maxX = 100;
-        const minZ = -100;
-        const maxZ = 100;
+        const minX = -125;
+        const maxX = 125;
+        const minZ = -125;
+        const maxZ = 125;
         
         // Generate random position
         const x = minX + Math.random() * (maxX - minX);
@@ -278,16 +246,7 @@ class ChangingRoom {
             this.changePlayerModel();
             this.lastModelChange = now;
         }
-        
-        // Play sound effect if sound system exists
-        if (window.soundSystem && window.soundSystem.initialized) {
-            // You can add a custom sound for the changing room
-            // window.soundSystem.playCustomSound('changingRoom');
-            if (window.soundSystem.playPowerupSound) {
-                window.soundSystem.playPowerupSound();
-            }
-        }
-        
+
         // Show changing message
         this.showChangingMessage();
     }
@@ -295,12 +254,7 @@ class ChangingRoom {
     // Called when player exits changing room
     onPlayerExit() {
         console.log("Player left changing room");
-        
-        // Hide particles
-        if (this.particles) {
-            this.particles.visible = false;
-        }
-        
+
         // Hide message
         this.hideChangingMessage();
     }
