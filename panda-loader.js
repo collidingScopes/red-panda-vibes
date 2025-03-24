@@ -137,17 +137,18 @@ function createRedPandaPlayer() {
             
             // Use different scale based on whether it's custom or default
             if (params.avatarUrl) {
-                // For custom models, use a more conservative scale
-                model.scale.set(1.5, 1.5, 1.5);
-                // Don't apply the rotation by default for custom models
-            } else {
+                //custom 3D model
                 let customModelScale = 1.5;
                 if(modelUrl.toLowerCase().includes("yacht")){
-                    customModelScale = 0.9;
+                    customModelScale = 0.8;
                 }
                 console.log("Custom model scale: "+customModelScale);
-                // For the default panda model use the original scale
                 model.scale.set(customModelScale, customModelScale, customModelScale);
+            } else {
+                //panda 3D model
+                let pandaModelScale = 1.5;
+                console.log("Custom model scale: "+pandaModelScale);
+                model.scale.set(pandaModelScale, pandaModelScale, pandaModelScale);
                 //model.rotation.y = -Math.PI/2; // 90 degree clockwise turn
             }
 
