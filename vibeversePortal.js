@@ -21,6 +21,7 @@ class VibeversePortal {
         this.portalInfo = document.getElementById('portal-info');
         this.isPlayerInPortal = false;
         this.playerPreviouslyNearby = false;
+        this.signboardGroup = null;
     }
 
     create(position) {
@@ -47,6 +48,9 @@ class VibeversePortal {
         
         // Create decorative frame
         this.createPortalFrame();
+        
+        // Create signboard at the top
+        this.createSignboard();
         
         // Add to scene
         scene.add(this.portalGroup);
@@ -203,6 +207,166 @@ class VibeversePortal {
         
         // Add to portal group
         this.portalGroup.add(this.frameGroup);
+    }
+    
+    createSignboard() {
+        this.signboardGroup = new THREE.Group();
+        
+        // Signboard dimensions
+        const signboardWidth = this.portalWidth + 2;
+        const signboardHeight = 4; // Height of the signboard
+        const signboardDepth = 0.5;
+        const signboardOffsetY = 0; // Space between portal top and signboard bottom
+        
+        // Signboard background
+        const signboardGeometry = new THREE.BoxGeometry(signboardWidth, signboardHeight, signboardDepth);
+        const signboardMaterial = new THREE.MeshStandardMaterial({
+            color: 0x222222,
+            metalness: 0.4,
+            roughness: 0.6,
+            emissive: 0x111111
+        });
+        
+        const signboard = new THREE.Mesh(signboardGeometry, signboardMaterial);
+        
+        // Position the signboard above the portal
+        signboard.position.y = this.portalHeight + signboardOffsetY + signboardHeight/2;
+        
+        // Create text for the signboard
+        this.    createSignboardText("VIBEVERSE PORTAL", signboardWidth * 0.8, signboard.position.y);
+        
+        // Add signboard to the group
+        this.signboardGroup.add(signboard);
+        
+        // Add decorative elements to the signboard
+        this.addSignboardDecorations(signboard, signboardWidth, signboardHeight);
+        
+        // Add to portal group
+        this.portalGroup.add(this.signboardGroup);
+    }
+    
+    createSignboardText(text, width, yPosition) {
+        // Use a TextureLoader to create a canvas-based text texture
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        
+        // Make canvas size larger for better resolution
+        canvas.width = 1200;
+        canvas.height = 256;
+        
+        // Clear background with a dark color
+        context.fillStyle = '#222222';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Add text
+        context.font = 'bold 100px Helvetica, Arial, sans-serif';
+        context.textAlign = 'center';
+        context.textBaseline = 'middle';
+        
+        // Add white glow
+        context.shadowColor = '#FFFFFF';
+        context.shadowBlur = 25;
+        context.fillStyle = '#FFFFFF';
+        
+        // Draw text centered
+        context.fillText(text, canvas.width / 2, canvas.height / 2);
+        
+        // Create texture from canvas
+        const texture = new THREE.CanvasTexture(canvas);
+        
+        // Create material with the text texture
+        const signMaterial = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide
+        });
+        
+        // Create plane for the sign
+        const signGeometry = new THREE.PlaneGeometry(width, width * (canvas.height / canvas.width));
+        const signMesh = new THREE.Mesh(signGeometry, signMaterial);
+        
+        // Position the sign
+        signMesh.position.set(0, yPosition, 0.3);
+        
+        // Add to signboard group
+        this.signboardGroup.add(signMesh);
+        
+        // Add a second version on the back side for visibility from both directions
+        const backSignMesh = signMesh.clone();
+        backSignMesh.rotation.y = Math.PI;
+        backSignMesh.position.z = -0.3;
+        this.signboardGroup.add(backSignMesh);
+    }
+    
+    addSignboardDecorations(signboard, width, height) {
+        // Add decorative border to the signboard
+        const borderThickness = 0.2;
+        const borderDepth = 0.6;
+        const borderMaterial = new THREE.MeshStandardMaterial({
+            color: 0x888888,
+            metalness: 0.7,
+            roughness: 0.3,
+            emissive: 0x333333
+        });
+        
+        // Create border parts
+        const topBorderGeometry = new THREE.BoxGeometry(width + borderThickness*2, borderThickness, borderDepth);
+        const bottomBorderGeometry = new THREE.BoxGeometry(width + borderThickness*2, borderThickness, borderDepth);
+        const leftBorderGeometry = new THREE.BoxGeometry(borderThickness, height, borderDepth);
+        const rightBorderGeometry = new THREE.BoxGeometry(borderThickness, height, borderDepth);
+        
+        // Create meshes
+        const topBorder = new THREE.Mesh(topBorderGeometry, borderMaterial);
+        const bottomBorder = new THREE.Mesh(bottomBorderGeometry, borderMaterial);
+        const leftBorder = new THREE.Mesh(leftBorderGeometry, borderMaterial);
+        const rightBorder = new THREE.Mesh(rightBorderGeometry, borderMaterial);
+        
+        // Position the border parts relative to the signboard
+        topBorder.position.set(0, signboard.position.y + height/2 + borderThickness/2, 0.05);
+        bottomBorder.position.set(0, signboard.position.y - height/2 - borderThickness/2, 0.05);
+        leftBorder.position.set(-width/2 - borderThickness/2, signboard.position.y, 0.05);
+        rightBorder.position.set(width/2 + borderThickness/2, signboard.position.y, 0.05);
+        
+        // Add border parts to group
+        this.signboardGroup.add(topBorder);
+        this.signboardGroup.add(bottomBorder);
+        this.signboardGroup.add(leftBorder);
+        this.signboardGroup.add(rightBorder);
+        
+        // Add corner decorations
+        this.addSignboardCorners(width, height, signboard.position.y);
+    }
+    
+    addSignboardCorners(width, height, yPosition) {
+        const cornerSize = 0.5;
+        const cornerDepth = 0.7;
+        const cornerGeometry = new THREE.BoxGeometry(cornerSize, cornerSize, cornerDepth);
+        
+        // Material for corners
+        const cornerMaterial = new THREE.MeshStandardMaterial({
+            color: 0xAAAAAA,
+            metalness: 0.9,
+            roughness: 0.1,
+            emissive: 0x444444
+        });
+        
+        // Create corner meshes
+        const corners = [];
+        for (let i = 0; i < 4; i++) {
+            corners[i] = new THREE.Mesh(cornerGeometry, cornerMaterial);
+        }
+        
+        // Position the corners
+        const halfWidth = width/2 + 0.3;
+        const halfHeight = height/2 + 0.3;
+        
+        corners[0].position.set(-halfWidth, yPosition + halfHeight, 0.1); // Top left
+        corners[1].position.set(halfWidth, yPosition + halfHeight, 0.1);  // Top right
+        corners[2].position.set(-halfWidth, yPosition - halfHeight, 0.1); // Bottom left
+        corners[3].position.set(halfWidth, yPosition - halfHeight, 0.1);  // Bottom right
+        
+        // Add corners to the signboard group
+        corners.forEach(corner => this.signboardGroup.add(corner));
     }
     
     addDecorativeCorners() {

@@ -248,33 +248,6 @@ function createRedPandaPlayer() {
     return playerGroup;
 }
 
-/*
-// Create or update an element to display the username
-function updateUsernameDisplay(username) {
-    if (!username) return;
-    
-    let usernameDisplay = document.getElementById('username-display');
-    
-    if (!usernameDisplay) {
-        usernameDisplay = document.createElement('div');
-        usernameDisplay.id = 'username-display';
-        document.body.appendChild(usernameDisplay);
-    }
-    
-    usernameDisplay.textContent = username;
-    usernameDisplay.style.position = 'fixed';
-    usernameDisplay.style.top = '10px';
-    usernameDisplay.style.left = '10px';
-    usernameDisplay.style.color = 'white';
-    usernameDisplay.style.fontFamily = 'system-ui, sans-serif';
-    usernameDisplay.style.padding = '5px 10px';
-    usernameDisplay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    usernameDisplay.style.borderRadius = '5px';
-    usernameDisplay.style.zIndex = '1000';
-    usernameDisplay.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.5)';
-}
-*/
-
 // Create the original block-based panda as fallback
 function createBlockPanda() {
     const pandaGroup = new THREE.Group();
