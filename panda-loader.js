@@ -140,7 +140,7 @@ function createRedPandaPlayer() {
                 //custom 3D model
                 let customModelScale = 1.5;
                 if(modelUrl.toLowerCase().includes("yacht")){
-                    customModelScale = 0.8;
+                    customModelScale = 0.7;
                 }
                 console.log("Custom model scale: "+customModelScale);
                 model.scale.set(customModelScale, customModelScale, customModelScale);
