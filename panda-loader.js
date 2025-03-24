@@ -144,7 +144,7 @@ function createRedPandaPlayer() {
             // Use different scale based on whether it's custom or default
             if (params.avatarUrl) {
                 // For custom models, use a more conservative scale
-                model.scale.set(2.0, 2.0, 2.0);
+                model.scale.set(1.5, 1.5, 1.5);
                 // Don't apply the rotation by default for custom models
             } else {
                 // For the default panda model use the original scale
