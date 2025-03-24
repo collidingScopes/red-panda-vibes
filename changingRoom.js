@@ -144,10 +144,10 @@ class ChangingRoom {
         
         // Boundary box for collision detection (much larger than visual model)
         const boundingBoxGeometry = new THREE.BoxGeometry(8, 13, 8);
-        const boundingBoxMaterial = new THREE.MeshBasicMaterial({ 
+        const boundingBoxMaterial = new THREE.MeshBasicMaterial({
             color: 0xFF0000,
             transparent: true,
-            opacity: 0.0 // Invisible
+            opacity: 0.0
         });
         this.boundingBox = new THREE.Mesh(boundingBoxGeometry, boundingBoxMaterial);
         this.boundingBox.position.y = 6.5;
