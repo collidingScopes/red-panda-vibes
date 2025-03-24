@@ -121,7 +121,7 @@ function createRedPandaPlayer() {
     }
     
     // Determine which model to load
-    const modelUrl = params.avatarUrl || 'assets/panda3DModel6.glb';
+    const modelUrl = params.avatarUrl || 'assets/panda3DModel7.glb';
     
     // Log which model is being loaded
     console.log(`Loading 3D model: ${modelUrl}`);
@@ -148,8 +148,8 @@ function createRedPandaPlayer() {
                 // Don't apply the rotation by default for custom models
             } else {
                 // For the default panda model use the original scale
-                model.scale.set(3.0, 3.0, 3.0);
-                model.rotation.y = -Math.PI/2; // 90 degree clockwise turn
+                model.scale.set(1.5, 1.5, 1.5);
+                //model.rotation.y = -Math.PI/2; // 90 degree clockwise turn
             }
 
             // Center the model
