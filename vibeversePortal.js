@@ -367,7 +367,7 @@ class VibeversePortal {
     }
 
     activatePortal() {
-
+        resetAllKeyStates();
         // Create portal URL with parameters
         const portalUrl = "http://portal.pieter.com/"+urlParams;
         
@@ -424,10 +424,6 @@ class VibeversePortal {
             }, 100);
         }
 
-        // Hide portal UI elements
-        //updatePortalUI(false, "");
-       
-        resetAllKeyStates();
         pauseGame();
     }
     

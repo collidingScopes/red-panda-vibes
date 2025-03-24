@@ -553,9 +553,10 @@ class Portal {
     activate() {
         // Only trigger if player is actually moving through the portal
         if (!this.isAnimating) return;
-       
         console.log(`Portal "${this.name}" activated! Opening ${ this.url}`);
        
+        resetAllKeyStates();
+
         // Play portal sound if available
         if (window.soundSystem && window.soundSystem.initialized) {
         // Create ascending tones for portal activation
@@ -624,7 +625,6 @@ class Portal {
         // Hide portal UI elements
         updatePortalUI(false, "");
        
-        resetAllKeyStates();
         pauseGame();
     }
     

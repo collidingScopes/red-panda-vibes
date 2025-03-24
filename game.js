@@ -177,8 +177,8 @@ function updateCamera() {
     if (gameState.keyStates['ArrowLeft']) window.cameraAngleHorizontal += 0.03;
     if (gameState.keyStates['ArrowRight']) window.cameraAngleHorizontal -= 0.03;
     // Apply the min/max vertical angle limits
-    if (gameState.keyStates['ArrowUp']) window.cameraAngleVertical = Math.max(window.cameraAngleVertical - 0.04, MIN_VERTICAL_ANGLE);
-    if (gameState.keyStates['ArrowDown']) window.cameraAngleVertical = Math.min(window.cameraAngleVertical + 0.04, MAX_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowUp']) window.cameraAngleVertical = Math.max(window.cameraAngleVertical - 0.03, MIN_VERTICAL_ANGLE);
+    if (gameState.keyStates['ArrowDown']) window.cameraAngleVertical = Math.min(window.cameraAngleVertical + 0.03, MAX_VERTICAL_ANGLE);
     
     // Calculate camera position with orbit controls
     const horizontalDistance = window.cameraDistance * Math.cos(window.cameraAngleVertical);
@@ -187,7 +187,7 @@ function updateCamera() {
     // Update camera position using player's position without cloning
     camera.position.x = player.position.x + horizontalDistance * Math.sin(window.cameraAngleHorizontal);
     camera.position.z = player.position.z + horizontalDistance * Math.cos(window.cameraAngleHorizontal);
-    camera.position.y = player.position.y + 2.5 + verticalDistance; // 1.5 is a height offset
+    camera.position.y = player.position.y + 2.5 + verticalDistance; // 2.5 is a height offset
     
     // Reuse the target vector
     cameraTarget.copy(player.position);
@@ -249,10 +249,10 @@ function updatePlayerPosition(deltaTime) {
     // Movement direction (in camera space)
     const moveDirection = new THREE.Vector3(0, 0, 0);
     
-    if (gameState.keyStates['KeyW']) moveDirection.z = 1;
-    if (gameState.keyStates['KeyS']) moveDirection.z = -1;
-    if (gameState.keyStates['KeyA']) moveDirection.x = 1;
-    if (gameState.keyStates['KeyD']) moveDirection.x = -1;
+    if (gameState.keyStates['KeyW']) moveDirection.z = 0.5;
+    if (gameState.keyStates['KeyS']) moveDirection.z = -0.5;
+    if (gameState.keyStates['KeyA']) moveDirection.x = 0.5;
+    if (gameState.keyStates['KeyD']) moveDirection.x = -0.5;
     
     moveDirection.normalize();
     
@@ -607,10 +607,10 @@ function showTutorialMessages() {
     }
     
     // Display time for each message in milliseconds
-    const displayTime = 5500; // 5.5 seconds
+    const displayTime = 5000; // 5 seconds
     
     // Break time between messages
-    const breakTime = 1500;
+    const breakTime = 1000;
     
     // Create array to store timeouts so we can cancel them later
     window.tutorialTimeouts = [];
