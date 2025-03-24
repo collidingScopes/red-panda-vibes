@@ -113,7 +113,6 @@ function createRedPandaPlayer() {
     
     // Check for custom avatar URL from URL parameters
     const params = getUrlParameters();
-    console.log("URL params received: "+params);
 
     // Determine which model to load
     const modelUrl = params.avatarUrl || 'assets/panda3DModel7.glb';
@@ -146,6 +145,7 @@ function createRedPandaPlayer() {
                 if(modelUrl.toLowerCase().includes("yacht")){
                     customModelScale = 0.9;
                 }
+                console.log("Custom model scale: "+customModelScale);
                 // For the default panda model use the original scale
                 model.scale.set(customModelScale, customModelScale, customModelScale);
                 //model.rotation.y = -Math.PI/2; // 90 degree clockwise turn
