@@ -68,6 +68,7 @@ const portalDestinations = [
 ];
 let numPortalsPerLevel = 2;
 let urlParams = "?portal=true&username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
+urlParams += "&avatar_url=http://collidingscopes.github.io/red-panda-vibes/assets/panda3DModel6.glb";
 
 function initPortalSystem() {
     console.log("Waiting for game initialization...");
