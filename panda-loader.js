@@ -26,7 +26,8 @@ function getUrlParameters() {
     const urlParams = new URLSearchParams(window.location.search);
     return {
         avatarUrl: urlParams.get('avatar_url'),
-        username: urlParams.get('username')
+        username: urlParams.get('username'),
+        portal: urlParams.get('portal'),
     };
 }
 
@@ -113,13 +114,6 @@ function createRedPandaPlayer() {
     const params = getUrlParameters();
     console.log("URL params received: "+params);
 
-    // Store username in gameState if provided
-    if (params.username && window.gameState) {
-        window.gameState.username = params.username;
-        // Display username
-        //updateUsernameDisplay(params.username);
-    }
-    
     // Determine which model to load
     const modelUrl = params.avatarUrl || 'assets/panda3DModel7.glb';
     
@@ -246,6 +240,10 @@ function createRedPandaPlayer() {
             }
         }
     );
+
+    if(params.portal){
+        document.querySelector("#start-game-button").click(); // start game immediately if coming from portal
+    }
     
     return playerGroup;
 }
