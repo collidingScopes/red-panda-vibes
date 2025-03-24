@@ -19,7 +19,8 @@ const gameState = {
     pandaModel: null,  // Reference to the actual 3D model inside the player group
     pandaModelLoaded: false, // Flag to track if the 3D model was loaded
     pandaAnimationMixer: null, // Animation mixer for the panda model
-    pandaAnimations: {} // Storage for different animations
+    pandaAnimations: {}, // Storage for different animations
+    changingRoom: null,
 };
 
 // Add trampoline properties to gameState
@@ -461,6 +462,10 @@ function resetGame() {
             }
         }, 1000);
     }
+    
+    if (gameState.changingRoom) {
+        gameState.changingRoom.placeRandomly();
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly
@@ -537,6 +542,10 @@ function animate(currentTime) {
     if (gameState.snowSystem) {
         gameState.snowSystem.update(deltaTime);
     }
+
+    if (gameState.changingRoom && !gameState.goalReached) {
+        gameState.changingRoom.update(deltaTime);
+    }
     
     renderer.render(scene, camera);
 }
@@ -575,6 +584,9 @@ function init() {
     gameState.snowSystem = new SnowSystem(scene, player);
     console.log("Snow system initialized in game init");
 
+    gameState.changingRoom = new ChangingRoom(scene, player, getTerrainHeight);
+    gameState.changingRoom.initialize();
+    console.log("Changing room initialized");
 }
 
 function handleViewportResize() {
