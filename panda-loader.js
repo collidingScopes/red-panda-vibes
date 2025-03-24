@@ -142,8 +142,12 @@ function createRedPandaPlayer() {
                 model.scale.set(1.5, 1.5, 1.5);
                 // Don't apply the rotation by default for custom models
             } else {
+                let customModelScale = 1.5;
+                if(modelUrl.toLowerCase().includes("yacht")){
+                    customModelScale = 0.9;
+                }
                 // For the default panda model use the original scale
-                model.scale.set(1.5, 1.5, 1.5);
+                model.scale.set(customModelScale, customModelScale, customModelScale);
                 //model.rotation.y = -Math.PI/2; // 90 degree clockwise turn
             }
 
