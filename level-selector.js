@@ -102,5 +102,9 @@
     } else {
         // If DOMContentLoaded has already fired
         initLevelSelector();
+        if(urlParamsReceived.portal){
+            document.getElementById('start-game-button').click();
+            console.log("start game automatically because portal entry");
+        }
     }
 })();

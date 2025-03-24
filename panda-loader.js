@@ -23,12 +23,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Function to parse URL parameters
 function getUrlParameters() {
-    const urlParams = new URLSearchParams(window.location.search);
-    console.log("Url params: "+urlParams);
+    const params = new URLSearchParams(window.location.search);
+    console.log("Url params: "+params);
     return {
-        avatarUrl: urlParams.get('avatar_url'),
-        username: urlParams.get('username'),
-        portal: urlParams.get('portal'),
+        avatarUrl: params.get('avatar_url'),
+        username: params.get('username'),
+        portal: params.get('portal'),
     };
 }
 
@@ -242,10 +242,12 @@ function createRedPandaPlayer() {
         }
     );
 
+    /*
     if(params.portal){
         console.log("start game automatically");
         document.querySelector("#start-game-button").click(); // start game immediately if coming from portal
     }
+    */
     
     return playerGroup;
 }
@@ -389,3 +391,5 @@ function createBlockPanda() {
     
     return pandaGroup;
 }
+
+let urlParamsReceived = getUrlParameters();
