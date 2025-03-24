@@ -3,6 +3,7 @@
 
 // Portal destination URLs
 const portalDestinations = [
+    /*
     { 
         url: "https://fly.pieter.com", 
         name: "Fly.Pieter.com", 
@@ -54,6 +55,15 @@ const portalDestinations = [
     {
         url: "https://games.outerreaches.space/shadowhold/",
         name: "Shadowhold",
+    },
+    */
+    {
+        url: "https://metaverse-delta.vercel.app/",
+        name: "Metaverse Delta",
+    },
+    {
+        url: "https://vibejam.netlify.app/",
+        name: "Vibe Jam",
     },
 ];
 let numPortalsPerLevel = 2;
@@ -750,7 +760,8 @@ function createPortals() {
     let randomDistance = 80;
     let portalDestinationsCopy = portalDestinations.slice();
     let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy,portalCount);
-        
+    let urlParams = "?username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
+
     for (let i = 0; i < portalCount; i++) {
         // Calculate angle for even distribution
         const angle = (i / portalCount) * Math.PI * 2;
@@ -764,7 +775,7 @@ function createPortals() {
             // Create the portal
             const portal = new Portal(
                 position,
-                selectedPortalDestinations[i].url,
+                selectedPortalDestinations[i].url+urlParams,
                 COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())],
                 selectedPortalDestinations[i].name
             );
