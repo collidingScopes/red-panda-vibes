@@ -112,12 +112,12 @@ function createRedPandaPlayer() {
     // Check for custom avatar URL from URL parameters
     const params = getUrlParameters();
     console.log("URL params received: "+params);
-    
+
     // Store username in gameState if provided
     if (params.username && window.gameState) {
         window.gameState.username = params.username;
         // Display username
-        updateUsernameDisplay(params.username);
+        //updateUsernameDisplay(params.username);
     }
     
     // Determine which model to load
@@ -144,7 +144,7 @@ function createRedPandaPlayer() {
             // Use different scale based on whether it's custom or default
             if (params.avatarUrl) {
                 // For custom models, use a more conservative scale
-                model.scale.set(1.0, 1.0, 1.0);
+                model.scale.set(2.0, 2.0, 2.0);
                 // Don't apply the rotation by default for custom models
             } else {
                 // For the default panda model use the original scale
@@ -250,6 +250,7 @@ function createRedPandaPlayer() {
     return playerGroup;
 }
 
+/*
 // Create or update an element to display the username
 function updateUsernameDisplay(username) {
     if (!username) return;
@@ -274,6 +275,7 @@ function updateUsernameDisplay(username) {
     usernameDisplay.style.zIndex = '1000';
     usernameDisplay.style.textShadow = '1px 1px 2px rgba(0, 0, 0, 0.5)';
 }
+*/
 
 // Create the original block-based panda as fallback
 function createBlockPanda() {
