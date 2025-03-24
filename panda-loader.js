@@ -24,6 +24,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Function to parse URL parameters
 function getUrlParameters() {
     const urlParams = new URLSearchParams(window.location.search);
+    console.log("Url params: "+urlParams);
     return {
         avatarUrl: urlParams.get('avatar_url'),
         username: urlParams.get('username'),
@@ -242,6 +243,7 @@ function createRedPandaPlayer() {
     );
 
     if(params.portal){
+        console.log("start game automatically");
         document.querySelector("#start-game-button").click(); // start game immediately if coming from portal
     }
     
