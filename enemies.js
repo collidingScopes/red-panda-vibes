@@ -88,7 +88,7 @@ class EnemyManager {
         ];
     }
     
-    // Create a single enemy
+    // Create a single enemy with consistent appearance for better performance
     createEnemy() {
         // Position enemy randomly on terrain, but away from player start position
         let x, z, distanceFromStart;
@@ -112,29 +112,29 @@ class EnemyManager {
         blob.castShadow = true;
         enemy.add(blob);
         
-        // Add smaller bubbles on the surface for alien look
-        const bubbleCount = 1 + Math.floor(Math.random() * 5);
+        // Add exactly 4 bubbles with fixed positions for all enemies
+        // Pre-calculate bubble positions for optimal performance
+        const bubblePositions = [
+            {x: 0.8, y: 0, z: 0},      // Right side
+            {x: -0.8, y: 0, z: 0},     // Left side
+            {x: 0, y: 0.8, z: 0},      // Top
+            {x: 0, y: 0, z: 0.8}       // Front
+        ];
         
-        for (let i = 0; i < bubbleCount; i++) {
-            // Randomly select one of our pre-created bubble geometries
-            const bubbleGeometryIndex = Math.floor(Math.random() * this.bubbleGeometries.length);
-            const bubble = new THREE.Mesh(this.bubbleGeometries[bubbleGeometryIndex], this.bubbleMaterial);
-            
-            // Position bubble on surface of main blob
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.random() * Math.PI;
-            const radius = 0.8;
-            
-            bubble.position.x = radius * Math.sin(phi) * Math.cos(theta);
-            bubble.position.y = radius * Math.sin(phi) * Math.sin(theta);
-            bubble.position.z = radius * Math.cos(phi);
-            
+        // Use the same bubble geometry for all bubbles (medium size)
+        const bubbleGeometry = this.bubbleGeometries[1]; // Index 1 is the 0.4 size
+        
+        // Add the 4 bubbles at fixed positions
+        for (let i = 0; i < 4; i++) {
+            const bubble = new THREE.Mesh(bubbleGeometry, this.bubbleMaterial);
+            const pos = bubblePositions[i];
+            bubble.position.set(pos.x, pos.y, pos.z);
             enemy.add(bubble);
         }
         
-        // Scale the entire enemy
-        const scale = 1.0 + Math.random() * 0.5; // Random size variation
-        enemy.scale.set(scale, scale, scale);
+        // Use consistent scale for all enemies
+        const fixedScale = 1.8;
+        enemy.scale.set(fixedScale, fixedScale, fixedScale);
         
         // Set position
         enemy.position.set(x, y, z);
@@ -144,9 +144,9 @@ class EnemyManager {
             velocity: new THREE.Vector3(), // Current velocity vector
             targetPoint: new THREE.Vector3(x, y, z), // Where it's trying to go
             wanderTimer: 0, // Timer for changing wander direction
-            wanderInterval: 3 + Math.random() * 2, // Time between wander direction changes
+            wanderInterval: 4, // Fixed interval for all enemies
             state: 'wander', // 'wander' or 'chase'
-            initialScale: enemy.scale.x, // Save initial scale for pulsing animation
+            initialScale: fixedScale // Save initial scale for pulsing animation
         };
         
         this.scene.add(enemy);
@@ -285,7 +285,7 @@ class EnemyManager {
             const horizontalDistance = enemyPos.distanceTo(playerPos);
             
             // If player is directly above enemy (within jump kill radius) and close to top of enemy
-            if (horizontalDistance < 1.2 && 
+            if (horizontalDistance < 1.4 && 
                 Math.abs(playerBottom - enemyTop) < 0.5) {
                 
                 // Kill the enemy
