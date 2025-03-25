@@ -11,16 +11,12 @@ class VibeversePortal {
         this.isActive = false;
         this.position = new THREE.Vector3();
         this.activationDistance = 15;
-        this.portalLight = null;
         this.portalParticles = null;
         this.clock = new THREE.Clock();
         this.portalShaderMaterial = null;
         this.portalWidth = 12;
         this.portalHeight = 12;
-        this.portalIndicator = document.getElementById('portal-indicator');
-        this.portalInfo = document.getElementById('portal-info');
         this.isPlayerInPortal = false;
-        this.playerPreviouslyNearby = false;
         this.signboardGroup = null;
     }
 
@@ -201,10 +197,7 @@ class VibeversePortal {
         this.frameGroup.add(bottom);
         this.frameGroup.add(left);
         this.frameGroup.add(right);
-        
-        // Add decorative corners
-        this.addDecorativeCorners();
-        
+
         // Add to portal group
         this.portalGroup.add(this.frameGroup);
     }
@@ -233,14 +226,11 @@ class VibeversePortal {
         signboard.position.y = this.portalHeight + signboardOffsetY + signboardHeight/2;
         
         // Create text for the signboard
-        this.    createSignboardText("VIBEVERSE PORTAL", signboardWidth * 0.8, signboard.position.y);
+        this.createSignboardText("VIBEVERSE PORTAL", signboardWidth * 0.8, signboard.position.y);
         
         // Add signboard to the group
         this.signboardGroup.add(signboard);
-        
-        // Add decorative elements to the signboard
-        this.addSignboardDecorations(signboard, signboardWidth, signboardHeight);
-        
+
         // Add to portal group
         this.portalGroup.add(this.signboardGroup);
     }
@@ -298,111 +288,7 @@ class VibeversePortal {
         this.signboardGroup.add(backSignMesh);
     }
     
-    addSignboardDecorations(signboard, width, height) {
-        // Add decorative border to the signboard
-        const borderThickness = 0.2;
-        const borderDepth = 0.6;
-        const borderMaterial = new THREE.MeshStandardMaterial({
-            color: 0x888888,
-            metalness: 0.7,
-            roughness: 0.3,
-            emissive: 0x333333
-        });
-        
-        // Create border parts
-        const topBorderGeometry = new THREE.BoxGeometry(width + borderThickness*2, borderThickness, borderDepth);
-        const bottomBorderGeometry = new THREE.BoxGeometry(width + borderThickness*2, borderThickness, borderDepth);
-        const leftBorderGeometry = new THREE.BoxGeometry(borderThickness, height, borderDepth);
-        const rightBorderGeometry = new THREE.BoxGeometry(borderThickness, height, borderDepth);
-        
-        // Create meshes
-        const topBorder = new THREE.Mesh(topBorderGeometry, borderMaterial);
-        const bottomBorder = new THREE.Mesh(bottomBorderGeometry, borderMaterial);
-        const leftBorder = new THREE.Mesh(leftBorderGeometry, borderMaterial);
-        const rightBorder = new THREE.Mesh(rightBorderGeometry, borderMaterial);
-        
-        // Position the border parts relative to the signboard
-        topBorder.position.set(0, signboard.position.y + height/2 + borderThickness/2, 0.05);
-        bottomBorder.position.set(0, signboard.position.y - height/2 - borderThickness/2, 0.05);
-        leftBorder.position.set(-width/2 - borderThickness/2, signboard.position.y, 0.05);
-        rightBorder.position.set(width/2 + borderThickness/2, signboard.position.y, 0.05);
-        
-        // Add border parts to group
-        this.signboardGroup.add(topBorder);
-        this.signboardGroup.add(bottomBorder);
-        this.signboardGroup.add(leftBorder);
-        this.signboardGroup.add(rightBorder);
-        
-        // Add corner decorations
-        this.addSignboardCorners(width, height, signboard.position.y);
-    }
-    
-    addSignboardCorners(width, height, yPosition) {
-        const cornerSize = 0.5;
-        const cornerDepth = 0.7;
-        const cornerGeometry = new THREE.BoxGeometry(cornerSize, cornerSize, cornerDepth);
-        
-        // Material for corners
-        const cornerMaterial = new THREE.MeshStandardMaterial({
-            color: 0xAAAAAA,
-            metalness: 0.9,
-            roughness: 0.1,
-            emissive: 0x444444
-        });
-        
-        // Create corner meshes
-        const corners = [];
-        for (let i = 0; i < 4; i++) {
-            corners[i] = new THREE.Mesh(cornerGeometry, cornerMaterial);
-        }
-        
-        // Position the corners
-        const halfWidth = width/2 + 0.3;
-        const halfHeight = height/2 + 0.3;
-        
-        corners[0].position.set(-halfWidth, yPosition + halfHeight, 0.1); // Top left
-        corners[1].position.set(halfWidth, yPosition + halfHeight, 0.1);  // Top right
-        corners[2].position.set(-halfWidth, yPosition - halfHeight, 0.1); // Bottom left
-        corners[3].position.set(halfWidth, yPosition - halfHeight, 0.1);  // Bottom right
-        
-        // Add corners to the signboard group
-        corners.forEach(corner => this.signboardGroup.add(corner));
-    }
-    
-    addDecorativeCorners() {
-        const cornerSize = 0.8;
-        const cornerDepth = 0.5;
-        const cornerGeometry = new THREE.BoxGeometry(cornerSize, cornerSize, cornerDepth);
-        
-        // Use a more ornate material for corners
-        const cornerMaterial = new THREE.MeshStandardMaterial({
-            color: 0x888888,
-            metalness: 0.9,
-            roughness: 0.1,
-            emissive: 0x333333,
-            emissiveIntensity: 0.5
-        });
-        
-        // Create corner meshes
-        const corners = [];
-        for (let i = 0; i < 4; i++) {
-            corners[i] = new THREE.Mesh(cornerGeometry, cornerMaterial);
-        }
-        
-        // Position the corners
-        const halfWidth = this.portalWidth/2 + 0.5;
-        const halfHeight = this.portalHeight + 0.5;
-        
-        corners[0].position.set(-halfWidth, halfHeight, 0); // Top left
-        corners[1].position.set(halfWidth, halfHeight, 0);  // Top right
-        corners[2].position.set(-halfWidth, 0, 0);          // Bottom left
-        corners[3].position.set(halfWidth, 0, 0);           // Bottom right
-        
-        // Add corners to the frame group
-        corners.forEach(corner => this.frameGroup.add(corner));
-    }
-
-    update(shaderTime) {
+    update() {
         if (!this.portalShaderMaterial) return;
         
         // Update shader time
@@ -412,71 +298,19 @@ class VibeversePortal {
         // Check distance to player
         const distanceToPlayer = this.player.position.distanceTo(this.portalGroup.position);
         
+        const infoElement = document.getElementById('portal-info');
+
         // Player is near the portal
         if (distanceToPlayer < this.activationDistance) {
-            if (!this.playerPreviouslyNearby) {
-                this.playerPreviouslyNearby = true;
-                // Show portal indicator
-                this.portalInfo.style.display = 'block';
-                this.portalIndicator.style.display = 'block';
-                
-                // Animate portal light intensity
-                if (this.portalLight) {
-                    this.portalLight.intensity = 3;
-                }
-            }
-            
-            // Update portal indicator direction
-            this.updatePortalIndicator();
-            
-            // Check if player is entering the portal (from the front)
+            infoElement.textContent = `Vibeverse Portal Nearby`;
+            infoElement.classList.add('visible');
+
+            // Check if player is entering the portal
             this.checkPortalEntry(distanceToPlayer);
         } else {
-            // Player is far from portal
-            if (this.playerPreviouslyNearby) {
-                this.playerPreviouslyNearby = false;
-                // Hide portal indicator
-                this.portalInfo.style.display = 'none';
-                this.portalIndicator.style.display = 'none';
-                
-                // Reset portal light intensity
-                if (this.portalLight) {
-                    this.portalLight.intensity = 2;
-                }
-            }
-            
+            infoElement.classList.remove('visible');
             this.isPlayerInPortal = false;
         }
-    }
-    
-    updatePortalIndicator() {
-        // Calculate direction from player to portal
-        const direction = new THREE.Vector3().subVectors(
-            this.portalGroup.position,
-            this.player.position
-        );
-        
-        // Project the direction onto the XZ plane for 2D direction
-        direction.y = 0;
-        direction.normalize();
-        
-        // Get camera direction for reference
-        const cameraDirection = new THREE.Vector3();
-        window.camera.getWorldDirection(cameraDirection);
-        cameraDirection.y = 0;
-        cameraDirection.normalize();
-        
-        // Calculate angle between directions
-        const angle = Math.atan2(
-            direction.x * cameraDirection.z - direction.z * cameraDirection.x,
-            direction.x * cameraDirection.x + direction.z * cameraDirection.z
-        );
-        
-        // Convert to degrees
-        const degrees = (angle * 180 / Math.PI);
-        
-        // Update the indicator style
-        this.portalIndicator.style.transform = `rotate(${degrees}deg)`;
     }
     
     checkPortalEntry(distanceToPlayer) {
@@ -564,10 +398,6 @@ class VibeversePortal {
             this.portalMesh.geometry.dispose();
             this.portalMesh.material.dispose();
         }
-        
-        // Hide UI elements
-        if (this.portalInfo) this.portalInfo.style.display = 'none';
-        if (this.portalIndicator) this.portalIndicator.style.display = 'none';
     }
 }
 
@@ -614,23 +444,16 @@ class PortalSystem {
                 originalAnimate(currentTime);
             }
             
-            // Calculate delta time
             shaderTime += 5.0;
-            //this.lastTime = currentTime;
+
+            // Skip if game is paused or over
+            if (window.gameState && (window.gameState.gamePaused || window.gameState.gameOver)) {
+                return;
+            }
             
-            // Update all portals
-            this.update(shaderTime / 1000); // Convert to seconds
+            // Update each portal
+            this.portals.forEach(portal => portal.update(shaderTime));
         };
-    }
-    
-    update(shaderTime) {
-        // Skip if game is paused or over
-        if (window.gameState && (window.gameState.gamePaused || window.gameState.gameOver)) {
-            return;
-        }
-        
-        // Update each portal
-        this.portals.forEach(portal => portal.update(shaderTime));
     }
 }
 

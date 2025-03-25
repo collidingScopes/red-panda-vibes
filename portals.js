@@ -1,6 +1,6 @@
 // Enhanced Portal System for Red Panda Vibes
 // Creates functional fantasy-styled portals that open URLs when activated
-let numPortalsPerLevel = 2;
+let numPortalsPerLevel = 1;
 let urlParams = "?portal=true&username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
 urlParams += "&avatar_url=https://collidingscopes.github.io/red-panda-vibes/"+pandaModelLocation;
 

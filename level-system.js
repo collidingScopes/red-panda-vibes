@@ -34,7 +34,7 @@ class LevelSystem {
                 enemyCount: 0,
                 enemySpeedWander: this.baseSettings.enemySpeedWander,
                 enemySpeedChase: this.baseSettings.enemySpeedChase,
-                flagHeight: 30, // Starting flag height
+                flagHeight: 35, // Starting flag height
                 terrainHeightMultiplier: 1.0 // Base terrain height
             };
         }
@@ -49,7 +49,7 @@ class LevelSystem {
         
         // NEW: Shrink flag pole with each level (minimum 5 units)
         //const flagHeight = Math.max(7, 30 - (level - 1) * 1.5);
-        const flagHeight = 30;
+        const flagHeight = 35;
 
         // NEW: Increase terrain height multiplier with each level
         const terrainHeightMultiplier = 1.0 + Math.min(1.8, (level - 1) * 0.05);

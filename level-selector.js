@@ -79,7 +79,7 @@
                         if (typeof window.showTutorialMessages === 'function') {
                             window.showTutorialMessages();
                         }
-                    }, 4000);
+                    }, 3000);
                 } else {
                     // Show level warnings for the selected level
                     if (window.levelWarnings) {

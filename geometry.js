@@ -171,7 +171,7 @@ function createFlagPole() {
     const group = new THREE.Group();
     
     // Create a full bamboo stalk that goes all the way to the ground
-    const bambooHeight = 30; // Total height
+    const bambooHeight = 35; // Total height
     const bambooRadius = 1;
 
     // Create bamboo stalk using cylinder instead of box for a more natural look
