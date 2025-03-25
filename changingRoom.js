@@ -1,6 +1,3 @@
-// Changing room implementation for Red Panda Vibes
-// This creates a changing room that lets the player switch between 3D models
-
 class ChangingRoom {
     constructor(scene, player, getTerrainHeight) {
         this.scene = scene;
@@ -17,12 +14,145 @@ class ChangingRoom {
             { name: "Pixar", path: 'assets/pixar4.glb' },
         ];
         this.currentModelIndex = 0;
+        this.preloadedModels = {}; // Will store preloaded models
+        this.modelsLoaded = false; // Flag to track if all models are loaded
     }
 
     // Initialize the changing room
     initialize() {
         this.createChangingRoom();
         this.placeRandomly();
+        
+        // Start preloading models after 10 seconds
+        setTimeout(() => {
+            this.preloadAllModels();
+        }, 10000);
+    }
+
+    // Preload all models sequentially to avoid network overload
+    preloadAllModels() {
+        console.log("Starting to preload all character models sequentially...");
+        
+        const totalModels = this.modelOptions.length;
+        
+        // Define function to load models one after another
+        const loadModelSequentially = (index) => {
+            // If we've loaded all models, we're done
+            if (index >= totalModels) {
+                this.modelsLoaded = true;
+                console.log("All models preloaded successfully!");
+                return;
+            }
+            
+            const model = this.modelOptions[index];
+            console.log(`Starting to load model: ${model.name} (${index + 1}/${totalModels})`);
+             
+            const loader = new THREE.GLTFLoader();
+            
+            // Attempt to load the current model
+            loader.load(
+                model.path,
+                (gltf) => {
+                    // Success handler
+                    console.log(`Successfully loaded model: ${model.name}`);
+                    
+                    // Store the loaded model and its animations
+                    const processedModel = {
+                        scene: gltf.scene,
+                        animations: gltf.animations || []
+                    };
+                    
+                    // Process the model (scaling, shadows, etc.)
+                    this.processModel(processedModel);
+                    
+                    // Store in our preloaded models cache
+                    this.preloadedModels[model.name] = processedModel;
+                    
+                    // Move on to the next model after a short delay
+                    setTimeout(() => {
+                        loadModelSequentially(index + 1);
+                    }, 1000); // 1 second delay between loading models
+                },
+                (xhr) => {
+                    // Progress callback
+                    if (xhr.lengthComputable) {
+                        const percentComplete = Math.round((xhr.loaded / xhr.total) * 100);
+                        console.log(`Loading model ${model.name}: ${percentComplete}% complete`);
+                    }
+                },
+                (error) => {
+                    // Error handler
+                    console.error(`Error preloading model ${model.name}:`, error);
+                    console.log(`Will retry loading ${model.name} once more after delay...`);
+                    
+                    // Retry once after a delay
+                    setTimeout(() => {
+                        console.log(`Retrying load for ${model.name}...`);
+                        
+                        loader.load(
+                            model.path,
+                            (gltf) => {
+                                // Success on retry
+                                console.log(`Successfully loaded model ${model.name} on retry`);
+                                
+                                const processedModel = {
+                                    scene: gltf.scene,
+                                    animations: gltf.animations || []
+                                };
+                                
+                                this.processModel(processedModel);
+                                this.preloadedModels[model.name] = processedModel;
+                                
+                                // Continue with next model
+                                setTimeout(() => {
+                                    loadModelSequentially(index + 1);
+                                }, 500);
+                            },
+                            null,
+                            (retryError) => {
+                                // Failed even after retry
+                                console.error(`Failed to load ${model.name} even after retry:`, retryError);
+                                
+                                // Continue with next model anyway
+                                setTimeout(() => {
+                                    loadModelSequentially(index + 1);
+                                }, 500);
+                            }
+                        );
+                    }, 2000); // Wait 2 seconds before retry
+                }
+            );
+        };
+        
+        // Start the sequential loading process with the first model
+        loadModelSequentially(0);
+    }
+
+    // Process a loaded model (scaling, positioning, shadows)
+    processModel(modelData) {
+        const model = modelData.scene;
+        
+        // Scale the model appropriately
+        model.scale.set(1.5, 1.5, 1.5);
+        
+        // Center the model
+        const box = new THREE.Box3().setFromObject(model);
+        const center = box.getCenter(new THREE.Vector3());
+        model.position.sub(center);
+        
+        // Adjust the y-position so model stands on ground
+        const size = box.getSize(new THREE.Vector3());
+        model.position.y += size.y / 2;
+        
+        // Setup shadows
+        model.traverse((node) => {
+            if (node.isMesh) {
+                node.castShadow = true;
+                node.receiveShadow = true;
+            }
+        });
+        
+        return model;
     }
 
     // Create the changing room mesh
@@ -159,7 +289,6 @@ class ChangingRoom {
         this.scene.add(this.changingRoomMesh);
     }
 
-
     // Place the changing room at a random location on the terrain
     placeRandomly() {
         // Define placement area boundaries (adjust based on your map)
@@ -173,7 +302,7 @@ class ChangingRoom {
         const z = minZ + Math.random() * (maxZ - minZ);
         
         // Get terrain height at this position
-        const y = getTerrainHeight(x, z);
+        const y = this.getTerrainHeight(x, z);
         
         // Set position
         this.changingRoomMesh.position.set(x, y, z);
@@ -273,51 +402,75 @@ class ChangingRoom {
             this.player.remove(gameState.pandaModel);
         }
         
-        // Load and set new model
-        const loader = new THREE.GLTFLoader();
-        loader.load(
-            newModel.path,
-            (gltf) => {
-                console.log(`Successfully loaded model: ${newModel.name}`);
-                
-                const model = gltf.scene;
-                const animations = gltf.animations || [];
-                
-                // Scale and position the model appropriately
-                model.scale.set(1.5, 1.5, 1.5);
-                
-                // Center the model
-                const box = new THREE.Box3().setFromObject(model);
-                const center = box.getCenter(new THREE.Vector3());
-                model.position.sub(center);
-                
-                // Adjust the y-position so model stands on ground
-                const size = box.getSize(new THREE.Vector3());
-                model.position.y += size.y / 2;
-                
-                // Setup shadows
-                model.traverse((node) => {
-                    if (node.isMesh) {
-                        node.castShadow = true;
-                        node.receiveShadow = true;
-                    }
-                });
-                
-                // Add to player group
-                this.player.add(model);
-                
-                // Update game state reference
-                if (window.setPandaModel) {
-                    window.setPandaModel(model, animations);
-                }
-                
-                // Update message with current character
-                this.updateChangingMessage(newModel.name);
-            },
-            (error) => {
-                console.error('Error loading model:', error);
+        // If models are preloaded, use them for instant swap
+        if (this.modelsLoaded && this.preloadedModels[newModel.name]) {
+            console.log(`Using preloaded model: ${newModel.name}`);
+            
+            // Clone the preloaded model to avoid issues with reusing the same object
+            const modelData = this.preloadedModels[newModel.name];
+            const modelClone = modelData.scene.clone();
+            
+            // Add to player group
+            this.player.add(modelClone);
+            
+            // Update game state reference
+            if (window.setPandaModel) {
+                window.setPandaModel(modelClone, modelData.animations);
             }
-        );
+            
+            // Update message with current character
+            this.updateChangingMessage(newModel.name);
+        } 
+        // Fall back to loading model on-demand if not preloaded
+        else {
+            console.log(`Model not preloaded, loading on demand: ${newModel.name}`);
+            
+            // Load and set new model
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                newModel.path,
+                (gltf) => {
+                    console.log(`Successfully loaded model: ${newModel.name}`);
+                    
+                    const model = gltf.scene;
+                    const animations = gltf.animations || [];
+                    
+                    // Scale and position the model appropriately
+                    model.scale.set(1.5, 1.5, 1.5);
+                    
+                    // Center the model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.sub(center);
+                    
+                    // Adjust the y-position so model stands on ground
+                    const size = box.getSize(new THREE.Vector3());
+                    model.position.y += size.y / 2;
+                    
+                    // Setup shadows
+                    model.traverse((node) => {
+                        if (node.isMesh) {
+                            node.castShadow = true;
+                            node.receiveShadow = true;
+                        }
+                    });
+                    
+                    // Add to player group
+                    this.player.add(model);
+                    
+                    // Update game state reference
+                    if (window.setPandaModel) {
+                        window.setPandaModel(model, animations);
+                    }
+                    
+                    // Update message with current character
+                    this.updateChangingMessage(newModel.name);
+                },
+                (error) => {
+                    console.error('Error loading model:', error);
+                }
+            );
+        }
     }
     
     // Create and show changing room message
