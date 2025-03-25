@@ -34,7 +34,7 @@ gameState.trampoline = {
 };
 
 //physics
-const jumpForce = 9.5;
+const jumpForce = 10.0;
 const gravity = 16.0;
 
 // Make gameState globally accessible for mobile controls

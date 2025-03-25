@@ -18,8 +18,8 @@
         select.id = 'level-select';
         select.name = 'level-select';
         
-        // Add options for levels 1-10
-        for (let i = 1; i <= 10; i++) {
+        // Add options for levels 1-20
+        for (let i = 1; i <= 20; i++) {
             const option = document.createElement('option');
             option.value = i;
             option.textContent = `${i}`;
