@@ -321,7 +321,7 @@ class ChangingRoom {
         this.currentModelIndex = (this.currentModelIndex + 1) % this.modelOptions.length;
         const newModel = this.modelOptions[this.currentModelIndex];
         console.log(`Changing to: ${newModel.name}`);
-    
+        
         // Remove all existing models from the player
         while (this.player.children.length > 0) {
             const child = this.player.children[0];
@@ -329,7 +329,7 @@ class ChangingRoom {
             this.disposeModel(child);
         }
         this.currentPlayerModel = null;
-    
+        
         // Use preloaded model if available
         if (this.preloadedModels[newModel.name]) {
             const modelData = this.preloadedModels[newModel.name];
@@ -337,7 +337,20 @@ class ChangingRoom {
             this.processModel({ scene: modelClone }); // Ensure new model is processed
             this.player.add(modelClone);
             this.currentPlayerModel = modelClone;
-    
+            
+            // Create and display the notification div
+            const notification = document.createElement('div');
+            notification.className = 'level-warning';
+            notification.textContent = `Changed into: ${newModel.name}`;
+            document.body.appendChild(notification);
+            
+            // Remove the notification after 2 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 2000);
+            
             if (window.setPandaModel) {
                 window.setPandaModel(modelClone, modelData.animations);
             }
