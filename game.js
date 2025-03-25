@@ -21,6 +21,7 @@ const gameState = {
     pandaAnimationMixer: null, // Animation mixer for the panda model
     pandaAnimations: {}, // Storage for different animations
     changingRoom: null,
+    jetpack: null,
 };
 
 // Add trampoline properties to gameState
@@ -466,6 +467,12 @@ function resetGame() {
     if (gameState.changingRoom) {
         gameState.changingRoom.placeRandomly();
     }
+
+    /*
+    if (gameState.jetpack) {
+        gameState.jetpack.placeRandomly();
+    }
+    */
 }
 
 // Helper function to dispose of THREE.js objects properly
@@ -546,6 +553,10 @@ function animate(currentTime) {
     if (gameState.changingRoom && !gameState.goalReached) {
         gameState.changingRoom.update(deltaTime);
     }
+
+    if (gameState.jetpack && !gameState.goalReached) {
+        gameState.jetpack.update(deltaTime);
+    }
     
     renderer.render(scene, camera);
 }
@@ -565,7 +576,7 @@ function init() {
     
     // Make renderer globally accessible for mobile orientation handling
     window.renderer = renderer;
-    
+
     // Handle initial sizing for proper mobile rendering
     handleViewportResize();
     
@@ -589,6 +600,10 @@ function init() {
         gameState.changingRoom.initialize();
         console.log("Changing room initialized");
     }
+
+    gameState.jetpack = new Jetpack(scene, player, getTerrainHeight);
+    gameState.jetpack.initialize();
+    console.log("jetpack initialized");
 }
 
 function handleViewportResize() {
