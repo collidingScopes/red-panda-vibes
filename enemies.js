@@ -83,7 +83,7 @@ class EnemyManager {
         const blobGroup = new THREE.Group();
         
         // Main body - dark translucent sphere with warped shape
-        const blobGeometry = new THREE.SphereGeometry(1, 20, 16);
+        const blobGeometry = new THREE.SphereGeometry(1, 8, 8);
         
         // Create custom vertex displacement for more organic shape
         const positionAttribute = blobGeometry.getAttribute('position');
@@ -132,7 +132,7 @@ class EnemyManager {
         
         for (let i = 0; i < bubbleCount; i++) {
             const bubbleSize = 0.3 + Math.random() * 0.4;
-            const bubbleGeometry = new THREE.SphereGeometry(bubbleSize, 6, 6);
+            const bubbleGeometry = new THREE.SphereGeometry(bubbleSize, 5, 5);
             const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
             
             // Position bubble on surface of main blob
