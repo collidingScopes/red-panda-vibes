@@ -258,10 +258,10 @@ class Jetpack {
         this.fuelBarContainer.className = 'fuel-bar-container';
         this.fuelBarContainer.style.position = 'absolute';
         this.fuelBarContainer.style.bottom = '50%';
-        this.fuelBarContainer.style.right = '10%';
+        this.fuelBarContainer.style.right = '25%';
         this.fuelBarContainer.style.width = '200px';
         this.fuelBarContainer.style.height = '20px';
-        this.fuelBarContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+        this.fuelBarContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
         this.fuelBarContainer.style.border = '2px solid white';
         this.fuelBarContainer.style.borderRadius = '10px';
         this.fuelBarContainer.style.overflow = 'hidden';
@@ -270,8 +270,8 @@ class Jetpack {
         const label = document.createElement('div');
         label.textContent = 'JETPACK FUEL';
         label.style.position = 'absolute';
-        label.style.bottom = '50%';
-        label.style.right = '10%';
+        label.style.bottom = '53%';
+        label.style.right = '25%';
         label.style.color = 'white';
         label.style.fontFamily = 'Arial, sans-serif';
         label.style.fontSize = '12px';
