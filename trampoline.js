@@ -58,15 +58,9 @@ function createTrampoline() {
         trampolineGroup.add(leg);
     }
     
-    // Create a point light to emphasize the trampoline
-    const trampolineLight = new THREE.PointLight(surfaceColor, 1, 10);
-    trampolineLight.position.y = 2;
-    trampolineLight.castShadow = false;
-    
     // Add all parts to the group
     trampolineGroup.add(frameBase);
     trampolineGroup.add(bouncySurface);
-    trampolineGroup.add(trampolineLight);
     
     // Place the trampoline at a random position near the center of the map
     const angle = Math.random() * Math.PI * 2;
@@ -127,7 +121,7 @@ function checkTrampolineCollision() {
     
     // Check if the player is directly above the trampoline, falling, and close enough vertically
     const isFalling = gameState.playerVelocity.y <= 0;
-    const isDirectlyAbove = horizontalDistance < 2.5;
+    const isDirectlyAbove = horizontalDistance < 3.5;
     const isCloseVertically = Math.abs(playerBottom - trampolineTop) < 1.0;
     const isAboveTrampoline = isDirectlyAbove && isCloseVertically;
     
