@@ -73,22 +73,20 @@ class LevelSystem {
         this.enemyManager.SPEED_CHASE = settings.enemySpeedChase;
         this.enemyManager.reset(); // Reset and recreate enemies with new count and speed
         
-        // Reset player position
-        this.player.position.set(0, 50, 0);
-        
         if(level > 1){
+            this.player.position.set(0, 50, 0);
+
             this.updateTerrainHeight(settings.terrainHeightMultiplier);
+
+            // Reposition the flag for this level (further away for higher levels)
+            const distance = 50 + (level * 7); // Increase distance with level
+            const angle = Math.random() * Math.PI * 2; // Random angle for variety
+            const x = Math.cos(angle) * distance;
+            const z = Math.sin(angle) * distance;
+            // Update flag pole position
+            this.updateFlagPosition(x, z);
         }
             
-        // Reposition the flag for this level (further away for higher levels)
-        const distance = 50 + (level * 7); // Increase distance with level
-        const angle = Math.random() * Math.PI * 2; // Random angle for variety
-        const x = Math.cos(angle) * distance;
-        const z = Math.sin(angle) * distance;
-        
-        // Update flag pole position
-        this.updateFlagPosition(x, z);
-
         // NEW: Show level warning message if available
         if (window.levelWarnings) {
             window.levelWarnings.showWarningForLevel(level);
