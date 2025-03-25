@@ -79,8 +79,6 @@ class LevelSystem {
         if(level > 1){
             this.updateTerrainHeight(settings.terrainHeightMultiplier);
         }
-
-        this.updateFlagHeight(settings.flagHeight);
             
         // Reposition the flag for this level (further away for higher levels)
         const distance = 50 + (level * 7); // Increase distance with level
@@ -102,30 +100,6 @@ class LevelSystem {
         const terrainHeightFunction = window.getTerrainHeight || this.enemyManager.getTerrainHeight;
         const y = terrainHeightFunction(x, z);
         this.flagPole.position.set(x, y, z);
-    }
-
-    // Update flag pole height
-    updateFlagHeight(height) {
-        // Find the pole (first child of flagPole)
-        const pole = this.flagPole.children[0];
-        
-        // Update the pole height if found
-        if (pole) {
- 
-            // We need to modify the geometry to change height
-            if (pole.geometry) {
-                pole.geometry.dispose(); // Dispose old geometry to avoid memory leaks
-                pole.geometry = new THREE.BoxGeometry(0.5, height, 0.5);
-                
-                // Update position to keep the pole base at the same height
-                pole.position.y = height / 2;
-            }
-
-            // Adjust the light position (if it exists as the third child)
-            if (this.flagPole.children[2]) {
-                this.flagPole.children[2].position.y = height - 4;
-            }
-        }
     }
 
     // Update terrain height multiplier

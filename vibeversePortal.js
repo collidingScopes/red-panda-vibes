@@ -480,19 +480,6 @@ class VibeversePortal {
     }
     
     checkPortalEntry(distanceToPlayer) {
-        // Vector from portal to player
-        const portalToPlayer = new THREE.Vector3().subVectors(
-            this.player.position,
-            this.portalGroup.position
-        );
-        
-        // Portal forward direction (negative z in local space)
-        const portalForward = new THREE.Vector3(0, 0, -1);
-        portalForward.applyQuaternion(this.portalGroup.quaternion);
-        
-        // Check if player is in front of the portal
-        const dotProduct = portalToPlayer.dot(portalForward);
-        
         // Calculate horizontal distance to portal center
         const portalPlanePosition = this.portalGroup.position.clone();
         portalPlanePosition.y += this.portalHeight / 2; // Adjust to portal center height
@@ -501,23 +488,12 @@ class VibeversePortal {
             this.player.position.x - portalPlanePosition.x,
             this.player.position.z - portalPlanePosition.z
         ).length();
-        
-        // Calculate vertical position relative to portal
-        const playerYRelativeToPortalBottom = this.player.position.y - this.portalGroup.position.y;
-        const playerYRelativeToPortalTop = this.player.position.y - (this.portalGroup.position.y + this.portalHeight);
-        
-        // Check if player is at the right height to go through portal
-        const isAtRightHeight = playerYRelativeToPortalBottom > 0 && playerYRelativeToPortalTop < 0;
-        
+
         // Player is in the portal if:
         // 1. They are close enough
-        // 2. They are at the right height
-        // 3. They are approaching from the front side
-        // 4. They are horizontally aligned with the portal center
-        if (distanceToPlayer < 5 && 
-            //isAtRightHeight && 
-            //dotProduct > 0 && 
-            horizontalDistanceToPortalCenter < this.portalWidth / 2) {
+        // 2. They are horizontally aligned with the portal center
+        if (distanceToPlayer < 5 &&
+            horizontalDistanceToPortalCenter < this.portalWidth) {
             
             if (!this.isPlayerInPortal) {
                 this.isPlayerInPortal = true;
@@ -543,21 +519,7 @@ class VibeversePortal {
         window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
         window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
         }
-       
-        // Function to detect if we're in an in-app browser
-        const isInAppBrowser = () => {
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-        return (
-        ua.includes("Instagram") ||
-        ua.includes("FBAN") || // Facebook
-        ua.includes("FBAV") || // Facebook
-        ua.includes("Twitter") ||
-        ua.includes("Line") ||
-        ua.includes("MicroMessenger") || // WeChat
-        /Mobi/.test(ua) && !/Safari/.test(ua) // Mobile but not Safari
-        );
-        };
-       
+              
         // Try different methods to open the URL
         try {
             // First attempt: Use window.open
@@ -699,56 +661,3 @@ window.removeVibeversePortal = function() {
         window.portalSystem.removeVibeversePortal();
     }
 };
-
-function isInAppBrowser() {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-    
-    // Common patterns for in-app browsers
-    const inAppPatterns = [
-        // X/Twitter
-        'Twitter',
-        'TwitterAndroid',
-        'TwitteriOS',
-        
-        // Facebook
-        'FB_IAB',           // Facebook In-App Browser
-        'FBAN',            // Facebook App Native
-        'FBAV',            // Facebook App Version
-        
-        // Instagram
-        'Instagram',
-        
-        // LinkedIn
-        'LinkedInApp',
-        
-        // Snapchat
-        'Snapchat',
-        
-        // TikTok
-        'TikTok',
-        
-        // Mobile-specific indicators often present with in-app browsers
-        /\bMobile\b.*\bSafari\b/,  // Mobile Safari-like but not standalone
-    ];
-
-    // Check if any pattern matches
-    for (let pattern of inAppPatterns) {
-        if (typeof pattern === 'string') {
-            if (ua.includes(pattern)) return true;
-        } else if (pattern instanceof RegExp) {
-            if (pattern.test(ua)) return true;
-        }
-    }
-
-    // Additional check: window size vs screen size
-    // In-app browsers often have different dimensions due to UI elements
-    const isFullScreen = window.innerHeight === screen.height && 
-                        window.innerWidth === screen.width;
-
-    // Check for standalone browser features that might be absent
-    const isStandalone = ('standalone' in window.navigator) && 
-                        window.navigator.standalone;
-
-    // If it's not full screen and not standalone, might be in-app
-    return !isFullScreen && !isStandalone;
-}

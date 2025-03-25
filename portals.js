@@ -506,20 +506,6 @@ class Portal {
         window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
         }
        
-        // Function to detect if we're in an in-app browser
-        const isInAppBrowser = () => {
-        const ua = navigator.userAgent || navigator.vendor || window.opera;
-        return (
-        ua.includes("Instagram") ||
-        ua.includes("FBAN") || // Facebook
-        ua.includes("FBAV") || // Facebook
-        ua.includes("Twitter") ||
-        ua.includes("Line") ||
-        ua.includes("MicroMessenger") || // WeChat
-        /Mobi/.test(ua) && !/Safari/.test(ua) // Mobile but not Safari
-        );
-        };
-       
         // Ensure URL has protocol
         let targetUrl = this.url;
         if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
@@ -805,4 +791,57 @@ function getRandomUniqueValues(array, count) {
     
     // Return the first 'count' elements
     return shuffled.slice(0, count);
+}
+
+function isInAppBrowser() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera;
+    
+    // Common patterns for in-app browsers
+    const inAppPatterns = [
+        // X/Twitter
+        'Twitter',
+        'TwitterAndroid',
+        'TwitteriOS',
+        
+        // Facebook
+        'FB_IAB',           // Facebook In-App Browser
+        'FBAN',            // Facebook App Native
+        'FBAV',            // Facebook App Version
+        
+        // Instagram
+        'Instagram',
+        
+        // LinkedIn
+        'LinkedInApp',
+        
+        // Snapchat
+        'Snapchat',
+        
+        // TikTok
+        'TikTok',
+        
+        // Mobile-specific indicators often present with in-app browsers
+        /\bMobile\b.*\bSafari\b/,  // Mobile Safari-like but not standalone
+    ];
+
+    // Check if any pattern matches
+    for (let pattern of inAppPatterns) {
+        if (typeof pattern === 'string') {
+            if (ua.includes(pattern)) return true;
+        } else if (pattern instanceof RegExp) {
+            if (pattern.test(ua)) return true;
+        }
+    }
+
+    // Additional check: window size vs screen size
+    // In-app browsers often have different dimensions due to UI elements
+    const isFullScreen = window.innerHeight === screen.height && 
+                        window.innerWidth === screen.width;
+
+    // Check for standalone browser features that might be absent
+    const isStandalone = ('standalone' in window.navigator) && 
+                        window.navigator.standalone;
+
+    // If it's not full screen and not standalone, might be in-app
+    return !isFullScreen && !isStandalone;
 }

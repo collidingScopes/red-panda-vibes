@@ -170,9 +170,35 @@ function threeColorToHex(threeColor) {
 function createFlagPole() {
     const group = new THREE.Group();
     
+    // Create a full bamboo stalk that goes all the way to the ground
+    const bambooHeight = 30; // Total height
+    const bambooRadius = 1;
+
+    // Create bamboo stalk using cylinder instead of box for a more natural look
+    const stalkGeometry = new THREE.CylinderGeometry(
+        bambooRadius/2, // top radius
+        bambooRadius/2, // bottom radius
+        bambooHeight,   // height
+        12             // radial segments
+    );
+    
+    const stalkMaterial = new THREE.MeshStandardMaterial({
+        color: 0x7CFC00, // Light green for bamboo
+        roughness: 0.7,
+        metalness: 0.1
+    });
+    
+    const stalk = new THREE.Mesh(stalkGeometry, stalkMaterial);
+    
+    // Position the stalk so its bottom is at y=0
+    stalk.position.y = bambooHeight / 2;
+    stalk.castShadow = true;
+    
+    group.add(stalk);
+
     // Create node rings (the slightly wider parts between segments)
     function createNodeRing(posY, radius) {
-        const ringGeometry = new THREE.CylinderGeometry(radius/1.5, radius/1.5, 0.3, 12);
+        const ringGeometry = new THREE.CylinderGeometry(radius/1.2, radius/1.2, 0.3, 12);
         const ringMaterial = new THREE.MeshStandardMaterial({
             color: 0x228B22, // Darker green for nodes
             roughness: 0.8,
@@ -194,14 +220,14 @@ function createFlagPole() {
         
         for (let i = 0; i < leafCount; i++) {
             // Calculate angle for this leaf
-            const angle = baseAngle + (i * (Math.PI / 2) / (leafCount - 1));
+            const angle = baseAngle + (i * (Math.PI * 2) / leafCount);
             
             // Create a simple triangle shape for the leaf
             const leafShape = new THREE.Shape();
             leafShape.moveTo(0, 0);
             leafShape.lineTo(0.6, 0.3);
-            leafShape.lineTo(1+Math.random()*4, 0);
-            leafShape.lineTo(Math.random(), -0.3);
+            leafShape.lineTo(2 + Math.random() * 3, 0);
+            leafShape.lineTo(0.6, -0.3);
             leafShape.lineTo(0, 0);
             
             const leafGeometry = new THREE.ShapeGeometry(leafShape);
@@ -231,36 +257,39 @@ function createFlagPole() {
         cluster.position.y = posY;
         return cluster;
     }
-    
-    // Create a full bamboo stalk that goes all the way to the ground
-    const bambooHeight = 30; // Total height
-    const bambooRadius = 1;
 
-    // Add node rings at positions matching the image
-    const nodePositions = [3, 7, 11, 15]; // Positions from bottom
+    // Add node rings at regular intervals
+    const segmentHeight = bambooHeight / 6;
+    const nodePositions = [];
+    
+    // Create nodes at regular intervals
+    for (let i = 1; i < 6; i++) {
+        nodePositions.push(i * segmentHeight);
+    }
     
     nodePositions.forEach(posY => {
         const ring = createNodeRing(posY, bambooRadius);
         group.add(ring);
         
         // Add leaf cluster at this node if it's not too close to the top
-        if (posY < bambooHeight - 3) {
-            const leafCluster = createLeafCluster(posY+Math.random()*4-2, bambooRadius);
+        if (posY < bambooHeight - 5) {
+            const leafCluster = createLeafCluster(posY, bambooRadius);
             group.add(leafCluster);
         }
     });
-    
-    // Add a light to highlight the bamboo
-    const bambooLight = new THREE.PointLight(0x00ff00, 2.5, 15); // More natural green glow
-    bambooLight.position.y = bambooHeight/2; // Position at middle of bamboo
 
-    bambooLight.castShadow = true;
-    group.add(bambooLight);
-    
-    // Position the bamboo stalk far away from the starting point
+    // Position the bamboo stalk at the specified location
     const x = 50;
     const z = 50;
-    const y = getTerrainHeight(x, z);
+    
+    // Make sure getTerrainHeight is defined and available
+    let y = 0;
+    try {
+        y = getTerrainHeight(x, z);
+    } catch (e) {
+        console.warn("getTerrainHeight function not available, setting y to 0");
+    }
+    
     // Setting y position to terrain height directly (bamboo will grow from ground)
     group.position.set(x, y, z);
     
