@@ -11,7 +11,7 @@ class EnemyManager {
         this.COUNT = 15; // Number of enemies in the world
         this.DETECTION_RADIUS = 25; // How far enemies can see the player
         this.SPEED_WANDER = gameState.speed*0.6; // Speed when wandering randomly
-        this.SPEED_CHASE = gameState.speed*0.8; // Speed when chasing the player
+        this.SPEED_CHASE = gameState.speed*0.75; // Speed when chasing the player
         this.KILL_DISTANCE = 1.5; // How close an enemy needs to be to catch the player
         
         // Add kill counter property
@@ -107,12 +107,12 @@ class EnemyManager {
         
         // Create dark, oily material with slight sheen
         const blobMaterial = new THREE.MeshStandardMaterial({
-            color: 0x050510, // Very dark blue-black
-            roughness: 0.2, // Somewhat shiny
-            metalness: 0.8, // Metallic look for oil sheen effect
+            color: 0x151556, // Very dark blue-black
+            roughness: 0.3, // Somewhat shiny
+            metalness: 1.0, // Metallic look for oil sheen effect
             transparent: true,
-            opacity: 0.7,
-            emissive: 0x334455, // Slight blue glow
+            opacity: 0.8,
+            emissive: 0x154473, // Slight blue glow
             emissiveIntensity: 0.7
         });
         
@@ -123,18 +123,16 @@ class EnemyManager {
         // Add smaller bubbles on the surface for alien look
         const bubbleCount = 1 + Math.floor(Math.random() * 5);
         const bubbleMaterial = new THREE.MeshStandardMaterial({
-            color: 0x050510, // Dark blue
+            color: 0x731d77, // Dark blue
             roughness: 0.2, // Very shiny
             metalness: 0.8, // Very metallic
             transparent: true,
-            opacity: 0.7,
-            emissive: 0x334455, // Slight blue glow
-            emissiveIntensity: 0.7
+            opacity: 0.8,
         });
         
         for (let i = 0; i < bubbleCount; i++) {
-            const bubbleSize = 0.2 + Math.random() * 0.3;
-            const bubbleGeometry = new THREE.SphereGeometry(bubbleSize, 8, 8);
+            const bubbleSize = 0.3 + Math.random() * 0.4;
+            const bubbleGeometry = new THREE.SphereGeometry(bubbleSize, 6, 6);
             const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
             
             // Position bubble on surface of main blob
