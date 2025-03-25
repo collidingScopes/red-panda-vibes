@@ -23,10 +23,13 @@ class EnemyManager {
         // Reusable vectors to optimize performance
         this.tempVector = new THREE.Vector3();
         this.targetVector = new THREE.Vector3();
-
+    
         // Add these new properties for smooth movement
         this.rotationSmoothness = 0.9; // Lower values = smoother rotation (0.05 - 0.2 is good)
         this.minMovementThreshold = 0.01; // Minimum movement before rotating
+        
+        // Create shared geometry and materials for all enemies
+        this.createSharedEnemyResources();
         
         // Create game over screen (hidden initially)
         this.createGameOverScreen();
@@ -35,11 +38,54 @@ class EnemyManager {
         this.updateKillCounterDisplay();
     }
     
-    // Initialize enemies
-    initialize() {        
-        for (let i = 0; i < this.COUNT; i++) {
-            this.createEnemy();
+    // Create shared resources for all enemies
+    createSharedEnemyResources() {
+        // Main body - dark translucent sphere with warped shape
+        this.blobGeometry = new THREE.SphereGeometry(1, 8, 8);
+        
+        // Create custom vertex displacement for more organic shape
+        const positionAttribute = this.blobGeometry.getAttribute('position');
+        const vertex = new THREE.Vector3();
+        
+        for (let i = 0; i < positionAttribute.count; i++) {
+            vertex.fromBufferAttribute(positionAttribute, i);
+            
+            // Apply noise to make it blobby (this is a simple way to create organic feel)
+            const noise = Math.sin(vertex.x * 4) * 0.2 + 
+                        Math.sin(vertex.z * 3) * 0.2;
+            
+            vertex.multiplyScalar(1 + noise);
+            
+            positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
         }
+        
+        // Create dark, oily material with slight sheen
+        this.blobMaterial = new THREE.MeshStandardMaterial({
+            color: 0x151556, // Very dark blue-black
+            roughness: 0.3, // Somewhat shiny
+            metalness: 1.0, // Metallic look for oil sheen effect
+            transparent: true,
+            opacity: 0.8,
+            emissive: 0x154473, // Slight blue glow
+            emissiveIntensity: 0.7
+        });
+        
+        // Material for bubbles
+        this.bubbleMaterial = new THREE.MeshStandardMaterial({
+            color: 0x731d77, // Dark blue
+            roughness: 0.2, // Very shiny
+            metalness: 0.8, // Very metallic
+            transparent: true,
+            opacity: 0.8,
+        });
+        
+        // Create a few bubble geometries of different sizes to reuse
+        this.bubbleGeometries = [
+            new THREE.SphereGeometry(0.3, 5, 5),
+            new THREE.SphereGeometry(0.4, 5, 5),
+            new THREE.SphereGeometry(0.5, 5, 5),
+            new THREE.SphereGeometry(0.6, 5, 5)
+        ];
     }
     
     // Create a single enemy
@@ -58,8 +104,39 @@ class EnemyManager {
         
         const y = this.getTerrainHeight(x, z) + 1; // Slightly above terrain
         
-        // Create the oily blob enemy with dark, translucent material
-        const enemy = this.createBlobMesh();
+        // Create a group to hold the enemy parts
+        const enemy = new THREE.Group();
+        
+        // Create the main blob using shared geometry and material
+        const blob = new THREE.Mesh(this.blobGeometry, this.blobMaterial);
+        blob.castShadow = true;
+        enemy.add(blob);
+        
+        // Add smaller bubbles on the surface for alien look
+        const bubbleCount = 1 + Math.floor(Math.random() * 5);
+        
+        for (let i = 0; i < bubbleCount; i++) {
+            // Randomly select one of our pre-created bubble geometries
+            const bubbleGeometryIndex = Math.floor(Math.random() * this.bubbleGeometries.length);
+            const bubble = new THREE.Mesh(this.bubbleGeometries[bubbleGeometryIndex], this.bubbleMaterial);
+            
+            // Position bubble on surface of main blob
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.random() * Math.PI;
+            const radius = 0.8;
+            
+            bubble.position.x = radius * Math.sin(phi) * Math.cos(theta);
+            bubble.position.y = radius * Math.sin(phi) * Math.sin(theta);
+            bubble.position.z = radius * Math.cos(phi);
+            
+            enemy.add(bubble);
+        }
+        
+        // Scale the entire enemy
+        const scale = 1.0 + Math.random() * 0.5; // Random size variation
+        enemy.scale.set(scale, scale, scale);
+        
+        // Set position
         enemy.position.set(x, y, z);
         
         // Add enemy properties
@@ -76,82 +153,12 @@ class EnemyManager {
         this.enemies.push(enemy);
         return enemy;
     }
-    
-    // Create the oil slick blob mesh with alien-like appearance
-    createBlobMesh() {
-        // Create group to hold the entire enemy
-        const blobGroup = new THREE.Group();
-        
-        // Main body - dark translucent sphere with warped shape
-        const blobGeometry = new THREE.SphereGeometry(1, 8, 8);
-        
-        // Create custom vertex displacement for more organic shape
-        const positionAttribute = blobGeometry.getAttribute('position');
-        const vertex = new THREE.Vector3();
-        
-        for (let i = 0; i < positionAttribute.count; i++) {
-            vertex.fromBufferAttribute(positionAttribute, i);
-            
-            // Apply noise to make it blobby (this is a simple way to create organic feel)
-            const noise = Math.sin(vertex.x * 4) * 0.2 + 
-                        //Math.sin(vertex.y * 5) * 0.2 + 
-                        Math.sin(vertex.z * 3) * 0.2;
-            
-            vertex.multiplyScalar(1 + noise);
-            
-            positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
+
+    // Initialize enemies
+    initialize() {        
+        for (let i = 0; i < this.COUNT; i++) {
+            this.createEnemy();
         }
-        
-        // Update normals for proper lighting
-        //blobGeometry.computeVertexNormals();
-        
-        // Create dark, oily material with slight sheen
-        const blobMaterial = new THREE.MeshStandardMaterial({
-            color: 0x151556, // Very dark blue-black
-            roughness: 0.3, // Somewhat shiny
-            metalness: 1.0, // Metallic look for oil sheen effect
-            transparent: true,
-            opacity: 0.8,
-            emissive: 0x154473, // Slight blue glow
-            emissiveIntensity: 0.7
-        });
-        
-        const blob = new THREE.Mesh(blobGeometry, blobMaterial);
-        blob.castShadow = true;
-        blobGroup.add(blob);
-        
-        // Add smaller bubbles on the surface for alien look
-        const bubbleCount = 1 + Math.floor(Math.random() * 5);
-        const bubbleMaterial = new THREE.MeshStandardMaterial({
-            color: 0x731d77, // Dark blue
-            roughness: 0.2, // Very shiny
-            metalness: 0.8, // Very metallic
-            transparent: true,
-            opacity: 0.8,
-        });
-        
-        for (let i = 0; i < bubbleCount; i++) {
-            const bubbleSize = 0.3 + Math.random() * 0.4;
-            const bubbleGeometry = new THREE.SphereGeometry(bubbleSize, 5, 5);
-            const bubble = new THREE.Mesh(bubbleGeometry, bubbleMaterial);
-            
-            // Position bubble on surface of main blob
-            const theta = Math.random() * Math.PI * 2;
-            const phi = Math.random() * Math.PI;
-            const radius = 0.8;
-            
-            bubble.position.x = radius * Math.sin(phi) * Math.cos(theta);
-            bubble.position.y = radius * Math.sin(phi) * Math.sin(theta);
-            bubble.position.z = radius * Math.cos(phi);
-            
-            blobGroup.add(bubble);
-        }
-        
-        // Scale the entire enemy
-        const scale = 1.0 + Math.random() * 0.5; // Random size variation
-        blobGroup.scale.set(scale, scale, scale);
-        
-        return blobGroup;
     }
     
     // Update the kill counter display
@@ -476,14 +483,30 @@ class EnemyManager {
         document.getElementById('game-over-screen').classList.remove("hidden");
     }
     
-    // Reset enemies for a new game
+    // Create game over screen
+    createGameOverScreen() {
+        // Add event listener for retry button
+        document.getElementById('retry-button').addEventListener('click', () => {
+            resetGame(); // This function is defined in game.js
+        });
+    }
+    
+    disposeEnemy(enemy) {
+        // For shared geometries and materials, we don't dispose them
+        // We only need to remove the meshes from the scene and release the references
+        this.scene.remove(enemy);
+        
+        // Clear any additional properties or references
+        enemy.userData = null;
+    }
+    
+    // Update this method for proper cleanup on reset or game end
     reset() {
-        // Remove all existing enemies
+        // Remove all existing enemies from the scene
         for (const enemy of this.enemies) {
             this.scene.remove(enemy);
-            this.disposeEnemy(enemy);
         }
-
+    
         // Reset kill counter when starting a new game
         if(this.gameOver){
             this.killCount = 0;
@@ -497,35 +520,6 @@ class EnemyManager {
         
         // Create new enemies
         this.initialize();
-    }
-    
-    // Create game over screen
-    createGameOverScreen() {
-        // Add event listener for retry button
-        document.getElementById('retry-button').addEventListener('click', () => {
-            resetGame(); // This function is defined in game.js
-        });
-    }
-    
-    // Properly dispose of enemy resources to prevent memory leaks
-    disposeEnemy(enemy) {
-        enemy.traverse((child) => {
-            if (child.geometry) {
-                child.geometry.dispose();
-            }
-            
-            if (child.material) {
-                if (Array.isArray(child.material)) {
-                    child.material.forEach(material => {
-                        if (material.map) material.map.dispose();
-                        material.dispose();
-                    });
-                } else {
-                    if (child.material.map) child.material.map.dispose();
-                    child.material.dispose();
-                }
-            }
-        });
     }
 }
 
