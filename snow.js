@@ -4,7 +4,7 @@ class SnowSystem {
         this.player = player;
         
         // Snow settings
-        this.COUNT = 900;      // Number of snowflakes
+        this.COUNT = 800;      // Number of snowflakes
         this.AREA_SIZE = 80;    // Area around player to show snow
         this.FALL_SPEED = 3;    // How fast snow falls
         this.DRIFT_SPEED = 0.6; // How much snow drifts horizontally

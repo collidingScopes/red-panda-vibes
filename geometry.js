@@ -37,9 +37,7 @@ window.getTerrainHeight = function(x, z) {
     ) * 0.7 * (window.terrainHeightMultiplier || 1.0));
 };
 
-// PASTEL NEON STYLED TERRAIN SYSTEM
 function createTerrain() {
-
     getRandomPalette(); //assigns a random palette to selectedPalette array
     if(scene.fog) scene.fog.color.set(selectedPalette[0]);
     updateBackground([
@@ -51,10 +49,9 @@ function createTerrain() {
         { position: 0, color: threeColorToHex(selectedPalette[0]) },
     ]);
 
-    // Create a large flat base with soft gradient
+    // Create a large flat base with soft gradient (unchanged)
     const terrainSize = 400;
     const baseGeometry = new THREE.BoxGeometry(terrainSize, 1, terrainSize);
-    // Create a gradient material for the base
     const baseTexture = createTerrainBaseTexture();
     const baseMaterial = new THREE.MeshStandardMaterial({
         map: baseTexture,
@@ -67,69 +64,129 @@ function createTerrain() {
     baseTerrain.receiveShadow = true;
     scene.add(baseTerrain);
     
-    // Create the actual terrain with hills using many small box segments
+    // Setup for terrain generation
     const segmentSize = 4;
     const segments = Math.floor(terrainSize / segmentSize);
     const halfTerrainSize = terrainSize / 2;
     
-    // Create hills group
+    // OPTIMIZATION 1: Use InstancedMesh for similar colored segments
+    // Create a lookup for palette colors
+    const paletteInstancedMeshes = {};
+    
+    // Create a single box geometry to be reused
+    const boxGeometry = new THREE.BoxGeometry(segmentSize, 1, segmentSize);
+    
+    // Hills group
     const hillsGroup = new THREE.Group();
     scene.add(hillsGroup);
     
-    // Generate terrain segments - with more flowing height variation
+    // First pass: Count instances needed for each color in the palette
+    const instanceCounts = {};
+    selectedPalette.forEach(color => {
+        instanceCounts[color] = 0;
+    });
+    
+    // Count needed instances
     for (let x = 0; x < segments; x++) {
         for (let z = 0; z < segments; z++) {
             const posX = (x * segmentSize) - halfTerrainSize + segmentSize/2;
             const posZ = (z * segmentSize) - halfTerrainSize + segmentSize/2;
             
-            // Generate height variation with more flowing values
             const height = getTerrainHeight(posX, posZ);
             
-            // Only create visible hills (if height > 0.2)
             if (height > 0.2) {
-                const hillGeometry = new THREE.BoxGeometry(segmentSize, height, segmentSize);
-                
-                // Choose a pastel color with slight randomization
+                // Select a base color from the palette
                 const baseColor = selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
-
-                // Create a subtle color variation
-                const color = new THREE.Color(baseColor);
-                color.r += (Math.random() * 0.1 - 0.05);
-                color.g += (Math.random() * 0.1 - 0.05);
-                color.b += (Math.random() * 0.1 - 0.05);
-                
-                const hillMaterial = new THREE.MeshStandardMaterial({
-                    color: color,
-                });
-                
-                const hill = new THREE.Mesh(hillGeometry, hillMaterial);
-                hill.position.set(posX, height/2, posZ);
-                hill.receiveShadow = true;
-                hillsGroup.add(hill);
+                instanceCounts[baseColor]++;
             }
         }
-    }    
+    }
+    
+    // Create instanced meshes for each color
+    selectedPalette.forEach(baseColor => {
+        if (instanceCounts[baseColor] > 0) {
+            const material = new THREE.MeshStandardMaterial({
+                color: new THREE.Color(baseColor),
+                roughness: 0.7,
+                metalness: 0.1
+            });
+            
+            const instancedMesh = new THREE.InstancedMesh(
+                boxGeometry,
+                material,
+                instanceCounts[baseColor]
+            );
+            instancedMesh.receiveShadow = true;
+            
+            paletteInstancedMeshes[baseColor] = {
+                mesh: instancedMesh,
+                count: 0 // Current instance count
+            };
+            
+            hillsGroup.add(instancedMesh);
+        }
+    });
+    
+    // Create a dummy object for positioning
+    const dummy = new THREE.Object3D();
+    
+    // Second pass: Actually position the instances
+    for (let x = 0; x < segments; x++) {
+        for (let z = 0; z < segments; z++) {
+            const posX = (x * segmentSize) - halfTerrainSize + segmentSize/2;
+            const posZ = (z * segmentSize) - halfTerrainSize + segmentSize/2;
+            
+            const height = getTerrainHeight(posX, posZ);
+            
+            if (height > 0.2) {
+                // Select a base color from the palette
+                const baseColor = selectedPalette[Math.floor(Math.random() * selectedPalette.length)];
+                
+                // Get the instanced mesh for this color
+                const instanceData = paletteInstancedMeshes[baseColor];
+                
+                // Position and scale the dummy object
+                dummy.position.set(posX, height/2, posZ);
+                dummy.scale.set(1, height, 1); // Scale vertically to match height
+                dummy.updateMatrix();
+                
+                // Apply matrix to the instance
+                instanceData.mesh.setMatrixAt(instanceData.count, dummy.matrix);
+                instanceData.count++;
+            }
+        }
+    }
+    
+    // Update the instance matrices
+    Object.values(paletteInstancedMeshes).forEach(({ mesh }) => {
+        mesh.instanceMatrix.needsUpdate = true;
+    });
+    
+    // OPTIMIZATION 2: For subtle color variations, we can use vertex colors in a follow-up pass
+    // This would add some complexity but could be implemented if needed
+    
     return hillsGroup;
 }
 
 // Create a gradient texture for the terrain base
 function createTerrainBaseTexture() {
-    const canvas = getCanvas(512, 512);
+    const resolution = 32;
+    const canvas = getCanvas(resolution, resolution);
     const context = canvas.getContext('2d');
     
     // Create a radial gradient
     const gradient = context.createRadialGradient(
-        256, 256, 0,
-        256, 256, 384
+        resolution, resolution, 0,
+        resolution, resolution, resolution
     );
     
-    gradient.addColorStop(0, threeColorToHex(selectedPalette[0])); // Center: Light blue
-    gradient.addColorStop(0.3, threeColorToHex(selectedPalette[1])); // Middle: Light purple
-    gradient.addColorStop(0.6, threeColorToHex(selectedPalette[2])); // Outer middle: Pink
-    gradient.addColorStop(1, threeColorToHex(selectedPalette[3])); // Edge: Mint green
+    gradient.addColorStop(0, threeColorToHex(selectedPalette[0]));
+    gradient.addColorStop(0.3, threeColorToHex(selectedPalette[1])); 
+    gradient.addColorStop(0.6, threeColorToHex(selectedPalette[2])); 
+    gradient.addColorStop(1, threeColorToHex(selectedPalette[3]));
     
     context.fillStyle = gradient;
-    context.fillRect(0, 0, 512, 512);
+    context.fillRect(0, 0, resolution, resolution);
     
     const texture = new THREE.CanvasTexture(canvas);
     texture.needsUpdate = true;
@@ -437,11 +494,11 @@ function createObstacles() {
     const obstacles = [];
     
     // Create glowing flowers with the new style
-    for (let i = 0; i < 150; i++) {
+    for (let i = 0; i < 125; i++) {
         const flowerGroup = createNeonFlowerPatch();
         
         const angle = Math.random() * Math.PI * 2;
-        const distance = Math.random() * 90 + 5;
+        const distance = Math.random() * 120 + 5;
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
@@ -453,7 +510,7 @@ function createObstacles() {
     }
     
     // Create pastel-styled trees
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 18; i++) {
         const tree = createPastelTree();
         
         // Position trees randomly around the map
