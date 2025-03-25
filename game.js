@@ -584,9 +584,11 @@ function init() {
     gameState.snowSystem = new SnowSystem(scene, player);
     console.log("Snow system initialized in game init");
 
-    gameState.changingRoom = new ChangingRoom(scene, player, getTerrainHeight);
-    gameState.changingRoom.initialize();
-    console.log("Changing room initialized");
+    if(!isMobile){
+        gameState.changingRoom = new ChangingRoom(scene, player, getTerrainHeight);
+        gameState.changingRoom.initialize();
+        console.log("Changing room initialized");
+    }
 }
 
 function handleViewportResize() {
