@@ -14,6 +14,7 @@ class SoundSystem {
         
         // Background music properties
         this.musicTracks = [
+            { path: 'assets/song-0.mp3', audio: null, loaded: false },
             { path: 'assets/song-1.mp3', audio: null, loaded: false },
             { path: 'assets/song-2.mp3', audio: null, loaded: false },
             { path: 'assets/song-3.mp3', audio: null, loaded: false }
@@ -41,12 +42,12 @@ class SoundSystem {
             
             // Create master volume control
             this.masterGain = this.audioContext.createGain();
-            this.masterGain.gain.value = 0.7;
+            this.masterGain.gain.value = 0.9;
             this.masterGain.connect(this.audioContext.destination);
             
             // Create separate gain node for music
             this.musicGain = this.audioContext.createGain();
-            this.musicGain.gain.value = 0.5; // Start with lower volume for music
+            this.musicGain.gain.value = 0.8; // Start with lower volume for music
             this.musicGain.connect(this.masterGain);
             
             this.initialized = true;
@@ -241,7 +242,7 @@ class SoundSystem {
         
         // Update master volume
         if (this.masterGain) {
-            this.masterGain.gain.value = this.muted ? 0 : 0.7;
+            this.masterGain.gain.value = this.muted ? 0 : 0.9;
         }
         
         // Update UI
@@ -298,7 +299,7 @@ class SoundSystem {
             
             // Restore previous music volume
             if (this.musicGain) {
-                const targetVolume = this.previousMusicGainValue || 0.5; // Default to 0.5 if no previous value
+                const targetVolume = this.previousMusicGainValue || 0.8; // Default to 0.5 if no previous value
                 
                 // Smoothly transition back to previous volume
                 this.musicGain.gain.setTargetAtTime(targetVolume, this.audioContext.currentTime, 0.1);
