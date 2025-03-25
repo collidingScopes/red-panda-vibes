@@ -191,7 +191,7 @@ function createRedPandaPlayer() {
                 console.log('Custom model failed to load. Trying default model...');
                 
                 loader.load(
-                    'assets/panda3DModel6.glb',
+                    'assets/panda3DModel8.glb',
                     (gltf) => {
                         console.log('Default model loaded successfully');
                         
