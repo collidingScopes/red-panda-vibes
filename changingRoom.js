@@ -11,7 +11,7 @@ class ChangingRoom {
         this.lastModelChange = 0;
         this.cooldownTime = 2000; // 2 seconds cooldown between model changes
         this.modelOptions = [
-            { name: "Red Panda", path: 'assets/panda3DModel8.glb' },
+            { name: "Red Panda", path: pandaModelLocation },
             { name: "Bernie", path: 'assets/bernie4.glb' },
             { name: "Levels", path: 'assets/levels3.glb' }
         ];

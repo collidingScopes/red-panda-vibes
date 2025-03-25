@@ -1,6 +1,8 @@
 // Script to ensure the 3D model loader is initialized correctly
 // Enhanced with support for custom avatar URLs from URL parameters
 
+let pandaModelLocation = 'assets/panda3DModel8.glb';
+
 // Wait for DOM and Three.js to load
 document.addEventListener('DOMContentLoaded', () => {
     let checkLoaderInterval = setInterval(() => {
@@ -115,7 +117,7 @@ function createRedPandaPlayer() {
     const params = getUrlParameters();
 
     // Determine which model to load
-    const modelUrl = params.avatarUrl || 'assets/panda3DModel8.glb';
+    const modelUrl = params.avatarUrl || pandaModelLocation;
     
     // Log which model is being loaded
     console.log(`Loading 3D model: ${modelUrl}`);
@@ -191,7 +193,7 @@ function createRedPandaPlayer() {
                 console.log('Custom model failed to load. Trying default model...');
                 
                 loader.load(
-                    'assets/panda3DModel8.glb',
+                    pandaModelLocation,
                     (gltf) => {
                         console.log('Default model loaded successfully');
                         
