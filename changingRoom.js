@@ -13,7 +13,8 @@ class ChangingRoom {
         this.modelOptions = [
             { name: "Red Panda", path: pandaModelLocation },
             { name: "Bernie", path: 'assets/bernie4.glb' },
-            { name: "Levels", path: 'assets/levels3.glb' }
+            { name: "Levels", path: 'assets/levels3.glb' },
+            { name: "Pixar", path: 'assets/pixar3.glb' },
         ];
         this.currentModelIndex = 0;
     }
