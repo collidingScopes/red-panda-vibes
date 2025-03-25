@@ -12,6 +12,7 @@ class ChangingRoom {
             { name: "Bernie", path: 'assets/bernie4.glb' },
             { name: "Levels", path: 'assets/levels3.glb' },
             { name: "Pixar", path: 'assets/pixar4.glb' },
+            { name: "Judge Judy", path: 'assets/judgeJudy.glb' },
         ];
         this.currentModelIndex = 0;
         this.preloadedModels = {};
@@ -232,10 +233,11 @@ class ChangingRoom {
     // Place the changing room at a random location on the terrain
     placeRandomly() {
         // Define placement area boundaries (adjust based on your map)
-        const minX = -125;
-        const maxX = 125;
-        const minZ = -125;
-        const maxZ = 125;
+        let maxRadius = 100;
+        const minX = -maxRadius;
+        const maxX = maxRadius;
+        const minZ = -maxRadius;
+        const maxZ = maxRadius;
         
         // Generate random position
         const x = minX + Math.random() * (maxX - minX);
