@@ -582,11 +582,13 @@ button {
 /* Styles for the level selector */
 
 #level-selector-container {
-    margin-bottom: 20px;
+    background: rgba(0,0,0,0.4);
     font-family: 'Courier New', monospace;
     color: #84ffef; /* Neon cyan */
     text-transform: uppercase;
     text-align: center;
+    background-color: black;
+    padding: 5px;
 }
 
 #level-select {
@@ -601,15 +603,16 @@ button {
     border-radius: 3px;
     transition: all 0.3s ease;
     margin-left: 10px;
+    font-weight: bold;
 }
 
 #level-select:hover {
-    background-color: rgba(162, 255, 132, 0.2); /* Slightly green tint */
-    box-shadow: 0 0 10px rgba(162, 255, 132, 0.6); /* Green glow */
+    /* background-color: rgba(162, 255, 132, 0.2); Slightly green tint */
+    box-shadow: 0 0 20px rgba(162, 255, 132, 0.6); /* Green glow */
 }
 
 #level-select option {
-    background-color: rgba(10, 10, 30, 0.9);
+    background-color: black;
     color: #a2ff84;
 }
 

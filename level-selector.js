@@ -22,7 +22,7 @@
         for (let i = 1; i <= 10; i++) {
             const option = document.createElement('option');
             option.value = i;
-            option.textContent = `Level ${i}`;
+            option.textContent = `${i}`;
             if (i === 1) option.selected = true;
             select.appendChild(option);
         }

@@ -15,9 +15,26 @@ let selectedPalette = COLORS.synthwave;
 
 function getRandomPalette() {
     const paletteNames = Object.keys(COLORS);
-    const randomIndex = Math.floor(Math.random() * paletteNames.length);
-    const randomPaletteName = paletteNames[randomIndex];
+    
+    // Find the current palette name by comparing the selectedPalette array with all palette arrays
+    const currentPaletteName = paletteNames.find(name => 
+        COLORS[name] === selectedPalette || 
+        (Array.isArray(COLORS[name]) && Array.isArray(selectedPalette) && 
+         JSON.stringify(COLORS[name]) === JSON.stringify(selectedPalette))
+    );
+    
+    // Filter out the current palette
+    const availablePalettes = paletteNames.filter(name => name !== currentPaletteName);
+    
+    // Select a random palette from the remaining options
+    const randomIndex = Math.floor(Math.random() * availablePalettes.length);
+    const randomPaletteName = availablePalettes[randomIndex];
+    
+    // Update the selectedPalette
     selectedPalette = COLORS[randomPaletteName];
+    
+    // Return the new palette (optional)
+    return selectedPalette;
 }
 
 // Helper function to create canvas elements
