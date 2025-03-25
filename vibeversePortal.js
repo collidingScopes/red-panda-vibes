@@ -316,18 +316,28 @@ class VibeversePortal {
     checkPortalEntry(distanceToPlayer) {
         // Calculate horizontal distance to portal center
         const portalPlanePosition = this.portalGroup.position.clone();
-        portalPlanePosition.y += this.portalHeight / 2; // Adjust to portal center height
         
-        const horizontalDistanceToPortalCenter = new THREE.Vector2(
+        // Calculate horizontal distance only (ignore Y-axis)
+        const horizontalDistanceToPortal = new THREE.Vector2(
             this.player.position.x - portalPlanePosition.x,
             this.player.position.z - portalPlanePosition.z
         ).length();
-
+        
+        // Calculate vertical position relative to portal
+        const playerHeightRelativeToPortal = this.player.position.y - portalPlanePosition.y;
+        
+        // Check if player is within the portal's vertical range
+        // This allows for jumping through the portal
+        const isInPortalVerticalRange = playerHeightRelativeToPortal > 0 && 
+                                       playerHeightRelativeToPortal < this.portalHeight;
+        
         // Player is in the portal if:
-        // 1. They are close enough
+        // 1. They are horizontally close enough
         // 2. They are horizontally aligned with the portal center
-        if (distanceToPlayer < 5 &&
-            horizontalDistanceToPortalCenter < this.portalWidth) {
+        // 3. They are within the portal's vertical range
+        if (horizontalDistanceToPortal < 2 &&
+            horizontalDistanceToPortal < this.portalWidth / 2 &&
+            isInPortalVerticalRange) {
             
             if (!this.isPlayerInPortal) {
                 this.isPlayerInPortal = true;
