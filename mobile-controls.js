@@ -280,24 +280,14 @@ class MobileControls {
         const currentAspect = window.innerWidth / window.innerHeight;
         const isPortrait = currentAspect < 1;
         const baseAspect = 16 / 9; // Reference aspect ratio (landscape)
-        const baseDistance = 7.5;  // Original camera distance
+        const baseDistance = 8.0;  // Original camera distance
         
         // Calculate new camera distance: 
         let aspectFactor;
         
         if (isPortrait) {
-            // ENHANCED PORTRAIT MODE: Increase distance more aggressively for portrait
-            // The narrower the aspect ratio (more extreme portrait), the more we pull back
-            // Scale from 0.5 (very narrow portrait) to 0.9 (almost square)
-            //const portraitFactor = Math.max(0.5, Math.min(0.9, currentAspect));
-            //aspectFactor = 2.0 * portraitFactor; // Double the base distance for extreme portrait
             aspectFactor = 1.5;
             this.log(`Portrait mode detected - setting camera factor: ${aspectFactor}`);
-        } else if (currentAspect > baseAspect) {
-            // Wide landscape - can slightly reduce distance
-            //aspectFactor = 1.0 - (0.1 * (currentAspect - baseAspect) / baseAspect);
-            //aspectFactor = Math.max(aspectFactor, 0.9); // Don't go below 0.9
-            aspectFactor = 1.0;
         } else {
             // Normal landscape - use base distance
             aspectFactor = 1.0;
@@ -306,14 +296,7 @@ class MobileControls {
         // Set the new camera distance
         window.cameraDistance = baseDistance * aspectFactor;
         
-        /*
-        // For extreme portrait mode, also adjust vertical camera angle to see more of the scene
-        if (isPortrait && currentAspect < 0.7) {
-            // Adjust vertical camera angle to look more from above in extreme portrait
-            window.cameraAngleVertical = Math.PI/8; // Look more downward
-        }
-        */
-        
+
         this.log(`Adjusted camera distance to ${window.cameraDistance} (aspect: ${currentAspect}, portrait: ${isPortrait})`);
         
         // Maintain pixel ratio setting
