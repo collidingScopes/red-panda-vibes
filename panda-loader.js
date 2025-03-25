@@ -115,7 +115,7 @@ function createRedPandaPlayer() {
     const params = getUrlParameters();
 
     // Determine which model to load
-    const modelUrl = params.avatarUrl || 'assets/panda3DModel7.glb';
+    const modelUrl = params.avatarUrl || 'assets/panda3DModel8.glb';
     
     // Log which model is being loaded
     console.log(`Loading 3D model: ${modelUrl}`);
