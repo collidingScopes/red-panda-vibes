@@ -10,9 +10,9 @@ class EnemyManager {
         // Enemy settings
         this.COUNT = 15; // Number of enemies in the world
         this.DETECTION_RADIUS = 25; // How far enemies can see the player
-        this.SPEED_WANDER = gameState.speed*0.6; // Speed when wandering randomly
-        this.SPEED_CHASE = gameState.speed*0.75; // Speed when chasing the player
-        this.KILL_DISTANCE = 1.5; // How close an enemy needs to be to catch the player
+        this.SPEED_WANDER = gameState.speed*0.55; // Speed when wandering randomly
+        this.SPEED_CHASE = gameState.speed*0.7; // Speed when chasing the player
+        this.KILL_DISTANCE = 1.4; // How close an enemy needs to be to catch the player
         
         // Add kill counter property
         this.killCount = 0;
@@ -25,7 +25,7 @@ class EnemyManager {
         this.targetVector = new THREE.Vector3();
 
         // Add these new properties for smooth movement
-        this.rotationSmoothness = 0.1; // Lower values = smoother rotation (0.05 - 0.2 is good)
+        this.rotationSmoothness = 0.9; // Lower values = smoother rotation (0.05 - 0.2 is good)
         this.minMovementThreshold = 0.01; // Minimum movement before rotating
         
         // Create game over screen (hidden initially)
@@ -48,7 +48,7 @@ class EnemyManager {
         let x, z, distanceFromStart;
         do {
             const angle = Math.random() * Math.PI * 2;
-            const distance = Math.random() * 70 + 30; // Min 30 units from center
+            const distance = Math.random() * 70 + 40; // Minimum 40 units from center
             x = Math.cos(angle) * distance;
             z = Math.sin(angle) * distance;
             
@@ -307,12 +307,23 @@ class EnemyManager {
         this.checkPlayerCaught();
     }
     
-    // Update a single enemy
     updateEnemy(enemy, deltaTime) {
         const userData = enemy.userData;
         
         // Distance to player
         const distanceToPlayer = enemy.position.distanceTo(this.player.position);
+        
+        // Check if we're currently in a rotation transition for wandering
+        if (userData.state === 'wander' && userData.isRotating) {
+            // Handle rotation transition
+            userData.rotationTimer += deltaTime;
+            if (userData.rotationTimer >= userData.rotationDuration) {
+                // Rotation complete, resume movement
+                userData.isRotating = false;
+            }
+            // Skip the rest of the update while rotating
+            return;
+        }
         
         // Update enemy state based on player proximity and invisibility status
         if (distanceToPlayer < this.DETECTION_RADIUS && !this.playerIsInvisible) {
@@ -332,6 +343,9 @@ class EnemyManager {
                 if (distanceToTarget < 2) {
                     userData.state = 'wander';
                     userData.wanderTimer = 0; // Reset wander timer
+                    
+                    // Set initial wander direction
+                    this.setNewWanderDirection(enemy);
                 }
             } else {
                 userData.state = 'wander';
@@ -340,35 +354,18 @@ class EnemyManager {
                 if (userData.wanderTimer >= userData.wanderInterval) {
                     userData.wanderTimer = 0;
                     
-                    // Generate new random point near current position
-                    const wanderRadius = 5 + Math.random() * 15; // Variable radius between 5-10
-                    
-                    // Choose a new direction that's not too different from current direction
-                    // This prevents drastic 180° turns that cause the spasming
-                    let angle;
-                    
-                    if (userData.lastWanderAngle !== undefined) {
-                        // Choose a new angle that's within 90 degrees of previous angle
-                        angle = userData.lastWanderAngle + (Math.random() * Math.PI/2 - Math.PI/4);
-                    } else {
-                        // First wander, choose completely random angle
-                        angle = Math.random() * Math.PI * 2;
-                    }
-                    
-                    // Save this angle for next time
-                    userData.lastWanderAngle = angle;
-                    
-                    const newX = enemy.position.x + Math.cos(angle) * wanderRadius;
-                    const newZ = enemy.position.z + Math.sin(angle) * wanderRadius;
-                    const terrainHeight = this.getTerrainHeight(newX, newZ);
-                    
-                    userData.targetPoint.set(newX, terrainHeight + 1.2, newZ);
+                    // Set new wander direction
+                    this.setNewWanderDirection(enemy);
                     
                     // Add slight variation to wander interval
-                    userData.wanderInterval = 3 + Math.random() * 2;
+                    userData.wanderInterval = 5 + Math.random() * 5;
+                    
+                    // Skip the rest of the update to prevent movement in this frame
+                    return;
                 }
             }
             
+            // Copy the target point for movement calculation
             this.targetVector.copy(userData.targetPoint);
         }
         
@@ -386,25 +383,54 @@ class EnemyManager {
         const terrainHeight = this.getTerrainHeight(enemy.position.x, enemy.position.z);
         enemy.position.y = terrainHeight + 1.2; // Hover above terrain
         
-        // Rotate enemy to face direction of movement (with smoothing)
-        if (userData.velocity.length() > this.minMovementThreshold) {
-            // Store the current rotation as a quaternion if it doesn't exist
-            if (!userData.currentRotation) {
-                userData.currentRotation = new THREE.Quaternion().copy(enemy.quaternion);
+        // Handle rotation based on state
+        if (userData.state === 'chase') {
+            // For chase state, use smooth rotation (keeping original behavior)
+            if (userData.velocity.length() > this.minMovementThreshold) {
+                // Store the current rotation as a quaternion if it doesn't exist
+                if (!userData.currentRotation) {
+                    userData.currentRotation = new THREE.Quaternion().copy(enemy.quaternion);
+                }
+                
+                // Create a target rotation by looking at where we're moving
+                const targetPosition = enemy.position.clone().add(userData.velocity.clone().normalize());
+                const tempEnemy = enemy.clone();
+                tempEnemy.lookAt(targetPosition);
+                const targetRotation = new THREE.Quaternion().copy(tempEnemy.quaternion);
+                
+                // Smoothly interpolate between current and target rotation
+                userData.currentRotation.slerp(targetRotation, this.rotationSmoothness);
+                
+                // Apply the smooth rotation
+                enemy.quaternion.copy(userData.currentRotation);
             }
-            
-            // Create a target rotation by looking at where we're moving
-            const targetPosition = enemy.position.clone().add(userData.velocity.clone().normalize());
-            const tempEnemy = enemy.clone();
-            tempEnemy.lookAt(targetPosition);
-            const targetRotation = new THREE.Quaternion().copy(tempEnemy.quaternion);
-            
-            // Smoothly interpolate between current and target rotation
-            userData.currentRotation.slerp(targetRotation, this.rotationSmoothness);
-            
-            // Apply the smooth rotation
-            enemy.quaternion.copy(userData.currentRotation);
         }
+        // For wander state, rotation is handled in setNewWanderDirection
+    }
+    
+    // Add this new helper method to set a new wander direction
+    setNewWanderDirection(enemy) {
+        const userData = enemy.userData;
+        
+        // Generate new random point for wandering
+        const wanderRadius = 20 + Math.random() * 50;
+        const angle = Math.random() * Math.PI * 2; // Completely random angle
+        
+        const newX = enemy.position.x + Math.cos(angle) * wanderRadius;
+        const newZ = enemy.position.z + Math.sin(angle) * wanderRadius;
+        const terrainHeight = this.getTerrainHeight(newX, newZ);
+        
+        userData.targetPoint.set(newX, terrainHeight + 1.2, newZ);
+        
+        // Set rotation state
+        userData.isRotating = true;
+        userData.rotationTimer = 0;
+        userData.rotationDuration = 0.3; // Time to complete rotation (in seconds)
+        
+        // Immediately face the new direction
+        const direction = new THREE.Vector3(newX - enemy.position.x, 0, newZ - enemy.position.z).normalize();
+        const targetPosition = enemy.position.clone().add(direction);
+        enemy.lookAt(targetPosition);
     }
 
     // Check if any enemy has caught the player
