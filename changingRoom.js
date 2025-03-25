@@ -340,6 +340,50 @@ class ChangingRoom {
             this.player.add(modelClone);
             this.currentPlayerModel = modelClone;
             
+            // Check if invisibility is active and apply transparency to new model
+            if (window.powerupSystem && 
+                window.powerupSystem.activeEffects && 
+                window.powerupSystem.activeEffects.invisibility &&
+                window.powerupSystem.activeEffects.invisibility.active) {
+                
+                // Clear stored materials since the model changed
+                window.powerupSystem.activeEffects.invisibility.originalMaterials = [];
+                
+                // Apply transparency to new model (reuse the applyPlayerTransparency method)
+                modelClone.traverse((node) => {
+                    if (node.isMesh && node.material) {
+                        // Handle arrays of materials
+                        if (Array.isArray(node.material)) {
+                            node.material.forEach(material => {
+                                // Store original properties
+                                window.powerupSystem.activeEffects.invisibility.originalMaterials.push({
+                                    material: material,
+                                    transparent: material.transparent,
+                                    opacity: material.opacity
+                                });
+                                
+                                // Apply transparency
+                                material.transparent = true;
+                                material.opacity = 0.4; // 40% opacity
+                                material.needsUpdate = true;
+                            });
+                        } else {
+                            // Store original properties
+                            window.powerupSystem.activeEffects.invisibility.originalMaterials.push({
+                                material: node.material,
+                                transparent: node.material.transparent,
+                                opacity: node.material.opacity
+                            });
+                            
+                            // Apply transparency
+                            node.material.transparent = true;
+                            node.material.opacity = 0.4; // 40% opacity
+                            node.material.needsUpdate = true;
+                        }
+                    }
+                });
+            }
+            
             // Create and display the notification div
             const notification = document.createElement('div');
             notification.className = 'level-warning';

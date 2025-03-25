@@ -53,7 +53,8 @@ class PowerupSystem {
             invisibility: {
                 active: false,
                 timeRemaining: 0,
-                progressBar: null
+                progressBar: null,
+                originalMaterials: [], // Store original material properties
             },
         };
         
@@ -432,7 +433,8 @@ class PowerupSystem {
                 if (window.gameState && window.gameState.enemyManager) {
                     window.gameState.enemyManager.playerIsInvisible = false;
                 }
-                
+
+                this.restorePlayerMaterials();
                 this.activeEffects.invisibility.active = false;
                 this.activeEffects.invisibility.timeRemaining = 0;
                 
@@ -526,6 +528,7 @@ class PowerupSystem {
             if (window.gameState && window.gameState.enemyManager) {
                 window.gameState.enemyManager.playerIsInvisible = false;
             }
+            this.restorePlayerMaterials();
             this.activeEffects.invisibility.active = false;
             this.activeEffects.invisibility.timeRemaining = 0;
             this.updateInvisibilityUI();
@@ -598,10 +601,67 @@ class PowerupSystem {
             window.gameState.enemyManager.playerIsInvisible = true;
         }
         
+        // Apply transparency to player model
+        this.applyPlayerTransparency(0.4); // 40% opacity
+        
         // Show UI
         this.updateInvisibilityUI();
         
         console.log(`Invisibility activated! (${config.duration} seconds)`);
+    }
+
+    // Add method to apply transparency to the player model
+    applyPlayerTransparency(opacity) {
+        if (!this.player) return;
+        
+        // Store original materials and apply transparency
+        this.activeEffects.invisibility.originalMaterials = [];
+        
+        this.player.traverse((node) => {
+            if (node.isMesh && node.material) {
+                // Handle arrays of materials
+                if (Array.isArray(node.material)) {
+                    node.material.forEach(material => {
+                        // Store original properties
+                        this.activeEffects.invisibility.originalMaterials.push({
+                            material: material,
+                            transparent: material.transparent,
+                            opacity: material.opacity
+                        });
+                        
+                        // Apply transparency
+                        material.transparent = true;
+                        material.opacity = opacity;
+                        material.needsUpdate = true;
+                    });
+                } else {
+                    // Store original properties
+                    this.activeEffects.invisibility.originalMaterials.push({
+                        material: node.material,
+                        transparent: node.material.transparent,
+                        opacity: node.material.opacity
+                    });
+                    
+                    // Apply transparency
+                    node.material.transparent = true;
+                    node.material.opacity = opacity;
+                    node.material.needsUpdate = true;
+                }
+            }
+        });
+    }
+
+    // Add method to restore original material properties
+    restorePlayerMaterials() {
+        // Restore original material properties
+        this.activeEffects.invisibility.originalMaterials.forEach(item => {
+            item.material.transparent = item.transparent;
+            item.material.opacity = item.opacity;
+            item.material.needsUpdate = true;
+        });
+        
+        // Clear the stored materials
+        this.activeEffects.invisibility.originalMaterials = [];
     }
     
     // Add method to update invisibility UI
