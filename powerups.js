@@ -15,7 +15,7 @@ class PowerupSystem {
             optimizationEnabled: true // Toggle to enable/disable optimization
         };
 
-        this.collectionRadius = 3.5; // Distance to collect
+        this.collectionRadius = 4.0; // Distance to collect
 
         // Power-up configuration
         this.config = {

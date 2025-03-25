@@ -94,7 +94,7 @@ class EnemyManager {
             
             // Apply noise to make it blobby (this is a simple way to create organic feel)
             const noise = Math.sin(vertex.x * 4) * 0.2 + 
-                        Math.sin(vertex.y * 5) * 0.2 + 
+                        //Math.sin(vertex.y * 5) * 0.2 + 
                         Math.sin(vertex.z * 3) * 0.2;
             
             vertex.multiplyScalar(1 + noise);
@@ -103,7 +103,7 @@ class EnemyManager {
         }
         
         // Update normals for proper lighting
-        blobGeometry.computeVertexNormals();
+        //blobGeometry.computeVertexNormals();
         
         // Create dark, oily material with slight sheen
         const blobMaterial = new THREE.MeshStandardMaterial({
@@ -405,47 +405,8 @@ class EnemyManager {
             // Apply the smooth rotation
             enemy.quaternion.copy(userData.currentRotation);
         }
-        
-        // Animate the enemy based on state (pulsing/morphing)
-        this.animateEnemy(enemy, deltaTime, userData.state);
     }
-    
-    // Animate enemy (pulse, grow when chasing, etc)
-    animateEnemy(enemy, deltaTime, state) {
-        // Pulse effect
-        const pulseSpeed = (state === 'chase') ? 10 : 4;
-        const pulseAmount = (state === 'chase') ? 0.2 : 0.1;
-        const time = performance.now() * 0.001; 
-        const pulse = Math.sin(time * pulseSpeed) * pulseAmount;
-        
-        // Base scale from initial scale
-        const baseScale = enemy.userData.initialScale;
-        
-        // Grow slightly when chasing
-        const chaseBonus = (state === 'chase') ? 0.2 : 0;
-        
-        // Apply scale
-        const newScale = baseScale + pulse + chaseBonus;
-        enemy.scale.set(newScale, newScale, newScale);
-        
-        // If chasing, make bubbles pulse more dramatically
-        if (state === 'chase') {
-            // Increase emissive intensity of all materials
-            enemy.traverse((child) => {
-                if (child.material) {
-                    child.material.emissiveIntensity = 0.3 + Math.abs(pulse);
-                }
-            });
-        } else {
-            // Reset emissive intensity when not chasing
-            enemy.traverse((child) => {
-                if (child.material) {
-                    child.material.emissiveIntensity = 0.2;
-                }
-            });
-        }
-    }
-    
+
     // Check if any enemy has caught the player
     checkPlayerCaught() {
         // Skip enemy collision check if we're on level 1 (no enemies) OR if the player is invisible
