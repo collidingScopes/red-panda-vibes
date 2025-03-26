@@ -46,10 +46,8 @@ class Jetpack {
         this.particles = null;
         this.particleSystem = null;
         
-        // Sounds
-        this.jetpackSound = null;
-        this.pickupSound = null;
-        this.outOfFuelSound = null;
+        // Sound controller
+        this.jetpackSoundController = null;
     }
     
     initialize() {
@@ -64,13 +62,6 @@ class Jetpack {
         this.createJetpack();
         this.createFuelBar();
         this.createParticleSystem();
-        
-        if (window.soundSystem && window.soundSystem.initialized) {
-            this.jetpackSound = window.soundSystem.createSound('jetpack', './sounds/jetpack.mp3', 0.5, true);
-            this.pickupSound = window.soundSystem.createSound('jetpack-pickup', './sounds/pickup.mp3', 0.7);
-            // Create a sound for when fuel runs out
-            this.outOfFuelSound = window.soundSystem.createSound('jetpack-empty', './sounds/powerdown.mp3', 0.6);
-        }
         
         // Place the jetpack with a short delay to ensure terrain is initialized
         setTimeout(() => {
@@ -105,9 +96,7 @@ class Jetpack {
         this.isCollected = false;
         
         // Stop any sounds
-        if (this.jetpackSound && this.jetpackSound.isPlaying) {
-            this.jetpackSound.stop();
-        }
+        this.stopJetpackSound();
         
         // Hide UI elements
         if (this.fuelBarContainer) {
@@ -248,9 +237,6 @@ class Jetpack {
         });
 
         this.object = jetpackGroup;
-        
-        // Set an initial position that is visible
-        //this.object.position.set(10, 10, 10);
         
         this.scene.add(this.object);
         this.floatTime = Math.random() * Math.PI * 2;
@@ -470,9 +456,8 @@ class Jetpack {
                         }
                     }
                     
-                    if (this.jetpackSound && !this.jetpackSound.isPlaying) {
-                        this.jetpackSound.play();
-                    }
+                    // Play jetpack sound if it's not already playing
+                    this.playJetpackSound();
                     
                     // Check if fuel just ran out
                     if (this.currentFuel === 0) {
@@ -486,9 +471,8 @@ class Jetpack {
                         this.particleSystem.visible = false;
                     }
                     
-                    if (this.jetpackSound && this.jetpackSound.isPlaying) {
-                        this.jetpackSound.stop();
-                    }
+                    // Stop jetpack sound
+                    this.stopJetpackSound();
                 }
             } else {
                 this.isActive = false;
@@ -498,9 +482,8 @@ class Jetpack {
                     this.particleSystem.visible = false;
                 }
                 
-                if (this.jetpackSound && this.jetpackSound.isPlaying) {
-                    this.jetpackSound.stop();
-                }
+                // Stop jetpack sound
+                this.stopJetpackSound();
             }
             
             this.updateFuelBar();
@@ -535,19 +518,36 @@ class Jetpack {
         this.fuelBarContainer.style.display = 'block';
         this.fuelBarContainer.label.style.display = 'block';
         
-        if (this.pickupSound) {
-            this.pickupSound.play();
+        // Play pickup sound
+        if (window.playJetpackPickupSound) {
+            window.playJetpackPickupSound();
         }
         
         this.showJetpackTutorial();
+    }
+    
+    // Play jetpack sound
+    playJetpackSound() {
+        // If we don't have a sound controller and the sound function exists, create one
+        if (!this.jetpackSoundController && window.playJetpackSound) {
+            this.jetpackSoundController = window.playJetpackSound();
+        }
+    }
+    
+    // Stop jetpack sound
+    stopJetpackSound() {
+        if (this.jetpackSoundController) {
+            this.jetpackSoundController.stop();
+            this.jetpackSoundController = null;
+        }
     }
     
     handleFuelDepletion() {
         console.log("Jetpack fuel depleted!");
         
         // Play out of fuel sound
-        if (this.outOfFuelSound) {
-            this.outOfFuelSound.play();
+        if (window.playJetpackEmptySound) {
+            window.playJetpackEmptySound();
         }
         
         // Show a notification to the player
@@ -565,9 +565,7 @@ class Jetpack {
         this.isCollected = false;
         
         // Stop sounds
-        if (this.jetpackSound && this.jetpackSound.isPlaying) {
-            this.jetpackSound.stop();
-        }
+        this.stopJetpackSound();
         
         // Hide particles
         if (this.particleSystem) {
@@ -610,7 +608,7 @@ class Jetpack {
     showJetpackTutorial() {
         const tutorial = document.createElement('div');
         tutorial.className = 'level-warning';
-        if(isMobile){
+        if(typeof isMobile !== 'undefined' && isMobile){
             tutorial.innerHTML = 'Jetpack Collected! Tap to activate. Watch your fuel gauge!';
         } else {
             tutorial.innerHTML = 'Jetpack Collected! Press SPACE to activate. Watch your fuel gauge!';
@@ -649,9 +647,7 @@ class Jetpack {
         this.currentFuel = this.maxFuel;
         
         // Stop sounds
-        if (this.jetpackSound && this.jetpackSound.isPlaying) {
-            this.jetpackSound.stop();
-        }
+        this.stopJetpackSound();
         
         // Hide particles
         if (this.particleSystem) {

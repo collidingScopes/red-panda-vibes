@@ -6,13 +6,14 @@ class ChangingRoom {
         this.changingRoomMesh = null;
         this.isPlayerInside = false;
         this.lastModelChange = 0;
-        this.cooldownTime = 2000;
+        this.cooldownTime = 1800;
         this.modelOptions = [
             { name: "Red Panda", path: pandaModelLocation },
             { name: "Bernie", path: 'assets/bernie4.glb' },
             { name: "Levels", path: 'assets/levels3.glb' },
             { name: "Pixar", path: 'assets/pixar4.glb' },
             { name: "Judge Judy", path: 'assets/judgeJudy.glb' },
+            //{ name: "Sloth", path: 'assets/sloth.glb' },
         ];
         this.currentModelIndex = 0;
         this.preloadedModels = {};

@@ -1,5 +1,7 @@
 // Enhanced Sound System for Red Panda Vibes
 // Using Web Audio API for reliable sound effects and background music
+let musicLevel = 0.7;
+let soundEffectLevel = 0.9; 
 
 class SoundSystem {
     constructor() {
@@ -42,12 +44,12 @@ class SoundSystem {
             
             // Create master volume control
             this.masterGain = this.audioContext.createGain();
-            this.masterGain.gain.value = 0.9;
+            this.masterGain.gain.value = soundEffectLevel;
             this.masterGain.connect(this.audioContext.destination);
             
             // Create separate gain node for music
             this.musicGain = this.audioContext.createGain();
-            this.musicGain.gain.value = 0.8; // Start with lower volume for music
+            this.musicGain.gain.value = musicLevel; // Start with lower volume for music
             this.musicGain.connect(this.masterGain);
             
             this.initialized = true;
@@ -242,7 +244,7 @@ class SoundSystem {
         
         // Update master volume
         if (this.masterGain) {
-            this.masterGain.gain.value = this.muted ? 0 : 0.9;
+            this.masterGain.gain.value = this.muted ? 0 : soundEffectLevel;
         }
         
         // Update UI
@@ -299,7 +301,7 @@ class SoundSystem {
             
             // Restore previous music volume
             if (this.musicGain) {
-                const targetVolume = this.previousMusicGainValue || 0.8; // Default to 0.5 if no previous value
+                const targetVolume = this.previousMusicGainValue || musicLevel; // Default to 0.5 if no previous value
                 
                 // Smoothly transition back to previous volume
                 this.musicGain.gain.setTargetAtTime(targetVolume, this.audioContext.currentTime, 0.1);
@@ -534,6 +536,194 @@ class SoundSystem {
         }
     }
 
+    // === JETPACK SOUNDS ===
+    
+    // Play jetpack thrust sound - continuous sound while jetpack is active
+    playJetpackSound() {
+        if (!this.initialized || this.muted) return;
+        
+        // Create white noise for the base of the jetpack sound
+        const noiseDuration = 0.2;  // Short duration that will loop
+        const noiseBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * noiseDuration, this.audioContext.sampleRate);
+        const noiseData = noiseBuffer.getChannelData(0);
+        
+        // Fill with white noise
+        for (let i = 0; i < noiseBuffer.length; i++) {
+            noiseData[i] = Math.random() * 2 - 1;
+        }
+        
+        // Create source and set to loop
+        const noiseSource = this.audioContext.createBufferSource();
+        noiseSource.buffer = noiseBuffer;
+        noiseSource.loop = true;
+        
+        // Create bandpass filter for "jet" sound
+        const filter = this.audioContext.createBiquadFilter();
+        filter.type = "bandpass";
+        filter.frequency.value = 900;  // Center frequency
+        filter.Q.value = 0.5;  // Width of the band
+        
+        // Create lowpass filter for "rumble"
+        const lowpass = this.audioContext.createBiquadFilter();
+        lowpass.type = "lowpass";
+        lowpass.frequency.value = 600;
+        
+        // Create gain node for volume control
+        const gainNode = this.audioContext.createGain();
+        gainNode.gain.value = 0.65;  // Not too loud
+        
+        // Add some modulation for a more dynamic sound
+        const lfo = this.audioContext.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 8;  // 8 Hz modulation
+        
+        const lfoGain = this.audioContext.createGain();
+        lfoGain.gain.value = 100;  // Amount of frequency modulation
+        
+        lfo.connect(lfoGain);
+        lfoGain.connect(filter.frequency);
+        lfo.start();
+        
+        // Connect everything
+        noiseSource.connect(filter);
+        filter.connect(lowpass);
+        lowpass.connect(gainNode);
+        gainNode.connect(this.masterGain);
+        
+        // Start the sound
+        noiseSource.start();
+        
+        // Return controller object to allow stopping the sound
+        return {
+            isPlaying: true,
+            stop: () => {
+                if (noiseSource) {
+                    // Fade out to avoid clicks
+                    gainNode.gain.setTargetAtTime(0, this.audioContext.currentTime, 0.1);
+                    
+                    // Stop after fade
+                    setTimeout(() => {
+                        try {
+                            noiseSource.stop();
+                            lfo.stop();
+                        } catch (e) {
+                            // Ignore errors if already stopped
+                        }
+                    }, 200);
+                }
+                this.isPlaying = false;
+            }
+        };
+    }
+    
+    // Play jetpack pickup sound
+    playJetpackPickupSound() {
+        if (!this.initialized || this.muted) return;
+        
+        // Playful ascending arpeggio
+        const notes = [523.25, 659.25, 783.99, 1046.50, 1318.51]; // C5, E5, G5, C6, E6
+        
+        notes.forEach((note, index) => {
+            // Higher volume than regular pickups
+            this.playTone(note, 0.15, 'sine', 0.4, index * 0.08);
+        });
+        
+        // Add a "whoosh" sound
+        setTimeout(() => {
+            this.playFilteredNoise(0.3, 0.2);
+        }, 400);
+    }
+    
+    // Play jetpack fuel empty sound
+    playJetpackEmptySound() {
+        if (!this.initialized || this.muted) return;
+        
+        // Descending pitchbend for power down effect
+        const startFreq = 600;
+        const endFreq = 200;
+        const duration = 0.8;
+        
+        try {
+            const oscillator = this.audioContext.createOscillator();
+            const gainNode = this.audioContext.createGain();
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(startFreq, this.audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(
+                endFreq, 
+                this.audioContext.currentTime + duration
+            );
+            
+            gainNode.gain.setValueAtTime(0.3, this.audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(
+                0.001, 
+                this.audioContext.currentTime + duration
+            );
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            oscillator.start();
+            oscillator.stop(this.audioContext.currentTime + duration);
+            
+            // Add some noise for texture
+            setTimeout(() => {
+                this.playNoise(0.3, 0.1);
+            }, 200);
+            
+        } catch (error) {
+            console.error("Failed to play jetpack empty sound:", error);
+        }
+    }
+    
+    // Helper for filtered noise sounds (useful for whooshes)
+    playFilteredNoise(duration, volume = 0.2) {
+        if (!this.initialized || this.muted) return;
+        
+        try {
+            // Create noise buffer
+            const bufferSize = this.audioContext.sampleRate * duration;
+            const buffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                // Apply envelope to noise
+                const position = i / bufferSize;
+                const envelope = position < 0.3 ? 
+                    position / 0.3 : // Attack
+                    1 - ((position - 0.3) / 0.7); // Release
+                
+                data[i] = (Math.random() * 2 - 1) * envelope;
+            }
+            
+            // Create source
+            const noise = this.audioContext.createBufferSource();
+            noise.buffer = buffer;
+            
+            // Create bandpass filter
+            const filter = this.audioContext.createBiquadFilter();
+            filter.type = "bandpass";
+            filter.frequency.value = 1500;
+            filter.Q.value = 1.0;
+            
+            // Create gain node
+            const gainNode = this.audioContext.createGain();
+            gainNode.gain.value = volume;
+            
+            // Connect nodes
+            noise.connect(filter);
+            filter.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            // Play sound
+            noise.start();
+            
+            return noise;
+        } catch (error) {
+            console.error("Failed to play filtered noise:", error);
+            return null;
+        }
+    }
 }
 
 // Initialize sound system when the document is ready
@@ -629,4 +819,18 @@ window.playEnemyCrushSound = function() {
 
 window.playWaterSplashSound = function() {
     if (soundSystem) soundSystem.playWaterSplashSound();
+};
+
+// === JETPACK SOUND FUNCTIONS ===
+window.playJetpackSound = function() {
+    if (soundSystem) return soundSystem.playJetpackSound();
+    return null;
+};
+
+window.playJetpackPickupSound = function() {
+    if (soundSystem) soundSystem.playJetpackPickupSound();
+};
+
+window.playJetpackEmptySound = function() {
+    if (soundSystem) soundSystem.playJetpackEmptySound();
 };
