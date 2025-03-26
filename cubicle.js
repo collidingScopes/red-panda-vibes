@@ -9,8 +9,38 @@ class Cubicle {
         this.object = null;
         this.cooldown = false;
         this.cooldownTime = 2000; // 2 seconds cooldown between interactions
-        this.detectionRadius = 6; // How close player needs to be to interact
+        this.detectionRadius = 3; // Smaller radius - how close player needs to be to interact
+        this.exitCooldownTime = 5000; // 5 seconds cooldown after exiting the computer screen
         this.floatHeight = 1; // Lower float height since it's a workplace object
+        
+        // Computer screen animation properties
+        this.computerScreenContainer = null;
+        this.canvas = null;
+        this.ctx = null;
+        this.animationActive = false;
+        this.animationId = null;
+        this.previousGameAnimationId = null;
+        this.backgroundImage = null;
+        
+        this.logo = {
+            x: 100,
+            y: 100,
+            width: 280,
+            height: 100,
+            dx: 2,
+            dy: 2,
+            color: '#00FFFF' // Initial color - cyan
+        };
+        
+        this.colors = [
+            '#00FFFF', // cyan
+            '#FF00FF', // magenta
+            '#FFFF00', // yellow
+            '#00FF00', // lime
+            '#FF3399', // pink
+            '#33CCFF', // light blue
+            '#FF6600'  // orange
+        ];
     }
 
     async createCubicleModel() {
@@ -234,6 +264,26 @@ class Cubicle {
         console.log("Initializing cubicle...");
         await this.createCubicleModel();
         this.placeRandomly();
+        this.initializeComputerScreenAnimation();
+        
+        // Load the background image
+        this.loadBackgroundImage();
+    }
+    
+    loadBackgroundImage() {
+        // Create an Image object to load the Windows XP background
+        this.backgroundImage = new Image();
+        this.backgroundImage.src = 'assets/windowsXP.jpg';
+        
+        // Log a message when image is loaded successfully
+        this.backgroundImage.onload = () => {
+            console.log("Windows XP background image loaded successfully");
+        };
+        
+        // Log an error if the image fails to load
+        this.backgroundImage.onerror = (err) => {
+            console.error("Error loading Windows XP background image:", err);
+        };
     }
     
     placeRandomly() {
@@ -246,7 +296,7 @@ class Cubicle {
         
         // Find a random position on the map, not too close to the origin
         const angle = Math.random() * Math.PI * 2;
-        const distance = 20 + Math.random() * 40; // Between 20 and 60 units from center
+        const distance = 30 + Math.random() * 60; // Between 20 and 60 units from center
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
@@ -305,10 +355,310 @@ class Cubicle {
         }
     }
     
+    // Initialize the computer screen animation components
+    initializeComputerScreenAnimation() {
+        // Create the canvas container
+        this.computerScreenContainer = document.createElement('div');
+        this.computerScreenContainer.id = 'computer-screen-container';
+        this.computerScreenContainer.style.position = 'fixed';
+        this.computerScreenContainer.style.top = '0';
+        this.computerScreenContainer.style.left = '0';
+        this.computerScreenContainer.style.width = '100%';
+        this.computerScreenContainer.style.height = '100%';
+        this.computerScreenContainer.style.backgroundColor = 'black';
+        this.computerScreenContainer.style.zIndex = '1000';
+        this.computerScreenContainer.style.display = 'none';
+
+        // Create the canvas for the animation
+        this.canvas = document.createElement('canvas');
+        this.canvas.id = 'computer-screen';
+        this.canvas.style.width = '100%';
+        this.canvas.style.height = '100%';
+        this.computerScreenContainer.appendChild(this.canvas);
+
+        // Create a Windows 95/98 style dialog header
+        const dialogHeader = document.createElement('div');
+        dialogHeader.style.position = 'fixed';
+        dialogHeader.style.top = '20px';
+        dialogHeader.style.right = '40px';
+        dialogHeader.style.width = '120px';
+        dialogHeader.style.height = '22px';
+        dialogHeader.style.backgroundColor = '#000080'; // Windows 95/98 blue
+        dialogHeader.style.display = 'flex';
+        dialogHeader.style.justifyContent = 'space-between';
+        dialogHeader.style.alignItems = 'center';
+        dialogHeader.style.padding = '20px';
+        dialogHeader.style.zIndex = '1001';
+        dialogHeader.style.borderTop = '1px solid #DFDFDF';
+        dialogHeader.style.borderLeft = '1px solid #DFDFDF';
+        dialogHeader.style.borderRight = '1px solid #000000';
+        dialogHeader.style.borderBottom = '1px solid #000000';
+        
+        // Add "X" text
+        const headerText = document.createElement('span');
+        headerText.textContent = 'Return to game >>';
+        headerText.style.color = 'white';
+        headerText.style.fontFamily = 'Courier New, sans-serif';
+        headerText.style.fontSize = '13px';
+        dialogHeader.appendChild(headerText);
+        
+        // Create the exit button (X button)
+        const exitButton = document.createElement('button');
+        exitButton.id = 'exit-computer-button';
+        exitButton.textContent = 'X';
+        exitButton.style.width = '16px';
+        exitButton.style.height = '16px';
+        exitButton.style.display = 'flex';
+        exitButton.style.justifyContent = 'center';
+        exitButton.style.alignItems = 'center';
+        exitButton.style.backgroundColor = '#C0C0C0'; // Windows 95/98 gray
+        exitButton.style.color = 'black';
+        exitButton.style.border = '1px solid #FFFFFF';
+        exitButton.style.borderRight = '1px solid #848484';
+        exitButton.style.borderBottom = '1px solid #848484';
+        exitButton.style.cursor = 'pointer';
+        exitButton.style.fontSize = '16px';
+        exitButton.style.fontFamily = 'Courier New, sans-serif';
+        exitButton.style.fontWeight = 'bold';
+        exitButton.style.padding = '0';
+        exitButton.style.zIndex = '1001';
+        
+        // Add the click event
+        const self = this;
+        exitButton.addEventListener('click', function() {
+            self.exitComputerScreen();
+        });
+        
+        dialogHeader.appendChild(exitButton);
+        this.computerScreenContainer.appendChild(dialogHeader);
+
+        // Add to document
+        document.body.appendChild(this.computerScreenContainer);
+
+        // Get the drawing context
+        this.ctx = this.canvas.getContext('2d');
+        
+        // Add resize listener
+        window.addEventListener('resize', this.resizeCanvas.bind(this));
+    }
+    
+    // Start the computer screen animation
+    startComputerScreenAnimation() {
+        // Make the container visible
+        this.computerScreenContainer.style.display = 'block';
+        
+        // Resize canvas to match window
+        this.resizeCanvas();
+        
+        // Set animation as active
+        this.animationActive = true;
+        
+        // Start the animation loop
+        this.animateComputerScreen();
+    }
+    
+    // Animate the computer screen
+    animateComputerScreen() {
+        if (!this.animationActive) return;
+        
+        // Clear the canvas
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        
+        // Draw the Windows XP background image instead of black fill
+        if (this.backgroundImage && this.backgroundImage.complete) {
+            // Draw the image to fill the entire canvas
+            this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            // Fallback to black if image isn't loaded
+            this.ctx.fillStyle = 'black';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
+        
+        // Update logo position
+        this.logo.x += this.logo.dx;
+        this.logo.y += this.logo.dy;
+        
+        // Check for collision with edges
+        let collision = false;
+        if (this.logo.x + this.logo.width > this.canvas.width || this.logo.x < 0) {
+            this.logo.dx = -this.logo.dx;
+            collision = true;
+            
+            // Correct position to prevent sticking to edges
+            if (this.logo.x < 0) {
+                this.logo.x = 0;
+            } else if (this.logo.x + this.logo.width > this.canvas.width) {
+                this.logo.x = this.canvas.width - this.logo.width;
+            }
+        }
+        
+        if (this.logo.y + this.logo.height > this.canvas.height || this.logo.y < 0) {
+            this.logo.dy = -this.logo.dy;
+            collision = true;
+            
+            // Correct position to prevent sticking to edges
+            if (this.logo.y < 0) {
+                this.logo.y = 0;
+            } else if (this.logo.y + this.logo.height > this.canvas.height) {
+                this.logo.y = this.canvas.height - this.logo.height;
+            }
+        }
+        
+        // Change color on collision
+        if (collision) {
+            const currentColorIndex = this.colors.indexOf(this.logo.color);
+            const nextColorIndex = (currentColorIndex + 1) % this.colors.length;
+            this.logo.color = this.colors[nextColorIndex];
+        }
+        
+        // Draw the logo
+        this.ctx.fillStyle = this.logo.color;
+        
+        // Draw the rounded rectangle for logo background
+        this.roundRect(
+            this.ctx, 
+            this.logo.x, 
+            this.logo.y, 
+            this.logo.width, 
+            this.logo.height, 
+            10
+        );
+        
+        // Draw the text
+        this.ctx.fillStyle = 'black';
+        this.ctx.font = 'bold 24px Courier New';
+        this.ctx.textAlign = 'center';
+        this.ctx.textBaseline = 'middle';
+        this.ctx.fillText(
+            "RED PANDA VIBES 🐼",
+            this.logo.x + this.logo.width / 2, 
+            this.logo.y + this.logo.height / 2
+        );
+        
+        // Request next frame
+        const self = this;
+        this.animationId = requestAnimationFrame(function() {
+            self.animateComputerScreen();
+        });
+    }
+    
+    // Helper function to draw rounded rectangles
+    roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
+    // Resize the canvas when window size changes
+    resizeCanvas() {
+        if (!this.canvas) return;
+        
+        // Make canvas match window size for crisp rendering
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+        
+        // Reset logo position to center if it's outside bounds
+        if (this.logo.x + this.logo.width > this.canvas.width || 
+            this.logo.x < 0) {
+            this.logo.x = (this.canvas.width - this.logo.width) / 2;
+        }
+        if (this.logo.y + this.logo.height > this.canvas.height || 
+            this.logo.y < 0) {
+            this.logo.y = (this.canvas.height - this.logo.height) / 2;
+        }
+    }
+    
+    // Exit the computer screen animation
+    exitComputerScreen() {
+        // Hide the container
+        this.computerScreenContainer.style.display = 'none';
+        
+        // Stop the animation
+        this.animationActive = false;
+        
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Resume the game
+        this.resumeGame();
+        
+        // Start the exit cooldown
+        this.startExitCooldown();
+    }
+    
+    startExitCooldown() {
+        // Set cooldown flag
+        this.cooldown = true;
+        
+        // Reset after the exit cooldown period
+        setTimeout(() => {
+            this.cooldown = false;
+            console.log("Cubicle can be activated again");
+        }, this.exitCooldownTime);
+    }
+    
     onPlayerInteraction() {
-        // This function will be implemented later
         console.log("Player touched the cubicle");
-        // For now, just log that the interaction happened
+        
+        // Get reference to the game state
+        const gameState = window.gameState;
+        
+        // Pause the game
+        if (gameState) {
+            // Store the current animation frame ID
+            this.previousGameAnimationId = gameState.animationId;
+            
+            // Cancel the current animation loop
+            if (gameState.animationId) {
+                cancelAnimationFrame(gameState.animationId);
+                gameState.animationId = null;
+            }
+            
+            // Set the game as paused
+            gameState.gamePaused = true;
+            
+            // If sound system exists, pause the music
+            if (window.soundSystem && window.soundSystem.pauseMusic) {
+                window.soundSystem.pauseMusic();
+            }
+        }
+        
+        // Start the computer screen animation
+        this.startComputerScreenAnimation();
+    }
+    
+    resumeGame() {
+        console.log("Resuming game after cubicle interaction");
+        
+        // Get reference to the game state
+        const gameState = window.gameState;
+        
+        if (gameState) {
+            // Unpause the game
+            gameState.gamePaused = false;
+            
+            // Restart the animation loop
+            if (!gameState.animationId) {
+                window.lastTime = performance.now();
+                gameState.animationId = requestAnimationFrame(window.animate);
+            }
+            
+            // If sound system exists, unpause the music
+            if (window.soundSystem && window.soundSystem.unpauseMusic) {
+                window.soundSystem.unpauseMusic();
+            }
+        }
     }
     
     startCooldown() {
@@ -320,6 +670,21 @@ class Cubicle {
     }
 
     destroy() {
+        // Remove resize event listener
+        window.removeEventListener('resize', this.resizeCanvas.bind(this));
+        
+        // Remove the computer screen container if it exists
+        if (this.computerScreenContainer && this.computerScreenContainer.parentNode) {
+            this.computerScreenContainer.parentNode.removeChild(this.computerScreenContainer);
+        }
+        
+        // Cancel any ongoing animation
+        if (this.animationId) {
+            cancelAnimationFrame(this.animationId);
+            this.animationId = null;
+        }
+        
+        // Remove the 3D object from the scene
         if (this.object && this.object.parent) {
             this.scene.remove(this.object);
         }

@@ -47,7 +47,7 @@ class Ipod {
         const ipodGroup = new THREE.Group();
         
         // Scale factor to easily adjust the overall size
-        const scaleFactor = 2;
+        const scaleFactor = 1.8;
 
         // Main body of the iPod - rounded rectangle with beveled edges
         const bodyGeometry = new THREE.BoxGeometry(3 * scaleFactor, 5 * scaleFactor, 0.6 * scaleFactor, 1, 1, 1);
@@ -191,7 +191,7 @@ class Ipod {
         
         // Find a random position on the map, not too close to the origin
         const angle = Math.random() * Math.PI * 2;
-        const distance = 15 + Math.random() * 40; // Between 15 and 55 units from center
+        const distance = 25 + Math.random() * 50; // Between 15 and 55 units from center
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
