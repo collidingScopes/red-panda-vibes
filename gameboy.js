@@ -1,6 +1,10 @@
 // Gameboy Class
 // Creates a low-poly 3D Gameboy Color in the game
 
+// Create Snake game container
+const snakeContainer = document.createElement('div');
+snakeContainer.id = 'snake-game-container';
+
 class Gameboy {
     constructor(scene, player, getTerrainHeight) {
         this.scene = scene;
@@ -36,7 +40,7 @@ class Gameboy {
         const gameboyGroup = new THREE.Group();
         
         // Scale factor to easily adjust the overall size
-        const scaleFactor = 1.6;
+        const scaleFactor = 2;
 
         // Main body of the Gameboy
         const bodyGeometry = new THREE.BoxGeometry(5 * scaleFactor, 8 * scaleFactor, 1 * scaleFactor);
@@ -355,6 +359,37 @@ class Gameboy {
             if (window.soundSystem && window.soundSystem.pauseMusic) {
                 window.soundSystem.pauseMusic();
             }
+
+            // Create instructions message
+            const instructionsMessage = document.createElement('div');
+            instructionsMessage.className = 'level-warning';
+            if(isMobile){
+                instructionsMessage.innerText =
+                `Swipe to move.
+                Eat food to grow!
+                Don't crash into walls or your own tail!
+                `;
+            } else {
+                instructionsMessage.innerText =
+                `Use arrow keys to move.
+                Eat food to grow!
+                Don't crash into walls or your own tail!
+                `;
+            } 
+
+            // Add instructions to the container
+            snakeContainer.appendChild(instructionsMessage);
+            
+            // Make instructions disappear after 4 seconds
+            setTimeout(() => {
+                instructionsMessage.style.opacity = '0';
+                // Remove from DOM after fade out
+                setTimeout(() => {
+                    if (document.body.contains(instructionsMessage)) {
+                        snakeContainer.removeChild(instructionsMessage);
+                    }
+                }, 500); // Wait for fade out animation
+            }, 5000);
             
             // Start Snake game
             this.startSnakeGame();
@@ -362,9 +397,7 @@ class Gameboy {
     }
     
     startSnakeGame() {
-        // Create Snake game container
-        const snakeContainer = document.createElement('div');
-        snakeContainer.id = 'snake-game-container';
+
         Object.assign(snakeContainer.style, {
             position: 'absolute',
             top: '0',
@@ -406,20 +439,76 @@ class Gameboy {
             display: 'block'
         });
         
-        // Create exit button
+        // Create buttons container for better layout
+        const buttonsContainer = document.createElement('div');
+        buttonsContainer.id = 'snake-buttons-container';
+        Object.assign(buttonsContainer.style, {
+            display: 'flex',
+            justifyContent: 'center',
+            gap: '20px',
+            marginTop: '20px'
+        });
+        
+        // Create new game button
+        const newGameButton = document.createElement('button');
+        newGameButton.id = 'snake-new-game-button';
+        newGameButton.innerText = 'New Game';
+        Object.assign(newGameButton.style, {
+            padding: '12px 24px',
+            fontSize: '18px',
+            backgroundColor: '#22cc22', // Vibrant green
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            transition: 'all 0.2s ease'
+        });
+        
+        // Create exit button with more vibrant styling
         const exitButton = document.createElement('button');
         exitButton.id = 'snake-exit-button';
         exitButton.innerText = 'Exit Game';
         Object.assign(exitButton.style, {
-            marginTop: '20px',
-            padding: '10px 20px',
+            padding: '12px 24px',
             fontSize: '18px',
-            backgroundColor: '#333',
+            backgroundColor: '#ff5555', // Vibrant red
             color: 'white',
             border: 'none',
             borderRadius: '5px',
-            cursor: 'pointer'
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            transition: 'all 0.2s ease'
         });
+        
+        // Add hover effects
+        newGameButton.onmouseover = () => {
+            newGameButton.style.backgroundColor = '#33dd33';
+            newGameButton.style.transform = 'translateY(-2px)';
+            newGameButton.style.boxShadow = '0 6px 12px rgba(0,0,0,0.3)';
+        };
+        newGameButton.onmouseout = () => {
+            newGameButton.style.backgroundColor = '#22cc22';
+            newGameButton.style.transform = 'translateY(0)';
+            newGameButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        };
+        
+        exitButton.onmouseover = () => {
+            exitButton.style.backgroundColor = '#ff6666';
+            exitButton.style.transform = 'translateY(-2px)';
+            exitButton.style.boxShadow = '0 6px 12px rgba(0,0,0,0.3)';
+        };
+        exitButton.onmouseout = () => {
+            exitButton.style.backgroundColor = '#ff5555';
+            exitButton.style.transform = 'translateY(0)';
+            exitButton.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+        };
+        
+        // Add buttons to container
+        buttonsContainer.appendChild(newGameButton);
+        buttonsContainer.appendChild(exitButton);
         
         // Score display
         const scoreDisplay = document.createElement('div');
@@ -438,7 +527,7 @@ class Gameboy {
         gameScreen.appendChild(canvas);
         gameScreen.appendChild(scoreDisplay);
         snakeContainer.appendChild(gameScreen);
-        snakeContainer.appendChild(exitButton);
+        snakeContainer.appendChild(buttonsContainer);
         document.body.appendChild(snakeContainer);
         
         // Start Snake game
@@ -463,6 +552,19 @@ class Gameboy {
             }
         });
         
+        // Add new game button event listener
+        newGameButton.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Reset the game
+            snakeGame.reset();
+            
+            // If game was over, make sure it's not anymore
+            snakeGame.gameOver = false;
+            snakeGame.paused = false;
+        });
+        
         // Add exit button event listener with cleanup safeguards
         exitButton.addEventListener('click', function exitHandler(e) {
             // Prevent the event from bubbling up
@@ -471,6 +573,14 @@ class Gameboy {
             
             // Remove the event listener immediately to prevent multiple triggers
             exitButton.removeEventListener('click', exitHandler);
+            
+            // Make sure snake game is properly stopped
+            snakeGame.stop();
+            
+            // Check if the container is still in the DOM before removing
+            if (document.body.contains(snakeContainer)) {
+                document.body.removeChild(snakeContainer);
+            }
             
             // Make sure snake game is properly stopped
             snakeGame.stop();
@@ -770,7 +880,7 @@ class SnakeGame {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw grid (optional, for retro feel)
-        this.ctx.strokeStyle = '#FFFFFF';
+        this.ctx.strokeStyle = '#AADDAA';
         this.ctx.lineWidth = 0.5;
         for (let i = 0; i < this.tileCount; i++) {
             // Vertical lines
@@ -880,9 +990,6 @@ class SnakeGame {
             
             this.ctx.font = '24px monospace';
             this.ctx.fillText(`Final Score: ${this.score}`, this.canvas.width / 2, this.canvas.height / 2);
-            
-            this.ctx.font = '18px monospace';
-            this.ctx.fillText('Press Space or Enter to play again', this.canvas.width / 2, this.canvas.height / 2 + 50);
         }
         
         // Draw pause screen
