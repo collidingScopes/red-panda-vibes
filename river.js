@@ -360,8 +360,8 @@ window.setupRiverGameplay = function() {
         
         if (closestDist < riverWidth / 2 && verticalDistanceToRiver < verticalThreshold) {
             if (gameState.playerVelocity.x !== 0 || gameState.playerVelocity.z !== 0) {
-                gameState.playerVelocity.x *= 0.5;
-                gameState.playerVelocity.z *= 0.5;
+                gameState.playerVelocity.x *= 0.7;
+                gameState.playerVelocity.z *= 0.7;
             }
             
             let flowDirection;

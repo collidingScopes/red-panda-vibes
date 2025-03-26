@@ -13,8 +13,8 @@ class Gameboy {
         this.object = null;
         this.cooldown = false;
         this.cooldownTime = 2000; // 2 seconds cooldown between interactions
-        this.detectionRadius = 6; // How close player needs to be to interact
-        this.floatHeight = 6;
+        this.detectionRadius = 5; // How close player needs to be to interact
+        this.floatHeight = 5;
         // Colors
         this.bodyColor = 0xFFD700; // Yellow
         this.screenFrameColor = 0x000000; // Black
@@ -40,7 +40,7 @@ class Gameboy {
         const gameboyGroup = new THREE.Group();
         
         // Scale factor to easily adjust the overall size
-        const scaleFactor = 2;
+        const scaleFactor = 1.1;
 
         // Main body of the Gameboy
         const bodyGeometry = new THREE.BoxGeometry(5 * scaleFactor, 8 * scaleFactor, 1 * scaleFactor);
@@ -199,7 +199,7 @@ class Gameboy {
         this.glow = glow;
         
         // Tilt the Gameboy slightly to make it more visible
-        gameboyGroup.rotation.x = -Math.PI / 12;
+        gameboyGroup.rotation.x = -Math.PI / 15;
         
         this.object = gameboyGroup;
         
@@ -264,7 +264,7 @@ class Gameboy {
         this.object.position.y = baseY + floatOffset;
         
         // Gentle rotation
-        this.object.rotation.y += deltaTime * this.animationParams.rotationSpeed;
+        this.object.rotation.y -= deltaTime * this.animationParams.rotationSpeed;
         
         // Pulse the glow
         if (this.glow) {
