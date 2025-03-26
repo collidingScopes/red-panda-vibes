@@ -23,6 +23,7 @@ const gameState = {
     changingRoom: null,
     jetpack: null,
     ipod: null,
+    gameboy: null,
 };
 
 // Add trampoline properties to gameState
@@ -478,6 +479,10 @@ function resetGame() {
     if (gameState.ipod) {
         gameState.ipod.placeRandomly();
     }
+
+    if (gameState.gameboy) {
+        gameState.gameboy.placeRandomly();
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly
@@ -566,6 +571,10 @@ function animate(currentTime) {
     if (gameState.ipod && !gameState.goalReached) {
         gameState.ipod.update(deltaTime);
     }
+
+    if (gameState.gameboy && !gameState.goalReached) {
+        gameState.gameboy.update(deltaTime);
+    }
     
     renderer.render(scene, camera);
 }
@@ -619,6 +628,11 @@ function init() {
     gameState.ipod = new Ipod(scene, player, getTerrainHeight);
     gameState.ipod.initialize();
     console.log("iPod initialized");
+
+    // Initialize Gameboy
+    gameState.gameboy = new Gameboy(scene, player, getTerrainHeight);
+    gameState.gameboy.initialize();
+    console.log("Gameboy initialized");
 }
 
 function handleViewportResize() {

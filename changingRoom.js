@@ -13,6 +13,7 @@ class ChangingRoom {
             { name: "Levels", path: 'assets/levels3.glb' },
             { name: "Pixar", path: 'assets/pixar4.glb' },
             { name: "Judge Judy", path: 'assets/judgeJudy.glb' },
+            { name: "Saratoga Water", path: 'assets/saratoga3.glb' },
             //{ name: "Sloth", path: 'assets/sloth.glb' },
         ];
         this.currentModelIndex = 0;

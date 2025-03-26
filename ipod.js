@@ -10,11 +10,11 @@ class Ipod {
         this.cooldown = false;
         this.cooldownTime = 2000; // 2 seconds cooldown between interactions
         this.detectionRadius = 6; // How close player needs to be to interact
-        this.floatHeight = 5;
+        this.floatHeight = 6;
         this.font = null; // Add this to store the loaded font
         // Colors
-        this.ipodColor = 0xE0E0E0; // Silver/white
-        this.displayColor = 0x222222; // Dark display
+        this.ipodColor = 0xf4f4f4; // Silver/white
+        this.displayColor = 0x666666; // Dark display
         this.buttonColor = 0xFFFFFF; // White wheel
         this.emojis = ['🔊', '🎸', '🎵', '🥁', '🎶', '🎧', '🎹', '💿'];
         this.emojiTextures = []; // Store loaded textures
@@ -53,8 +53,8 @@ class Ipod {
         const bodyGeometry = new THREE.BoxGeometry(3 * scaleFactor, 5 * scaleFactor, 0.6 * scaleFactor, 1, 1, 1);
         const bodyMaterial = new THREE.MeshStandardMaterial({
             color: this.ipodColor,
-            roughness: 0.2,
-            metalness: 0.8
+            roughness: 0.4,
+            metalness: 0.9,
         });
         
         const body = new THREE.Mesh(bodyGeometry, bodyMaterial);
