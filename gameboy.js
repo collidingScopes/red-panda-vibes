@@ -355,7 +355,12 @@ class Gameboy {
                 window.gameState.animationId = null;
             }
 
-            // Create instructions message
+            // Make sure we clear the snake container before using it
+            while (snakeContainer.firstChild) {
+                snakeContainer.removeChild(snakeContainer.firstChild);
+            }
+            
+            // Instructions message updated for WASD
             const instructionsMessage = document.createElement('div');
             instructionsMessage.className = 'level-warning';
             if(isMobile){
@@ -366,7 +371,7 @@ class Gameboy {
                 `;
             } else {
                 instructionsMessage.innerText =
-                `Use arrow keys to move.
+                `Use W/A/S/D keys to move:
                 Eat food to grow!
                 Don't crash into walls or your own tail!
                 `;
@@ -392,6 +397,11 @@ class Gameboy {
     }
     
     startSnakeGame() {
+
+        // Make sure we remove any existing snake container from the DOM first
+        if (document.body.contains(snakeContainer)) {
+            document.body.removeChild(snakeContainer);
+        }
 
         Object.assign(snakeContainer.style, {
             position: 'absolute',
@@ -700,10 +710,10 @@ class SnakeGame {
     
     handleKeyDown(e) {
         // Prevent default arrow key scrolling
-        if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+        if(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ', 'w', 'a', 's', 'd', 'W', 'A', 'S', 'D'].includes(e.key)) {
             e.preventDefault();
         }
-        
+
         if (this.gameOver) {
             if (e.key === ' ' || e.key === 'Enter') {
                 this.reset();
@@ -721,21 +731,29 @@ class SnakeGame {
         // Check that we're not trying to go in the opposite direction
         switch(e.key) {
             case 'ArrowUp':
+            case 'w':
+            case 'W':
                 if (this.direction.y !== 1) { // Not going down
                     this.nextDirection = { x: 0, y: -1 };
                 }
                 break;
             case 'ArrowDown':
+            case 's':
+            case 'S':
                 if (this.direction.y !== -1) { // Not going up
                     this.nextDirection = { x: 0, y: 1 };
                 }
                 break;
             case 'ArrowLeft':
+            case 'a':
+            case 'A':
                 if (this.direction.x !== 1) { // Not going right
                     this.nextDirection = { x: -1, y: 0 };
                 }
                 break;
             case 'ArrowRight':
+            case 'd':
+            case 'D':
                 if (this.direction.x !== -1) { // Not going left
                     this.nextDirection = { x: 1, y: 0 };
                 }
