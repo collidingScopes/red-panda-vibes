@@ -17,6 +17,7 @@ class SoundSystem {
         // Background music properties
         this.musicTracks = [
             { path: 'assets/song-0.mp3', audio: null, loaded: false },
+            { path: 'assets/bamboo-nomad.mp3', audio: null, loaded: false },
             { path: 'assets/song-1.mp3', audio: null, loaded: false },
             { path: 'assets/song-2.mp3', audio: null, loaded: false },
             { path: 'assets/song-3.mp3', audio: null, loaded: false }

@@ -16,20 +16,32 @@ class Ipod {
         this.ipodColor = 0xE0E0E0; // Silver/white
         this.displayColor = 0x222222; // Dark display
         this.buttonColor = 0xFFFFFF; // White wheel
+        this.emojis = ['🔊', '🎸', '🎵', '🥁', '🎶', '🎧', '🎹', '💿'];
+        this.emojiTextures = []; // Store loaded textures
+        this.particleSystem = null;
+        this.particleTimeout = null;
     }
 
     // Add this method to load the font
     loadFont() {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const loader = new THREE.FontLoader();
-            // Using a commonly available font from Three.js examples
-            // You might need to host this file yourself or use a different font
-            loader.load('https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', (font) => {
-                this.font = font;
-                resolve();
-            });
+            loader.load(
+                'https://threejs.org/examples/fonts/helvetiker_regular.typeface.json', // Default Three.js font
+                (font) => {
+                    this.font = font;
+                    console.log("Helvetiker font loaded successfully");
+                    resolve();
+                },
+                undefined,
+                (error) => {
+                    console.error('Error loading font:', error);
+                    reject(error);
+                }
+            );
         });
     }
+
     async createIpodModel() {
         // Create a group for the whole iPod
         const ipodGroup = new THREE.Group();
@@ -134,10 +146,38 @@ class Ipod {
         this.startFloatingAnimation();
     }
 
-    // Modify initialize to handle async
+    loadEmojiTextures() {
+        const loader = new THREE.TextureLoader();
+        const texturePromises = this.emojis.map(emoji => {
+            // Convert emoji to lowercase hexadecimal Unicode code point
+            const codePoint = emoji.codePointAt(0).toString(16).toLowerCase();
+            const url = `https://raw.githubusercontent.com/twitter/twemoji/master/assets/72x72/${codePoint}.png`;
+            return new Promise((resolve, reject) => {
+                loader.load(
+                    url,
+                    (texture) => resolve({ emoji, texture }),
+                    undefined,
+                    (error) => {
+                        console.error(`Error loading texture for ${emoji} at ${url}:`, error);
+                        reject(error);
+                    }
+                );
+            });
+        });
+
+        return Promise.all(texturePromises).then(results => {
+            this.emojiTextures = results;
+            console.log("Emoji textures loaded successfully");
+        }).catch(error => {
+            console.error("Failed to load some emoji textures:", error);
+        });
+    }
+
+    // Modify initialize to load textures (font loading removed)
     async initialize() {
         console.log("Initializing iPod...");
-        await this.createIpodModel();
+        await this.loadEmojiTextures(); // Load 2D emoji textures
+        await this.createIpodModel();   // No font dependency anymore
         this.placeRandomly();
     }
     
@@ -215,20 +255,96 @@ class Ipod {
         }
     }
     
+    createEmojiFireworks() {
+        if (this.emojiTextures.length === 0) {
+            console.warn("Emoji textures not loaded yet, cannot create fireworks");
+            return;
+        }
+
+        const particleGroup = new THREE.Group();
+        const particleCount = 25;
+        const particles = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const { texture } = this.emojiTextures[Math.floor(Math.random() * this.emojiTextures.length)];
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                color: new THREE.Color(1, 1, 1), // white
+                transparent: true
+            });
+
+            const particle = new THREE.Sprite(material);
+            particle.scale.set(0.7, 0.7, 0.7); // Adjust size as needed
+            particle.position.set(
+                this.object.position.x,
+                this.object.position.y,
+                this.object.position.z
+            );
+
+            particle.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 5,
+                Math.random() * 4 + 2,
+                (Math.random() - 0.5) * 5
+            );
+
+            particleGroup.add(particle);
+            particles.push(particle);
+        }
+
+        this.scene.add(particleGroup);
+        this.particleSystem = { group: particleGroup, particles };
+
+        this.particleTimeout = setTimeout(() => {
+            this.removeEmojiFireworks();
+        }, 2000);
+
+        this.animateEmojiFireworks(particles);
+    }
+
+    animateEmojiFireworks(particles) {
+        const startTime = Date.now();
+        const duration = 2000;
+    
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = elapsed / duration;
+    
+            if (progress < 1) {
+                particles.forEach(particle => {
+                    particle.position.add(particle.velocity.clone().multiplyScalar(0.016));
+                    particle.velocity.y -= 0.12; // Gravity
+                    // particle.material.opacity = 1 - progress;
+                    particle.material.rotation += 0.05; // Rotate the sprite's texture
+                });
+                requestAnimationFrame(animate);
+            }
+        };
+    
+        requestAnimationFrame(animate);
+    }
+
+    removeEmojiFireworks() {
+        if (this.particleSystem) {
+            this.scene.remove(this.particleSystem.group);
+            this.particleSystem = null;
+        }
+        if (this.particleTimeout) {
+            clearTimeout(this.particleTimeout);
+            this.particleTimeout = null;
+        }
+    }
+
     triggerNextTrack() {
         console.log("iPod touched, playing next track");
-        
-        // Only proceed if we have access to the sound system
+        this.createEmojiFireworks();
+
         if (window.soundSystem && window.soundSystem.initialized) {
-            // Call the playNextTrack function from the sound system
             window.soundSystem.playNextTrack();
-            
-            // Create a visual feedback effect
-            this.createActivationEffect();
         } else {
             console.warn("Sound system not initialized yet");
         }
     }
+
     
     startCooldown() {
         this.cooldown = true;
@@ -237,111 +353,12 @@ class Ipod {
             this.cooldown = false;
         }, this.cooldownTime);
     }
-    
-    createActivationEffect() {
-        // Flash the glow brighter
-        if (this.glow) {
-            // Store original properties
-            const originalIntensity = this.glow.material.emissiveIntensity;
-            const originalOpacity = this.glow.material.opacity;
-            
-            // Intensify the glow
-            this.glow.material.emissiveIntensity = 1.5;
-            this.glow.material.opacity = 0.8;
-            
-            // Create explosion particles
-            this.createParticleEffect();
-            
-            // Reset after animation
-            setTimeout(() => {
-                if (this.glow) {
-                    this.glow.material.emissiveIntensity = originalIntensity;
-                    this.glow.material.opacity = originalOpacity;
-                }
-            }, 1000);
+
+    destroy() {
+        this.removeEmojiFireworks();
+        if (this.object && this.object.parent) {
+            this.scene.remove(this.object);
         }
-    }
-    
-    createParticleEffect() {
-        // Create particles that explode outward
-        const particleCount = 20;
-        const particleSize = 0.3;
-        
-        // Create a group for particles
-        const particleGroup = new THREE.Group();
-        this.scene.add(particleGroup);
-        
-        // Set group position to iPod position
-        particleGroup.position.copy(this.object.position);
-        
-        // Create particles
-        for (let i = 0; i < particleCount; i++) {
-            const particleGeometry = new THREE.SphereGeometry(particleSize, 4, 4);
-            const particleMaterial = new THREE.MeshBasicMaterial({
-                color: 0x88CCFF,
-                transparent: true,
-                opacity: 0.7
-            });
-            
-            const particle = new THREE.Mesh(particleGeometry, particleMaterial);
-            
-            // Random initial position slightly offset from center
-            particle.position.set(
-                (Math.random() - 0.5) * 0.5,
-                (Math.random() - 0.5) * 0.5,
-                (Math.random() - 0.5) * 0.5
-            );
-            
-            // Random velocity
-            const angle = Math.random() * Math.PI * 2;
-            const height = Math.random() * Math.PI - Math.PI/2;
-            const speed = 2 + Math.random() * 3;
-            
-            particle.userData.velocity = new THREE.Vector3(
-                Math.cos(angle) * Math.cos(height) * speed,
-                Math.sin(height) * speed,
-                Math.sin(angle) * Math.cos(height) * speed
-            );
-            
-            particleGroup.add(particle);
-        }
-        
-        // Animate particles
-        let lifetime = 0;
-        const maxLifetime = 1.5; // seconds
-        
-        const animateParticles = () => {
-            lifetime += 0.016; // Approximately 60fps
-            
-            if (lifetime >= maxLifetime) {
-                // Clean up
-                this.scene.remove(particleGroup);
-                particleGroup.traverse(child => {
-                    if (child.geometry) child.geometry.dispose();
-                    if (child.material) child.material.dispose();
-                });
-                return;
-            }
-            
-            // Move each particle
-            particleGroup.children.forEach(particle => {
-                particle.position.add(particle.userData.velocity.clone().multiplyScalar(0.016));
-                
-                // Apply gravity
-                particle.userData.velocity.y -= 0.05;
-                
-                // Fade out
-                particle.material.opacity = 0.7 * (1 - lifetime / maxLifetime);
-                
-                // Scale down
-                const scale = 1 - lifetime / maxLifetime;
-                particle.scale.set(scale, scale, scale);
-            });
-            
-            requestAnimationFrame(animateParticles);
-        };
-        
-        animateParticles();
     }
 }
 
