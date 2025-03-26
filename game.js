@@ -22,6 +22,7 @@ const gameState = {
     pandaAnimations: {}, // Storage for different animations
     changingRoom: null,
     jetpack: null,
+    ipod: null,
 };
 
 // Add trampoline properties to gameState
@@ -473,6 +474,10 @@ function resetGame() {
         gameState.jetpack.placeRandomly();
     }
     */
+
+    if (gameState.ipod) {
+        gameState.ipod.placeRandomly();
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly
@@ -557,6 +562,10 @@ function animate(currentTime) {
     if (gameState.jetpack && !gameState.goalReached) {
         gameState.jetpack.update(deltaTime);
     }
+
+    if (gameState.ipod && !gameState.goalReached) {
+        gameState.ipod.update(deltaTime);
+    }
     
     renderer.render(scene, camera);
 }
@@ -601,9 +610,15 @@ function init() {
         console.log("Changing room initialized");
     }
 
+    //init jetpack
     gameState.jetpack = new Jetpack(scene, player, getTerrainHeight);
     gameState.jetpack.initialize();
     console.log("jetpack initialized");
+
+    // Initialize iPod
+    gameState.ipod = new Ipod(scene, player, getTerrainHeight);
+    gameState.ipod.initialize();
+    console.log("iPod initialized");
 }
 
 function handleViewportResize() {
