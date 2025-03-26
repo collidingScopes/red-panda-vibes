@@ -648,11 +648,6 @@ class Cubicle {
                 window.lastTime = performance.now();
                 gameState.animationId = requestAnimationFrame(window.animate);
             }
-            
-            // If sound system exists, unpause the music
-            if (window.soundSystem && window.soundSystem.unpauseMusic) {
-                window.soundSystem.unpauseMusic();
-            }
         }
     }
     

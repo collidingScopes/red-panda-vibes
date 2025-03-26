@@ -549,11 +549,6 @@ class Gameboy {
                     window.lastTime = performance.now();
                     window.gameState.animationId = requestAnimationFrame(window.animate);
                 }
-                
-                // Unpause music if available
-                if (window.soundSystem && window.soundSystem.unpauseMusic) {
-                    window.soundSystem.unpauseMusic();
-                }
             }
         });
         
@@ -626,11 +621,6 @@ class Gameboy {
                     if (!window.gameState.animationId) {
                         window.lastTime = performance.now();
                         window.gameState.animationId = requestAnimationFrame(window.animate);
-                    }
-                    
-                    // Unpause music if available
-                    if (window.soundSystem && window.soundSystem.unpauseMusic) {
-                        window.soundSystem.unpauseMusic();
                     }
                 }
             }, 100);
