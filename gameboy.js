@@ -661,8 +661,8 @@ class SnakeGame {
         this.onExit = onExit;
         
         // Game settings
-        this.gridSize = isMobile ? 15 : 20; // Smaller grid on mobile for bigger elements
-        this.tileCount = Math.floor(canvas.width / this.gridSize);
+        //this.gridSize = isMobile ? 15 : 20; // Smaller grid on mobile for bigger elements
+        this.tileCount = isMobile ? 20 : 30;
         this.tileSize = canvas.width / this.tileCount;
         
         // Game state
