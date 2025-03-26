@@ -29,7 +29,7 @@ class Jetpack {
         this.isActive = false;
         this.isCollected = false;
         this.floatHeight = 5.0;
-        this.floatAmplitude = 0.5;
+        this.floatAmplitude = 0.8;
         this.floatSpeed = 1.0;
         this.floatTime = 0;
         
@@ -120,10 +120,13 @@ class Jetpack {
             this.particleSystem.visible = false;
         }
         
-        // Make sure the jetpack object is invisible until game is reset
+        // Remove the jetpack from the player
         if (this.object) {
+            if (this.object.parent === this.player) {
+                this.player.remove(this.object);
+            }
             this.object.visible = false;
-            console.log("Jetpack hidden due to game over");
+            console.log("Jetpack removed from player due to game over");
         }
         
         // Reset fuel for next game
@@ -429,16 +432,8 @@ class Jetpack {
                 // Get terrain height safely
                 const baseHeight = this.getTerrainHeight(this.object.position.x, this.object.position.z);
                 this.object.position.y = baseHeight + this.floatHeight + floatOffset;
-                this.object.rotation.y += deltaTime * 0.5;
-                
-                const glowPulse = (Math.sin(this.floatTime * 2) * 0.2) + 0.8;
-                this.object.children.forEach(child => {
-                    if (child.material && child.material.opacity !== undefined && child.geometry instanceof THREE.SphereGeometry) {
-                        child.material.opacity = 0.3 * glowPulse;
-                        child.scale.set(glowPulse, glowPulse, glowPulse);
-                    }
-                });
-                
+                this.object.rotation.y += deltaTime * 1.0;
+
                 const distance = this.player.position.distanceTo(this.object.position);
                 if (distance < 5) {
                     this.collectJetpack();
@@ -454,8 +449,25 @@ class Jetpack {
                     
                     if (this.particleSystem) {
                         this.particleSystem.visible = true;
-                        this.particleSystem.position.copy(this.player.position);
-                        this.particleSystem.position.y -= 0.5;
+                        
+                        // Position particles based on jetpack position (on player's back)
+                        // Create a world position for the jetpack
+                        const jetpackWorldPos = new THREE.Vector3();
+                        
+                        if (this.object && this.object.parent === this.player) {
+                            // Get the world position of the jetpack thrusters
+                            this.object.getWorldPosition(jetpackWorldPos);
+                            
+                            // Offset slightly down to emit from thrusters
+                            jetpackWorldPos.y -= 0.3;
+                            
+                            // Set the particle system position
+                            this.particleSystem.position.copy(jetpackWorldPos);
+                        } else {
+                            // Fallback to player position if something is wrong
+                            this.particleSystem.position.copy(this.player.position);
+                            this.particleSystem.position.y -= 0.5;
+                        }
                     }
                     
                     if (this.jetpackSound && !this.jetpackSound.isPlaying) {
@@ -499,7 +511,27 @@ class Jetpack {
     collectJetpack() {
         console.log("Jetpack collected!");
         this.isCollected = true;
-        this.object.visible = false;
+        
+        // Instead of hiding the jetpack, attach it to the player
+        if (this.object) {
+            // Remove from scene
+            this.scene.remove(this.object);
+            
+            // Add to the player object
+            this.player.add(this.object);
+            
+            // Position it on the panda's back
+            this.object.position.set(-0.5, 1.2, -1.5); // Adjust these values as needed
+            
+            // Scale it down to fit the character better
+            const jetpackScale = 0.6; // Adjust scale as needed
+            this.object.scale.set(jetpackScale, jetpackScale, jetpackScale);
+            
+            // Rotate to face backward
+            this.object.rotation.y = Math.PI; // Rotate 180 degrees
+        }
+        
+        // Show the fuel bar
         this.fuelBarContainer.style.display = 'block';
         this.fuelBarContainer.label.style.display = 'block';
         
@@ -546,6 +578,21 @@ class Jetpack {
         if (this.fuelBarContainer) {
             this.fuelBarContainer.style.display = 'none';
             this.fuelBarContainer.label.style.display = 'none';
+        }
+        
+        // Remove the jetpack from the player and reset it
+        if (this.object) {
+            // Remove from player
+            if (this.object.parent === this.player) {
+                this.player.remove(this.object);
+            }
+            
+            // Reset scale and rotation
+            this.object.scale.set(1, 1, 1);
+            this.object.rotation.y = 0;
+            
+            // Hide it until we place it again
+            this.object.visible = false;
         }
         
         // Reset fuel for next time
@@ -617,20 +664,27 @@ class Jetpack {
             this.fuelBarContainer.label.style.display = 'none';
         }
         
-        // Ensure the object still exists and is properly set up
-        if (!this.object || !this.object.visible) {
-            console.log("Jetpack object missing or invisible during reset, checking state");
-            if (!this.object) {
-                console.log("Creating new jetpack object");
-                this.createJetpack();
-            } else {
-                console.log("Ensuring jetpack visibility");
-                this.object.visible = true;
+        // Properly remove the jetpack from the player
+        if (this.object) {
+            if (this.object.parent === this.player) {
+                this.player.remove(this.object);
             }
+            
+            // Reset scale and rotation
+            this.object.scale.set(1, 1, 1);
+            this.object.rotation.y = 0;
+            
+            // Add back to scene but keep invisible until placed
+            if (this.object.parent !== this.scene) {
+                this.scene.add(this.object);
+            }
+            this.object.visible = false;
+        } else {
+            console.log("Creating new jetpack object");
+            this.createJetpack();
         }
         
         // Create a new jetpack in the world after a short delay
-        // to ensure the level is properly reset first
         setTimeout(() => {
             console.log("Executing delayed jetpack placement after level reset");
             this.placeRandomly();
