@@ -286,7 +286,7 @@ class MobileControls {
         let aspectFactor;
         
         if (isPortrait) {
-            aspectFactor = 1.5;
+            aspectFactor = 1.6;
             this.log(`Portrait mode detected - setting camera factor: ${aspectFactor}`);
         } else {
             // Normal landscape - use base distance
