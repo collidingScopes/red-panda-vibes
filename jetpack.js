@@ -159,7 +159,7 @@ class Jetpack {
                         } else {
                             console.log("Jetpack object missing, recreating");
                             this.createJetpack();
-                            //this.placeRandomly();
+                            this.placeRandomly();
                         }
                     }, 1000);
                     
@@ -337,12 +337,6 @@ class Jetpack {
     }
     
     placeRandomly() {
-        // First check if the object exists, if not, create it again
-        if (!this.object) {
-            console.log("Jetpack object missing, recreating it");
-            //this.createJetpack();
-        }
-        
         // Make sure the object is in the scene
         if (this.object.parent !== this.scene) {
             console.log("Jetpack not in scene, adding it back");

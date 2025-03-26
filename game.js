@@ -470,12 +470,6 @@ function resetGame() {
         gameState.changingRoom.placeRandomly();
     }
 
-    /*
-    if (gameState.jetpack) {
-        gameState.jetpack.placeRandomly();
-    }
-    */
-
     if (gameState.ipod) {
         gameState.ipod.placeRandomly();
     }
