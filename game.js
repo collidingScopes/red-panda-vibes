@@ -25,6 +25,7 @@ const gameState = {
     ipod: null,
     gameboy: null,
     cubicle: null,
+    newspaper: null,
 };
 
 // Add trampoline properties to gameState
@@ -482,6 +483,10 @@ function resetGame() {
     if (gameState.cubicle) {
         gameState.cubicle.placeRandomly();
     }
+
+    if (gameState.newspaper) {
+        gameState.newspaper.placeRandomly();
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly
@@ -578,6 +583,10 @@ function animate(currentTime) {
     if (gameState.cubicle && !gameState.goalReached) {
         gameState.cubicle.update(deltaTime);
     }
+
+    if (gameState.newspaper && !gameState.goalReached) {
+        gameState.newspaper.update(deltaTime);
+    }
     
     renderer.render(scene, camera);
 }
@@ -640,6 +649,10 @@ function init() {
     gameState.cubicle = new Cubicle(scene, player, getTerrainHeight);
     gameState.cubicle.initialize();
     console.log("cubicle initialized");
+
+    gameState.newspaper = new Newspaper(scene, player, getTerrainHeight);
+    gameState.newspaper.initialize();
+    console.log("newspaper initialized");
 }
 
 function handleViewportResize() {
