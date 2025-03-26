@@ -22,6 +22,13 @@ class Cubicle {
         this.previousGameAnimationId = null;
         this.backgroundImage = null;
         
+        // Social media links
+        this.socialLinks = [
+            { name: "Twitter", url: "https://x.com/measure_plan" },
+            { name: "Instagram", url: "https://www.instagram.com/stereo.drift/" },
+            { name: "Github", url: "https://github.com/collidingScopes" }
+        ];
+        
         this.logo = {
             x: 100,
             y: 100,
@@ -48,7 +55,7 @@ class Cubicle {
         const cubicleGroup = new THREE.Group();
         
         // Scale factor to easily adjust the overall size
-        const scaleFactor = 2;
+        const scaleFactor = 2.2;
 
         // Floor - green carpet
         const floorGeometry = new THREE.BoxGeometry(7 * scaleFactor, 0.1 * scaleFactor, 7 * scaleFactor);
@@ -375,12 +382,15 @@ class Cubicle {
         this.canvas.style.width = '100%';
         this.canvas.style.height = '100%';
         this.computerScreenContainer.appendChild(this.canvas);
+        
+        // Create social media links bar
+        this.createSocialMediaLinks();
 
         // Create a Windows 95/98 style dialog header
         const dialogHeader = document.createElement('div');
         dialogHeader.style.position = 'fixed';
-        dialogHeader.style.top = '20px';
-        dialogHeader.style.right = '40px';
+        dialogHeader.style.top = '0px';
+        dialogHeader.style.right = '0px';
         dialogHeader.style.width = '120px';
         dialogHeader.style.height = '22px';
         dialogHeader.style.backgroundColor = '#000080'; // Windows 95/98 blue
@@ -388,7 +398,7 @@ class Cubicle {
         dialogHeader.style.justifyContent = 'space-between';
         dialogHeader.style.alignItems = 'center';
         dialogHeader.style.padding = '20px';
-        dialogHeader.style.zIndex = '1001';
+        dialogHeader.style.zIndex = '2000';
         dialogHeader.style.borderTop = '1px solid #DFDFDF';
         dialogHeader.style.borderLeft = '1px solid #DFDFDF';
         dialogHeader.style.borderRight = '1px solid #000000';
@@ -412,7 +422,7 @@ class Cubicle {
         exitButton.style.justifyContent = 'center';
         exitButton.style.alignItems = 'center';
         exitButton.style.backgroundColor = '#C0C0C0'; // Windows 95/98 gray
-        exitButton.style.color = 'black';
+        exitButton.style.color = 'red';
         exitButton.style.border = '1px solid #FFFFFF';
         exitButton.style.borderRight = '1px solid #848484';
         exitButton.style.borderBottom = '1px solid #848484';
@@ -421,7 +431,7 @@ class Cubicle {
         exitButton.style.fontFamily = 'Courier New, sans-serif';
         exitButton.style.fontWeight = 'bold';
         exitButton.style.padding = '0';
-        exitButton.style.zIndex = '1001';
+        exitButton.style.zIndex = '2001';
         
         // Add the click event
         const self = this;
@@ -440,6 +450,55 @@ class Cubicle {
         
         // Add resize listener
         window.addEventListener('resize', this.resizeCanvas.bind(this));
+    }
+    
+    // Create social media links
+    createSocialMediaLinks() {
+        // Create a container for social media links
+        const socialLinksContainer = document.createElement('div');
+        socialLinksContainer.style.position = 'fixed';
+        socialLinksContainer.style.top = '0px';
+        socialLinksContainer.style.left = '0';
+        socialLinksContainer.style.width = '100%';
+        socialLinksContainer.style.height = '40px';
+        socialLinksContainer.style.display = 'flex';
+        socialLinksContainer.style.justifyContent = 'center';
+        socialLinksContainer.style.alignItems = 'center';
+        socialLinksContainer.style.zIndex = '1002';
+        socialLinksContainer.style.backgroundColor = 'rgba(62, 98, 206, 0.7)';
+        socialLinksContainer.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.5)';
+        
+        // Create links
+        this.socialLinks.forEach(link => {
+            const linkElement = document.createElement('a');
+            linkElement.href = link.url;
+            linkElement.textContent = link.name;
+            linkElement.target = '_blank'; // Open in new tab
+            linkElement.style.color = 'white';
+            linkElement.style.textDecoration = 'none';
+            linkElement.style.margin = '0 20px';
+            linkElement.style.padding = '5px 15px';
+            linkElement.style.fontFamily = 'Courier New, sans-serif';
+            linkElement.style.fontSize = '16px';
+            linkElement.style.fontWeight = 'bold';
+            linkElement.style.backgroundColor = '#000080'; // Windows 95/98 blue
+            linkElement.style.border = '2px outset #DFDFDF';
+            linkElement.style.borderRadius = '3px';
+            
+            // Hover effect
+            linkElement.onmouseover = function() {
+                this.style.backgroundColor = '#0055AA';
+                this.style.cursor = 'pointer';
+            };
+            
+            linkElement.onmouseout = function() {
+                this.style.backgroundColor = '#000080';
+            };
+            
+            socialLinksContainer.appendChild(linkElement);
+        });
+        
+        this.computerScreenContainer.appendChild(socialLinksContainer);
     }
     
     // Start the computer screen animation
