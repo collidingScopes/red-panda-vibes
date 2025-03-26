@@ -351,7 +351,7 @@ class Jetpack {
         // First check if the object exists, if not, create it again
         if (!this.object) {
             console.log("Jetpack object missing, recreating it");
-            this.createJetpack();
+            //this.createJetpack();
         }
         
         // Make sure the object is in the scene
@@ -364,7 +364,7 @@ class Jetpack {
         if (this.player) {
             const playerPos = this.player.position;
             
-            // Place jetpack 20 units away from player in a random direction
+            // Place jetpack x units away from player in a random direction
             const angle = Math.random() * Math.PI * 2;
             const distance = 30 + Math.random()*30;
             
