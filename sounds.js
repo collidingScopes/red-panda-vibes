@@ -17,8 +17,9 @@ class SoundSystem {
         // Background music properties
         this.musicTracks = [
             { path: 'assets/song-0.mp3', audio: null, loaded: false },
-            { path: 'assets/panda-rnb-1.mp3', audio: null, loaded: false },
             { path: 'assets/panda-rnb-2.mp3', audio: null, loaded: false },
+            { path: 'assets/vibe-coding.mp3', audio: null, loaded: false },
+            { path: 'assets/panda-rnb-1.mp3', audio: null, loaded: false },
             { path: 'assets/song-1.mp3', audio: null, loaded: false },
             { path: 'assets/song-2.mp3', audio: null, loaded: false },
             { path: 'assets/song-3.mp3', audio: null, loaded: false },
@@ -256,14 +257,28 @@ class SoundSystem {
             soundToggle.textContent = this.muted ? "🔇" : "🔊";
         }
         
-        // Pause or resume background music
-        if (this.musicPlaying) {
-            const currentTrack = this.musicTracks[this.currentTrackIndex];
-            if (currentTrack && currentTrack.audio) {
-                if (this.muted) {
+        // Handle background music based on mute state
+        if (this.muted) {
+            // If muting, pause any playing music
+            if (this.musicPlaying) {
+                const currentTrack = this.musicTracks[this.currentTrackIndex];
+                if (currentTrack && currentTrack.audio) {
                     currentTrack.audio.pause();
-                } else {
-                    currentTrack.audio.play().catch(err => console.error("Error resuming music:", err));
+                }
+            }
+        } else {
+            // If unmuting, check if music should be playing
+            if (this.initialized && this.musicLoaded) {
+                if (this.musicPlaying) {
+                    // Resume current track if music was already playing
+                    const currentTrack = this.musicTracks[this.currentTrackIndex];
+                    if (currentTrack && currentTrack.audio) {
+                        currentTrack.audio.play().catch(err => console.error("Error resuming music:", err));
+                    }
+                } else if (window.gameState && window.gameState.pandaModelLoaded) {
+                    // Start music if it wasn't playing but should be
+                    console.log("Starting background music after unmute");
+                    this.startBackgroundMusic();
                 }
             }
         }
