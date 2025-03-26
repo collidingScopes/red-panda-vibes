@@ -421,19 +421,19 @@ class Gameboy {
         const gameScreen = document.createElement('div');
         gameScreen.id = 'snake-game-screen';
         Object.assign(gameScreen.style, {
-            width: '80%',
+            width: isMobile ? '95%' : '80%',
             maxWidth: '600px',
-            height: '70vh',
-            maxHeight: '600px',
+            height: isMobile ? '60vh' : '70vh',
+            maxHeight: isMobile ? '500px' : '600px',
             backgroundColor: '#98FB98', // Light green like old GameBoy screen
-            border: '10px solid #333',
+            border: isMobile ? '6px solid #333' : '10px solid #333',
             borderRadius: '5px',
             boxShadow: '0 0 20px rgba(255, 255, 0, 0.5)',
             overflow: 'hidden',
             position: 'relative'
         });
         
-        // Create canvas for Snake game
+        // Create canvas for Snake game with fixed internal dimensions
         const canvas = document.createElement('canvas');
         canvas.id = 'snake-canvas';
         canvas.width = 600;
@@ -661,7 +661,7 @@ class SnakeGame {
         this.onExit = onExit;
         
         // Game settings
-        this.gridSize = 20;
+        this.gridSize = isMobile ? 15 : 20; // Smaller grid on mobile for bigger elements
         this.tileCount = Math.floor(canvas.width / this.gridSize);
         this.tileSize = canvas.width / this.tileCount;
         
@@ -893,7 +893,7 @@ class SnakeGame {
         this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         
         // Draw grid (optional, for retro feel)
-        this.ctx.strokeStyle = '#AADDAA';
+        this.ctx.strokeStyle = '#FFFFFF';
         this.ctx.lineWidth = 0.5;
         for (let i = 0; i < this.tileCount; i++) {
             // Vertical lines
