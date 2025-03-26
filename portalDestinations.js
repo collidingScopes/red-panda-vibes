@@ -1,10 +1,10 @@
 // Portal destination URLs
 const portalDestinations = [
-    /*
     { 
         url: "https://fly.pieter.com", 
         name: "Fly.Pieter.com", 
     },
+    /*
     { 
         url: "https://schermutseling.com/", 
         name: "Schermutseling",
@@ -53,13 +53,9 @@ const portalDestinations = [
         url: "https://games.outerreaches.space/shadowhold/",
         name: "Shadowhold",
     },
-    */
-    {
-        url: "https://metaverse-delta.vercel.app/",
-        name: "Metaverse Delta",
-    },
     {
         url: "https://vibejam.netlify.app/",
         name: "Vibe Jam",
     },
+    */
 ];

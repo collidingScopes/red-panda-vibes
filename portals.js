@@ -1,4 +1,4 @@
-// Enhanced Portal System for Red Panda Vibes
+// Enhanced Portal System for Red Panda Vibes - Sky Portal Version
 // Creates functional fantasy-styled portals that open URLs when activated
 let numPortalsPerLevel = 1;
 let urlParams = "?portal=true&username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
@@ -48,13 +48,13 @@ function initPortalSystem() {
 
 // Portal class - handles creation and behavior of each portal
 class Portal {
-    constructor(position, url, color = 0xa020f0, name = "Portal") {
+    constructor(position, url, color = 0xa020f0, name = "Sky Portal") {
         this.position = position;
         this.url = url;
         this.name = name;
         this.color = color;
-        this.activationRadius = 5; // Distance at which player can activate portal
-        this.animationStartRadius = 20; // Distance at which animations begin
+        this.activationRadius = 8; // Increased activation radius for sky portal
+        this.animationStartRadius = 25; // Increased animation radius for sky portal
         this.portalGroup = new THREE.Group();
         this.portalActive = true;
         this.cooldownTime = 1000;
@@ -90,7 +90,7 @@ class Portal {
         
         try {
             // Create the stone arch (external ring)
-            const stoneRingGeometry = new THREE.TorusGeometry(4, 1, 12, 32);
+            const stoneRingGeometry = new THREE.TorusGeometry(6, 1.5, 16, 32); // Larger size for sky portal
             const stoneMaterial = new THREE.MeshStandardMaterial({
                 color: 0x5b037d,
                 roughness: 0.7,
@@ -101,11 +101,11 @@ class Portal {
             this.portalGroup.add(stoneRing);
             
             // Create inner ring with glowing effect
-            const innerRingGeometry = new THREE.TorusGeometry(4, 0.3, 12, 32);
+            const innerRingGeometry = new THREE.TorusGeometry(6, 0.5, 16, 32); // Larger size for sky portal
             const innerRingMaterial = new THREE.MeshStandardMaterial({
                 color: this.color,
                 emissive: this.color,
-                emissiveIntensity: 0.5,
+                emissiveIntensity: 0.8, // Increased for better visibility in sky
                 metalness: 0.8,
                 roughness: 0.2,
             });
@@ -113,36 +113,19 @@ class Portal {
             this.portalGroup.add(this.innerRing);
             
             // Create portal center - energy vortex
-            const portalGeometry = new THREE.CircleGeometry(4, 32);
+            const portalGeometry = new THREE.CircleGeometry(6, 32); // Larger size for sky portal
             this.portalMaterial = new THREE.MeshBasicMaterial({
                 color: 0xffffff,
                 transparent: true,
-                opacity: 0.5,
+                opacity: 0.7, // Higher opacity for better visibility
                 side: THREE.DoubleSide,
             });
-            
-            // Create a simple spiral pattern texture
-            const spiralTexture = this.createSpiralTexture();
-            this.portalMaterial.map = spiralTexture;
-            this.portalMaterial.alphaMap = spiralTexture;
-            
-            this.portalCenter = new THREE.Mesh(portalGeometry, this.portalMaterial);
-            this.portalCenter.position.z = 0.1;
-            this.portalGroup.add(this.portalCenter);
             
             // Create particle system
             this.createParticles();
             
-            // Get terrain height at position and place portal upright
-            let terrainHeight = 0;
-            try {
-                terrainHeight = getTerrainHeight(this.position.x, this.position.z);
-            } catch (e) {
-                console.warn("Could not get terrain height, using default", e);
-                // Default fallback height
-                terrainHeight = 0;
-            }
-            this.position.y = terrainHeight + 3.5;
+            // Set fixed sky position - 100 units high as requested
+            this.position.y = 100;
             
             // Set portal position
             this.portalGroup.position.set(this.position.x, this.position.y, this.position.z);
@@ -156,9 +139,9 @@ class Portal {
             // Add the portal to the scene if available
             if (scene) {
                 scene.add(this.portalGroup);
-                console.log(`Portal "${this.name}" created`);
+                console.log(`Sky Portal "${this.name}" created at height Y=100`);
             } else {
-                console.log(`Portal "${this.name}" created but waiting for scene to be available`);
+                console.log(`Sky Portal "${this.name}" created but waiting for scene to be available`);
             }
         } catch (e) {
             console.error("Error during portal creation:", e);
@@ -166,97 +149,16 @@ class Portal {
     }
     
     createPortalLights() {
-        this.portalLight = null; // Don't create initially
-    }
-    
-    createSpiralTexture() {
-        // Create a canvas for the spiral texture
-        const canvas = document.createElement('canvas');
-        canvas.width = 512; // Increased resolution for better detail
-        canvas.height = 512;
-        const ctx = canvas.getContext('2d');
-        
-        // Clear with transparent background
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw a spiral pattern
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        
-        // More vibrant background gradient
-        const bgGradient = ctx.createRadialGradient(
-            centerX, centerY, 0,
-            centerX, centerY, canvas.width / 2
-        );
-        
-        // Add color stops based on portal color
-        const colorObj = new THREE.Color(this.color);
-        const complementaryColor = new THREE.Color(
-            1 - colorObj.r,
-            1 - colorObj.g,
-            1 - colorObj.b
-        );
-        
-        // Background gradient with more contrast
-        bgGradient.addColorStop(0, 'white');
-        bgGradient.addColorStop(0.4, colorObj.getStyle());
-        bgGradient.addColorStop(0.7, 'rgba(255, 255, 255, 0.8)');
-        bgGradient.addColorStop(0.9, complementaryColor.getStyle());
-        bgGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
-        
-        // Fill background
-        ctx.fillStyle = bgGradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        // Draw multiple spiral arms for more visual interest
-        for (let arm = 0; arm < 3; arm++) {
-            const armOffset = (Math.PI * 2 / 3) * arm;
-            ctx.beginPath();
-            
-            // Create gradient for this spiral arm
-            const spiralGradient = ctx.createLinearGradient(
-                centerX - canvas.width/2, centerY - canvas.height/2,
-                centerX + canvas.width/2, centerY + canvas.height/2
-            );
-            
-            // Alternate colors for each arm for more visual interest
-            if (arm % 2 === 0) {
-                spiralGradient.addColorStop(0, 'white');
-                spiralGradient.addColorStop(0.5, colorObj.getStyle());
-                spiralGradient.addColorStop(1, 'white');
-            } else {
-                spiralGradient.addColorStop(0, colorObj.getStyle());
-                spiralGradient.addColorStop(0.5, 'white');
-                spiralGradient.addColorStop(1, colorObj.getStyle());
-            }
-            
-            ctx.strokeStyle = spiralGradient;
-            ctx.lineWidth = 8; // Thicker lines for better visibility
-            
-            // Draw spiral with more iterations and tighter spacing
-            for (let i = 0; i < 600; i++) {
-                const angle = (i / 10) + armOffset;
-                const radius = (i / 600) * (canvas.width / 1.8);
-                
-                const x = centerX + Math.cos(angle) * radius;
-                const y = centerY + Math.sin(angle) * radius;
-                
-                if (i === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            }
-            
-            ctx.stroke();
-        }
-        
-        return new THREE.CanvasTexture(canvas);
+        // Create a stronger light for sky portal
+        let lightColor = COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())];
+        this.portalLight = new THREE.PointLight(lightColor, 3, 30); // Stronger light with longer range
+        this.portalLight.position.set(0, 0, 0.5);
+        this.portalGroup.add(this.portalLight);
     }
     
     createParticles() {
         // Create particle system for the swirling effect
-        const particleCount = 250;
+        const particleCount = 300; // More particles for sky portal
         const particles = new THREE.BufferGeometry();
         
         // Create arrays for particle positions
@@ -266,12 +168,12 @@ class Portal {
         // Generate particles in a disc pattern
         for (let i = 0; i < particleCount; i++) {
             const i3 = i * 3;
-            const radius = Math.random() * 4.5;
+            const radius = Math.random() * 6.5; // Larger radius for sky portal
             const angle = Math.random() * Math.PI * 2;
             
             positions[i3] = Math.cos(angle) * radius;
             positions[i3 + 1] = Math.sin(angle) * radius;
-            positions[i3 + 2] = (Math.random() - 0.5) * 0.5;
+            positions[i3 + 2] = (Math.random() - 0.5) * 1.0; // More depth variation
             
             // Convert portal color to RGB for particles
             const color = new THREE.Color(this.color);
@@ -286,10 +188,10 @@ class Portal {
         
         // Material for the particles
         const particleMaterial = new THREE.PointsMaterial({
-            size: 0.14,
+            size: 0.25, // Larger particles for sky portal
             vertexColors: true,
             transparent: true,
-            opacity: 0.25,
+            opacity: 0.5, // Higher opacity for better visibility
             blending: THREE.AdditiveBlending,
             depthWrite: false
         });
@@ -306,13 +208,13 @@ class Portal {
         // Create a canvas for the label text
         const canvas = document.createElement('canvas');
         const context = canvas.getContext('2d');
-        canvas.width = 800;
-        canvas.height = 100;
+        canvas.width = 1200; // Larger canvas for better visibility
+        canvas.height = 150;
         
         // Set up text style
-        context.fillStyle = 'rgba(72, 3, 99, 0.8)';
+        context.fillStyle = 'rgba(72, 3, 99, 0.9)'; // More opaque for sky visibility
         context.fillRect(0, 0, canvas.width, canvas.height);
-        context.font = 'bold 70px Courier New';
+        context.font = 'bold 80px Courier New'; // Larger font for sky portal
         context.textAlign = 'center';
         context.textBaseline = 'middle';
         
@@ -332,13 +234,13 @@ class Portal {
         const material = new THREE.SpriteMaterial({
             map: texture,
             transparent: true,
-            opacity: 0.4 // Start dim
+            opacity: 0.9 // Higher opacity for better visibility in sky
         });
         
         // Create the sprite
         this.labelSprite = new THREE.Sprite(material);
-        this.labelSprite.scale.set(10, 2.5, 1); // text size
-        this.labelSprite.position.set(0, 5.5, 0); // Position above the portal
+        this.labelSprite.scale.set(15, 3.5, 1); // Larger text size for sky visibility
+        this.labelSprite.position.set(0, 8, 0); // Position above the portal
 
         this.portalGroup.add(this.labelSprite);
     }
@@ -358,8 +260,8 @@ class Portal {
                 this.startPortalAnimation();
             }
 
-            // Make portal face player for better visibility
-            this.facePlayer(playerPosition);
+            // For sky portal, make it face downward toward the player
+            this.facePlayerFromSky(playerPosition);
             
             // Update animations
             this.updatePortalAnimation(deltaTime, distanceToPlayer);
@@ -385,41 +287,29 @@ class Portal {
     }
     
     startPortalAnimation() {
-        if (!this.portalLight) {
-            let lightColor = COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())];
-            this.portalLight = new THREE.PointLight(lightColor, 2, 20);
-            this.portalLight.position.set(0, 0, 0.5);
-            this.portalGroup.add(this.portalLight);
-        }
         this.isAnimating = true;
 
         // Increase opacity of portal elements
         this.fadeIn(this.portalMaterial, 0.9);
-        this.fadeIn(this.particles.material, 0.8);
-        this.fadeIn(this.labelSprite.material, 0.9);
+        this.fadeIn(this.particles.material, 0.9);
+        this.fadeIn(this.labelSprite.material, 1.0);
         
         // Increase light intensity
-        this.portalLight.intensity = 2;
+        this.portalLight.intensity = 5; // Stronger light effect for sky portal
         
-        console.log(`Portal "${this.name}" animation started`);
+        console.log(`Sky Portal "${this.name}" animation started`);
     }
     
     stopPortalAnimation() {
-        /*
-        if (this.portalLight) {
-            this.portalGroup.remove(this.portalLight);
-            this.portalLight = null;
-        }
-        */
         this.isAnimating = false;
         
         // Decrease opacity of portal elements
-        this.fadeIn(this.portalMaterial, 0.1);
-        this.fadeIn(this.particles.material, 0.1);
-        this.fadeIn(this.labelSprite.material, 0.1);
+        this.fadeIn(this.portalMaterial, 0.4); // Keep slightly visible from a distance
+        this.fadeIn(this.particles.material, 0.3);
+        this.fadeIn(this.labelSprite.material, 0.6);
         
-        // Decrease light intensity
-        this.portalLight.intensity = 0.0;
+        // Decrease light intensity but keep it slightly visible
+        this.portalLight.intensity = 1.0;
     }
     
     fadeIn(material, targetOpacity) {
@@ -429,16 +319,13 @@ class Portal {
     updatePortalAnimation(deltaTime, distanceToPlayer) {
         // Intensify animations as player gets closer
         const proximityFactor = 1 - (distanceToPlayer / this.animationStartRadius);
-        
-        // Rotate portal center
-        this.portalCenter.rotation.z += deltaTime * 0.5 * (1 + proximityFactor);
-        
+
         // Pulse the light
         const time = performance.now() * 0.002;
-        this.portalLight.intensity = 0.7 + Math.sin(time * 1) * 1.5;
+        this.portalLight.intensity = 2 + Math.sin(time * 1.5) * 3;
         
         // Rotate inner ring in opposite direction
-        this.innerRing.rotation.z -= deltaTime * 0.5;
+        this.innerRing.rotation.z -= deltaTime * 0.8; // Faster rotation for sky portal
         
         // Animate particles
         if (this.particles) {
@@ -454,7 +341,7 @@ class Portal {
                 
                 // Calculate rotation speed based on distance from center
                 const distance = Math.sqrt(x * x + y * y);
-                const rotationSpeed = (1 - distance / 5) * 2 * proximityFactor;
+                const rotationSpeed = (1 - distance / 7) * 3 * proximityFactor;
                 const angle = time * rotationSpeed;
                 
                 // Rotate position
@@ -462,7 +349,7 @@ class Portal {
                 positions[i3 + 1] = x * Math.sin(angle) + y * Math.cos(angle);
                 
                 // Add slight vertical wobble
-                positions[i3 + 2] = Math.sin(time * 5 + i * 0.1) * 0.2 * proximityFactor;
+                positions[i3 + 2] = Math.sin(time * 7 + i * 0.1) * 0.5 * proximityFactor;
             }
             
             // Mark positions for update
@@ -470,46 +357,46 @@ class Portal {
         }
     }
     
-    facePlayer(playerPosition) {
-        // Calculate direction to player
+    facePlayerFromSky(playerPosition) {
+        // Calculate direction to player from sky
         const direction = new THREE.Vector3(
             playerPosition.x - this.portalGroup.position.x,
-            0, // Ignore Y to keep portal upright
+            playerPosition.y - this.portalGroup.position.y,
             playerPosition.z - this.portalGroup.position.z
         );
         
-        // Only rotate if the player is moving
+        // For sky portal, we want to always face toward the player (looking down)
         if (direction.length() > 0.1) {
             direction.normalize();
             
-            // Create a temporary target position in front of the portal
-            const targetPos = new THREE.Vector3().copy(this.portalGroup.position).add(direction);
+            // Look directly at player position - for sky portal this is important
+            this.portalGroup.lookAt(playerPosition);
             
-            // Look at the target position
-            this.portalGroup.lookAt(targetPos);
+            // Add slight tilt to make portal more visible from below
+            this.portalGroup.rotation.x += Math.PI / 6;
         }
     }
     
     activate() {
         // Only trigger if player is actually moving through the portal
         if (!this.isAnimating) return;
-        console.log(`Portal "${this.name}" activated! Opening ${ this.url}`);
+        console.log(`Sky Portal "${this.name}" activated! Opening ${ this.url}`);
        
         resetAllKeyStates();
 
         // Play portal sound if available
         if (window.soundSystem && window.soundSystem.initialized) {
-        // Create ascending tones for portal activation
-        window.soundSystem.playTone(300, 0.1, 'sine', 0.3);
-        window.soundSystem.playTone(450, 0.15, 'sine', 0.3, 0.1);
-        window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
-        window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
+            // Create ascending tones for portal activation
+            window.soundSystem.playTone(300, 0.1, 'sine', 0.3);
+            window.soundSystem.playTone(450, 0.15, 'sine', 0.3, 0.1);
+            window.soundSystem.playTone(600, 0.2, 'sine', 0.3, 0.25);
+            window.soundSystem.playTone(900, 0.4, 'sine', 0.3, 0.45);
         }
        
         // Ensure URL has protocol
         let targetUrl = this.url;
         if (!targetUrl.startsWith("http://") && !targetUrl.startsWith("https://")) {
-        targetUrl = "https://" + targetUrl;
+            targetUrl = "https://" + targetUrl;
         }
        
         // Try different methods to open the URL
@@ -528,13 +415,13 @@ class Portal {
        
         // For in-app browsers, sometimes triggering a real click event works better
         if (isInAppBrowser()) {
-        const clickEvent = new Event('click', {
-        bubbles: true,
-        cancelable: true
-        });
-        link.dispatchEvent(clickEvent);
+            const clickEvent = new Event('click', {
+                bubbles: true,
+                cancelable: true
+            });
+            link.dispatchEvent(clickEvent);
         } else {
-        link.click();
+            link.click();
         }
        
         // Clean up after a short delay
@@ -638,6 +525,31 @@ function updatePortalUI(isNearPortal, portalName) {
         } else {
             infoElement.classList.remove('visible');
         }
+    } else {
+        // Create portal info element if it doesn't exist
+        const portalInfo = document.createElement('div');
+        portalInfo.id = 'portal-info';
+        portalInfo.style.position = 'fixed';
+        portalInfo.style.top = '20px';
+        portalInfo.style.left = '50%';
+        portalInfo.style.transform = 'translateX(-50%)';
+        portalInfo.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+        portalInfo.style.color = '#fff';
+        portalInfo.style.padding = '10px 20px';
+        portalInfo.style.borderRadius = '20px';
+        portalInfo.style.fontFamily = 'Arial, sans-serif';
+        portalInfo.style.fontWeight = 'bold';
+        portalInfo.style.zIndex = '1000';
+        portalInfo.style.transition = 'opacity 0.3s ease';
+        portalInfo.style.opacity = '0';
+        portalInfo.style.pointerEvents = 'none';
+        
+        if (isNearPortal) {
+            portalInfo.textContent = `${portalName} Nearby`;
+            portalInfo.style.opacity = '1';
+        }
+        
+        document.body.appendChild(portalInfo);
     }
 }
 
@@ -675,22 +587,22 @@ function createPortals() {
         return [];
     }
         
-    // Calculate positions in a circle around the map
+    // Calculate positions in a circle around the map, but at Y=60
     const portals = [];
     const portalCount = numPortalsPerLevel;
-    const mapRadius = 80;
-    let randomDistance = 80;
+    const mapRadius = 50; // Slightly smaller radius for sky portal
+    let randomDistance = 20; // Less random distance for more predictable placement
     let portalDestinationsCopy = portalDestinations.slice();
-    let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy,portalCount);
+    let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy, portalCount);
 
     for (let i = 0; i < portalCount; i++) {
         // Calculate angle for even distribution
         const angle = (i / portalCount) * Math.PI * 2;
         
-        // Calculate position
+        // Calculate position - with fixed Y=60 for sky placement
         const x = Math.cos(angle) * (mapRadius + Math.random()*randomDistance);
         const z = Math.sin(angle) * (mapRadius + Math.random()*randomDistance);
-        const position = { x, y: 0, z };
+        const position = { x, y: 60, z };
         
         try {
             // Create the portal
@@ -698,12 +610,12 @@ function createPortals() {
                 position,
                 selectedPortalDestinations[i].url+urlParams,
                 COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())],
-                selectedPortalDestinations[i].name
+                selectedPortalDestinations[i].name,
             );
             
             portals.push(portal);
         } catch (e) {
-            console.error(`Error creating portal ${i}:`, e);
+            console.error(`Error creating sky portal ${i}:`, e);
         }
     }    
     // Setup update loop for portals
