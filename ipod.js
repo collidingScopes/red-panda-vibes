@@ -274,7 +274,7 @@ class Ipod {
             });
 
             const particle = new THREE.Sprite(material);
-            particle.scale.set(0.7, 0.7, 0.7); // Adjust size as needed
+            particle.scale.set(0.8, 0.8, 0.8); // Adjust size as needed
             particle.position.set(
                 this.object.position.x,
                 this.object.position.y,
@@ -282,9 +282,9 @@ class Ipod {
             );
 
             particle.velocity = new THREE.Vector3(
-                (Math.random() - 0.5) * 5,
-                Math.random() * 4 + 2,
-                (Math.random() - 0.5) * 5
+                (Math.random() - 0.5) * 7,
+                Math.random() * 7 + 2,
+                (Math.random() - 0.5) * 7,
             );
 
             particleGroup.add(particle);
@@ -296,14 +296,14 @@ class Ipod {
 
         this.particleTimeout = setTimeout(() => {
             this.removeEmojiFireworks();
-        }, 2000);
+        }, 4000);
 
         this.animateEmojiFireworks(particles);
     }
 
     animateEmojiFireworks(particles) {
         const startTime = Date.now();
-        const duration = 2000;
+        const duration = 4000;
     
         const animate = () => {
             const elapsed = Date.now() - startTime;
@@ -312,7 +312,7 @@ class Ipod {
             if (progress < 1) {
                 particles.forEach(particle => {
                     particle.position.add(particle.velocity.clone().multiplyScalar(0.016));
-                    particle.velocity.y -= 0.12; // Gravity
+                    particle.velocity.y -= 0.1; // Gravity
                     // particle.material.opacity = 1 - progress;
                     particle.material.rotation += 0.05; // Rotate the sprite's texture
                 });

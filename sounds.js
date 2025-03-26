@@ -17,10 +17,12 @@ class SoundSystem {
         // Background music properties
         this.musicTracks = [
             { path: 'assets/song-0.mp3', audio: null, loaded: false },
-            { path: 'assets/bamboo-nomad.mp3', audio: null, loaded: false },
+            { path: 'assets/panda-rnb-1.mp3', audio: null, loaded: false },
+            { path: 'assets/panda-rnb-2.mp3', audio: null, loaded: false },
             { path: 'assets/song-1.mp3', audio: null, loaded: false },
             { path: 'assets/song-2.mp3', audio: null, loaded: false },
-            { path: 'assets/song-3.mp3', audio: null, loaded: false }
+            { path: 'assets/song-3.mp3', audio: null, loaded: false },
+            { path: 'assets/bamboo-nomad.mp3', audio: null, loaded: false },
         ];
         this.currentTrackIndex = 0;
         this.musicLoaded = false;
@@ -571,7 +573,7 @@ class SoundSystem {
         
         // Create gain node for volume control
         const gainNode = this.audioContext.createGain();
-        gainNode.gain.value = 0.65;  // Not too loud
+        gainNode.gain.value = 0.55;  // Not too loud
         
         // Add some modulation for a more dynamic sound
         const lfo = this.audioContext.createOscillator();
