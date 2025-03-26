@@ -462,7 +462,7 @@ class Cubicle {
         socialLinksContainer.style.width = '100%';
         socialLinksContainer.style.height = '40px';
         socialLinksContainer.style.display = 'flex';
-        socialLinksContainer.style.justifyContent = 'center';
+        socialLinksContainer.style.justifyContent = 'left';
         socialLinksContainer.style.alignItems = 'center';
         socialLinksContainer.style.zIndex = '1002';
         socialLinksContainer.style.backgroundColor = 'rgba(62, 98, 206, 0.7)';
@@ -476,8 +476,8 @@ class Cubicle {
             linkElement.target = '_blank'; // Open in new tab
             linkElement.style.color = 'white';
             linkElement.style.textDecoration = 'none';
-            linkElement.style.margin = '0 20px';
-            linkElement.style.padding = '5px 15px';
+            linkElement.style.margin = '0 2px';
+            linkElement.style.padding = '5px 10px';
             linkElement.style.fontFamily = 'Courier New, sans-serif';
             linkElement.style.fontSize = '16px';
             linkElement.style.fontWeight = 'bold';

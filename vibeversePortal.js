@@ -14,8 +14,8 @@ class VibeversePortal {
         this.portalParticles = null;
         this.clock = new THREE.Clock();
         this.portalShaderMaterial = null;
-        this.portalWidth = 12;
-        this.portalHeight = 12;
+        this.portalWidth = 10;
+        this.portalHeight = 10;
         this.isPlayerInPortal = false;
         this.signboardGroup = null;
     }

@@ -337,14 +337,22 @@ class Ipod {
     triggerNextTrack() {
         console.log("iPod touched, playing next track");
         this.createEmojiFireworks();
-
+    
         if (window.soundSystem && window.soundSystem.initialized) {
-            window.soundSystem.playNextTrack();
+            // Only play next track if sound is not muted
+            if (!window.soundSystem.muted) {
+                window.soundSystem.playNextTrack();
+            } else {
+                console.log("Sound is muted, skipping to next track without playing");
+                // Still advance the track index without playing it
+                window.soundSystem.currentTrackIndex = 
+                    (window.soundSystem.currentTrackIndex + 1) % window.soundSystem.musicTracks.length;
+                console.log(`Advanced to track ${window.soundSystem.currentTrackIndex + 1} (muted)`);
+            }
         } else {
             console.warn("Sound system not initialized yet");
         }
     }
-
     
     startCooldown() {
         this.cooldown = true;
