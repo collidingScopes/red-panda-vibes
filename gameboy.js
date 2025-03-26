@@ -354,11 +354,6 @@ class Gameboy {
                 cancelAnimationFrame(window.gameState.animationId);
                 window.gameState.animationId = null;
             }
-            
-            // Pause music if available
-            if (window.soundSystem && window.soundSystem.pauseMusic) {
-                window.soundSystem.pauseMusic();
-            }
 
             // Create instructions message
             const instructionsMessage = document.createElement('div');
