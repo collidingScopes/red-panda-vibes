@@ -627,11 +627,6 @@ class Cubicle {
             
             // Set the game as paused
             gameState.gamePaused = true;
-            
-            // If sound system exists, pause the music
-            if (window.soundSystem && window.soundSystem.pauseMusic) {
-                window.soundSystem.pauseMusic();
-            }
         }
         
         // Start the computer screen animation
