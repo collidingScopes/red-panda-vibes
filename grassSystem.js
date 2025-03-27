@@ -159,7 +159,7 @@ class GrassSystem {
                 
                 // Random scale variation for natural look
                 const scale = 0.2 + Math.random() * 1.6;
-                dummy.scale.set(Math.min(scale/2,0.6), scale * (0.6 + Math.random() * 0.6), scale);
+                dummy.scale.set(Math.min(scale/2,0.4), scale * (0.4 + Math.random() * 0.8), scale);
                 
                 // Random rotation for variation
                 dummy.rotation.y = Math.random() * Math.PI * 2;
@@ -225,7 +225,7 @@ class GrassSystem {
             this.grassMesh.count = this.activeInstances;
             this.grassMesh.instanceMatrix.needsUpdate = true;
             
-            console.log(`Rendering ${this.activeInstances} grass blades near player`);
+            //console.log(`Rendering ${this.activeInstances} grass blades near player`);
         }
     }
     

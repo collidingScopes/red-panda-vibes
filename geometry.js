@@ -249,7 +249,7 @@ function threeColorToHex(threeColor) {
     return '#000000'; // Default to black
 }
 
-// Create stylized bamboo stalk (replaces flag pole)
+// Create stylized bamboo stalk
 function createFlagPole() {
     const group = new THREE.Group();
     
@@ -257,18 +257,19 @@ function createFlagPole() {
     const bambooHeight = 35; // Total height
     const bambooRadius = 1;
 
-    // Create bamboo stalk using cylinder instead of box for a more natural look
+    // Create bamboo stalk with a more distinctly low-poly look
     const stalkGeometry = new THREE.CylinderGeometry(
-        bambooRadius/2, // top radius
-        bambooRadius/2, // bottom radius
-        bambooHeight,   // height
-        12             // radial segments
+        bambooRadius/1.8, // top radius (slightly thinner)
+        bambooRadius/1.5, // bottom radius
+        bambooHeight,     // height
+        6                 // fewer radial segments for more obvious low-poly look
     );
     
     const stalkMaterial = new THREE.MeshStandardMaterial({
-        color: 0x7CFC00, // Light green for bamboo
-        roughness: 0.7,
-        metalness: 0.1
+        color: 0x7FFF00, // Chartreuse - brighter green for bamboo to match image
+        roughness: 0.5,  // Less roughness for a more vibrant appearance
+        metalness: 0.1,
+        flatShading: true // Add flat shading for low-poly look
     });
     
     const stalk = new THREE.Mesh(stalkGeometry, stalkMaterial);
@@ -281,58 +282,100 @@ function createFlagPole() {
 
     // Create node rings (the slightly wider parts between segments)
     function createNodeRing(posY, radius) {
-        const ringGeometry = new THREE.CylinderGeometry(radius/1.2, radius/1.2, 0.3, 12);
+        // Use even fewer segments for a more obviously faceted look
+        const ringGeometry = new THREE.CylinderGeometry(radius/1.1, radius/1.1, 0.4, 6); 
         const ringMaterial = new THREE.MeshStandardMaterial({
-            color: 0x228B22, // Darker green for nodes
-            roughness: 0.8,
-            metalness: 0.1
+            color: 0x32CD32, // More vibrant green for better contrast with the stalk
+            roughness: 0.6,
+            metalness: 0.1,
+            flatShading: true // Add flat shading for low-poly look
         });
         const ring = new THREE.Mesh(ringGeometry, ringMaterial);
         ring.position.y = posY;
         ring.castShadow = true;
+        
+        // Add slight random rotation to the ring for less perfect alignment
+        ring.rotation.x = Math.random() * 0.05 - 0.025;
+        ring.rotation.z = Math.random() * 0.05 - 0.025;
+        
         return ring;
     }
     
-    // Create a leaf cluster (small pointed leaves coming out from the node)
+    // Create a leaf cluster (geometric, low-poly leaves pointing outward)
     function createLeafCluster(posY, radius) {
         const cluster = new THREE.Group();
         
-        // Create 3-5 leaves in a fan arrangement
-        const leafCount = 3 + Math.floor(Math.random() * 3);
+        // Create 2-5 leaves in a random arrangement
+        const leafCount = 1 + Math.floor(Math.random() * 3);
         const baseAngle = Math.random() * Math.PI * 2; // Random starting angle
         
         for (let i = 0; i < leafCount; i++) {
-            // Calculate angle for this leaf
-            const angle = baseAngle + (i * (Math.PI * 2) / leafCount);
+            // Calculate angle for this leaf with some variation
+            const angle = baseAngle + (i * (Math.PI * 2) / leafCount) + (Math.random() * 0.7 - 0.35);
             
-            // Create a simple triangle shape for the leaf
-            const leafShape = new THREE.Shape();
-            leafShape.moveTo(0, 0);
-            leafShape.lineTo(0.6, 0.3);
-            leafShape.lineTo(2 + Math.random() * 3, 0);
-            leafShape.lineTo(0.6, -0.3);
-            leafShape.lineTo(0, 0);
+            // Create a geometric shape for the leaf (low-poly, similar to the image)
+            let leafGeometry;
             
-            const leafGeometry = new THREE.ShapeGeometry(leafShape);
+            // Randomize leaf shapes - create more variation
+            const shapeType = Math.random();
+            
+            if (shapeType < 0.3) {
+                // Hexagonal leaf
+                leafGeometry = new THREE.CircleGeometry(0.9 + Math.random() * 0.5, 4);
+                leafGeometry.scale(0.5 + Math.random() * 0.5, 1.5 + Math.random() * 0.8, 1);
+            } else if (shapeType < 0.6) {
+                // Diamond/rhombus leaf
+                leafGeometry = new THREE.PlaneGeometry(0.8 + Math.random() * 0.8, 2 + Math.random() * 1);
+                leafGeometry.rotateZ(Math.PI/4); // Rotate to make diamond shape
+                leafGeometry.scale(1, 1.2, 1); // Stretch slightly
+            } else if (shapeType < 0.8) {
+                // Triangular leaf
+                const shape = new THREE.Shape();
+                const size = 0.5 + Math.random() * 1.2;
+                shape.moveTo(0, size * 1.5);
+                shape.lineTo(-size, -size * 0.7);
+                shape.lineTo(size, -size * 0.7);
+                shape.lineTo(0, size * 1.5);
+                leafGeometry = new THREE.ShapeGeometry(shape);
+            } else {
+                // Quadrilateral with random vertices (very irregular shape)
+                const shape = new THREE.Shape();
+                const size = 0.6 + Math.random() * 0.8;
+                shape.moveTo(0, size);
+                shape.lineTo(-size * (0.5 + Math.random() * 0.5), size * (0.2 + Math.random() * 0.3));
+                shape.lineTo(0, -size * (0.8 + Math.random() * 0.4));
+                shape.lineTo(size * (0.5 + Math.random() * 0.5), size * (0.2 + Math.random() * 0.3));
+                shape.lineTo(0, size);
+                leafGeometry = new THREE.ShapeGeometry(shape);
+            }
+            
+            // Vary the leaf color slightly
+            const colorVariation = 0.2;
+            const leafColor = new THREE.Color(0x32CD32).multiplyScalar(0.9 + Math.random() * colorVariation);
+            
             const leafMaterial = new THREE.MeshStandardMaterial({ 
-                color: 0x32CD32, // Lime green
+                color: leafColor,
                 roughness: 0.8,
-                side: THREE.DoubleSide
+                side: THREE.DoubleSide,
+                flatShading: true // Essential for low-poly look
             });
             
             const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
             
-            // Position and rotate leaf
+            // Position with more variation
+            const distanceFromStem = radius * (1.2 + Math.random() * 1.0);
             leaf.position.set(
-                Math.cos(angle) * (radius), 
-                0,
-                Math.sin(angle) * (radius)
+                Math.cos(angle) * distanceFromStem, 
+                Math.random() * 2.0 - 1.0, // Vary height slightly
+                Math.sin(angle) * distanceFromStem
             );
             
-            // Rotate to face outward
-            leaf.rotation.y = Math.PI/2 - angle;
-            // Tilt slightly upward
-            leaf.rotation.x = -Math.PI/6;
+            // Rotate to face outward with significant random variation
+            leaf.rotation.y = Math.PI/2 - angle + (Math.random() * 0.8 - 0.4);
+            
+            // More dramatic random rotations on all axes
+            leaf.rotation.x = -Math.PI/2 + (Math.random() * 1.2 - 0.6);
+            leaf.rotation.z = Math.random() * 1.0 - 0.5;
             
             cluster.add(leaf);
         }
@@ -342,7 +385,7 @@ function createFlagPole() {
     }
 
     // Add node rings at regular intervals
-    const segmentHeight = bambooHeight / 6;
+    const segmentHeight = bambooHeight / 6; // Fewer segments to match image better
     const nodePositions = [];
     
     // Create nodes at regular intervals
@@ -354,10 +397,17 @@ function createFlagPole() {
         const ring = createNodeRing(posY, bambooRadius);
         group.add(ring);
         
-        // Add leaf cluster at this node if it's not too close to the top
-        if (posY < bambooHeight - 5) {
-            const leafCluster = createLeafCluster(posY, bambooRadius);
-            group.add(leafCluster);
+        // Create more prominent leaf clusters at each node
+        // The image shows very geometric, distinct leaf clusters at each node
+        const leafCluster = createLeafCluster(posY, bambooRadius);
+        group.add(leafCluster);
+        
+        // Add a second offset cluster at some nodes for more density and variation
+        if (Math.random() > 0.6) {
+            const offsetCluster = createLeafCluster(posY + 0.3, bambooRadius);
+            // Rotate the second cluster slightly
+            offsetCluster.rotation.y = Math.PI * Math.random();
+            group.add(offsetCluster);
         }
     });
 
@@ -378,46 +428,6 @@ function createFlagPole() {
     
     scene.add(group);
     return group;
-}
-
-function createPastelTree() {
-    const treeGroup = new THREE.Group();
-    
-    // Tree trunk - box for retro blockiness with warm color
-    const trunkGeometry = new THREE.BoxGeometry(1, 8, 1);
-    const trunkMaterial = new THREE.MeshStandardMaterial({ 
-        color: 0xd9a066,
-        roughness: 0.8,
-        metalness: 0.1,
-        emissive: 0x331100,
-        emissiveIntensity: 0.1
-    });
-    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    trunk.position.y = 4; // Changed from 1 to 4 to center the trunk
-    trunk.castShadow = true;
-    
-    // Choose from pastel colors for the foliage
-    const foliageColor = COLORS.foliage[Math.floor(Math.random() * COLORS.foliage.length)];
-    
-    // Tree foliage - rounded cone for soft look
-    let treeHeight = 4+Math.random()*4;
-    let treeWidth = 1+Math.random()*4;
-    const foliageGeometry = new THREE.ConeGeometry(treeWidth, treeHeight, 8); // More sides for smoother look
-    const foliageMaterial = new THREE.MeshStandardMaterial({ 
-        color: foliageColor,
-        roughness: 0.7,
-        metalness: 0.1,
-        emissive: foliageColor,
-        emissiveIntensity: 0.6
-    });
-    const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-    foliage.position.y = 8 + treeHeight/2 - 0.5; // Adjusted to connect properly with trunk
-    foliage.castShadow = true;
-    
-    treeGroup.add(trunk);
-    treeGroup.add(foliage);
-    
-    return treeGroup;
 }
 
 function createNeonFlowerPatch() {
@@ -514,11 +524,190 @@ function createNeonFlowerPatch() {
     return flowerGroup;
 }
 
-// Updated obstacles creation function to use our new flower style
+function createLowPolyTree() {
+    const treeGroup = new THREE.Group();
+    
+    // Tree size parameters
+    const treeHeight = 7 + Math.random() * 16; // Vary tree heights
+    const trunkHeight = treeHeight * 0.5;
+    const trunkWidth = 0.5 + Math.random() * 0.7;
+    const foliageSize = 2 + Math.random() * 2;
+    
+    // Tree trunk - using BoxGeometry but with some randomization for more natural look
+    const trunkGeometry = new THREE.CylinderGeometry(
+        trunkWidth * 0.7, // top radius (thinner at top)
+        trunkWidth, // bottom radius
+        trunkHeight,
+        5, // fewer radial segments for low-poly look
+        3, // height segments
+        false
+    );
+    
+    // Apply random vertex displacement to make trunk less perfect
+    const trunkPositions = trunkGeometry.attributes.position;
+    for (let i = 0; i < trunkPositions.count; i++) {
+        const x = trunkPositions.getX(i);
+        const y = trunkPositions.getY(i);
+        const z = trunkPositions.getZ(i);
+        
+        // Don't displace top and bottom caps too much
+        if (y > -trunkHeight/2 * 0.8 && y < trunkHeight/2 * 0.8) {
+            // Add small random displacement to x and z
+            trunkPositions.setX(i, x + (Math.random() * 0.2 - 0.1));
+            trunkPositions.setZ(i, z + (Math.random() * 0.2 - 0.1));
+        }
+    }
+    
+    // Choose a random brown shade for trunk
+    const trunkColors = [
+        0x8B4513, // SaddleBrown
+        0xA0522D, // Sienna
+        0xCD853F, // Peru
+        0xD2691E  // Chocolate
+    ];
+    const trunkColor = trunkColors[Math.floor(Math.random() * trunkColors.length)];
+    
+    const trunkMaterial = new THREE.MeshStandardMaterial({ 
+        color: trunkColor,
+        roughness: 0.9,
+        metalness: 0.1,
+        flatShading: true // Important for low-poly look
+    });
+    
+    const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
+    trunk.position.y = trunkHeight / 2;
+    trunk.castShadow = true;
+    //trunk.receiveShadow = true;
+    
+    // Apply slight random rotation to trunk for more natural look
+    trunk.rotation.x = (Math.random() * 0.1) - 0.05;
+    trunk.rotation.z = (Math.random() * 0.2) - 0.1;
+    
+    treeGroup.add(trunk);
+    
+    // Foliage - create multiple geometric shapes clustered together
+    const foliageCluster = createFoliageCluster(foliageSize, trunkHeight);
+    treeGroup.add(foliageCluster);
+    
+    // Add a small connection piece to ensure trunk and foliage are connected
+    const connectorGeometry = new THREE.CylinderGeometry(
+        trunkWidth * 0.8, // top radius
+        trunkWidth * 0.7, // bottom radius
+        trunkWidth, // short height
+        5, // radial segments
+        1 // height segments
+    );
+    
+    const connectorMaterial = new THREE.MeshStandardMaterial({
+        color: trunkColor,
+        roughness: 0.9,
+        metalness: 0.1,
+        flatShading: true
+    });
+    
+    const connector = new THREE.Mesh(connectorGeometry, connectorMaterial);
+    connector.position.y = trunkHeight;
+    connector.castShadow = true;
+    //connector.receiveShadow = true;
+    treeGroup.add(connector);
+    
+    return treeGroup;
+}
+
+// Function to create cluster of geometric shapes for foliage
+function createFoliageCluster(size, trunkHeight) {
+    const foliageGroup = new THREE.Group();
+    
+    // Select green shade for this tree's foliage from a palette
+    const greenColors = [
+        0x2E8B57, // SeaGreen
+        0x3CB371, // MediumSeaGreen
+        0x32CD32, // LimeGreen
+        0x228B22, // ForestGreen
+        0x6B8E23, // OliveDrab
+        0x556B2F  // DarkOliveGreen
+    ];
+    const baseColor = new THREE.Color(greenColors[Math.floor(Math.random() * greenColors.length)]);
+    
+    // Determine how many geometric shapes to use for this tree
+    const complexity = Math.floor(2 + Math.random() * 6); // 2-7 shapes
+    
+    // Create multiple geometric shapes with slight color variations
+    for (let i = 0; i < complexity; i++) {
+        // Vary shape type for more interesting foliage
+        let geometry;
+        const shapeType = Math.random();
+        
+        if (shapeType < 0.6) { // 60% polyhedra (similar to reference)
+            // Create a polyhedron (low-poly look)
+            if (Math.random() < 0.5) {
+                // Octahedron (diamond shape)
+                geometry = new THREE.OctahedronGeometry(size * (0.5 + Math.random() * 0.5), 0);
+            } else {
+                // Icosahedron (more facets but still low-poly)
+                geometry = new THREE.IcosahedronGeometry(size * (0.4 + Math.random() * 0.6), 0);
+            }
+        } else if (shapeType < 0.9) { // 30% cubes
+            // Create a cube with some variations
+            const cubeSize = size * (0.7 + Math.random() * 0.6);
+            geometry = new THREE.BoxGeometry(
+                cubeSize, 
+                cubeSize * (0.8 + Math.random() * 0.4),
+                cubeSize * (0.8 + Math.random() * 0.4)
+            );
+        } else { // 10% tetrahedra
+            // Create a tetrahedron (pyramid)
+            geometry = new THREE.TetrahedronGeometry(size * (0.4 + Math.random() * 0.6), 0);
+        }
+        
+        // Slight color variation for each shape
+        const colorVariation = 0.15;
+        const shapeColor = baseColor.clone().multiplyScalar(0.85 + Math.random() * colorVariation);
+        
+        const material = new THREE.MeshStandardMaterial({
+            color: shapeColor,
+            roughness: 0.8,
+            metalness: 0.1,
+            flatShading: true // Critical for low-poly look
+        });
+        
+        const shape = new THREE.Mesh(geometry, material);
+        
+        // Position each shape relative to center - keep them lower to connect with trunk
+        const offset = size * 0.25; // How far shapes can be from center
+        
+        // Ensure the lowest point of the foliage overlaps with the trunk top
+        // by controlling the minimum Y position more carefully
+        const minYPosition = trunkHeight - 0.2; // Slight overlap with trunk top
+        const randomYOffset = Math.random() * size * 0.7;
+        
+        shape.position.set(
+            (Math.random() * 2 - 1) * offset,
+            minYPosition + randomYOffset,
+            (Math.random() * 2 - 1) * offset
+        );
+        
+        // Random rotation
+        shape.rotation.set(
+            Math.random() * Math.PI,
+            Math.random() * Math.PI,
+            Math.random() * Math.PI
+        );
+        
+        shape.castShadow = true;
+        //shape.receiveShadow = true;
+        
+        foliageGroup.add(shape);
+    }
+    
+    return foliageGroup;
+}
+
+// Replace createObstacles function to use our new trees
 function createObstacles() {
     const obstacles = [];
     
-    // Create glowing flowers with the new style
+    // Create glowing flowers (unchanged from original function)
     for (let i = 0; i < 125; i++) {
         const flowerGroup = createNeonFlowerPatch();
         
@@ -534,9 +723,9 @@ function createObstacles() {
         scene.add(flowerGroup);
     }
     
-    // Create pastel-styled trees
+    // Create low poly trees instead of pastel trees
     for (let i = 0; i < 18; i++) {
-        const tree = createPastelTree();
+        const tree = createLowPolyTree();
         
         // Position trees randomly around the map
         const angle = Math.random() * Math.PI * 2;
