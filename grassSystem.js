@@ -159,8 +159,9 @@ class GrassSystem {
                 
                 // Random scale variation for natural look
                 const scale = 0.2 + Math.random() * 1.6;
-                dummy.scale.set(Math.min(scale/2,0.4), scale * (0.4 + Math.random() * 0.8), scale);
-                
+                dummy.scale.set(scale, scale * (0.4 + Math.random() * 0.8), scale);
+                //Math.min(scale/2,0.4)
+
                 // Random rotation for variation
                 dummy.rotation.y = Math.random() * Math.PI * 2;
                 

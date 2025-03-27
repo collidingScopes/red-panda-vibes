@@ -249,7 +249,142 @@ function threeColorToHex(threeColor) {
     return '#000000'; // Default to black
 }
 
-// Create stylized bamboo stalk
+function createLeafCluster(posY, radius) {
+    const cluster = new THREE.Group();
+    
+    // Create 0-2 stem + leaf groups at each node (some nodes may have no stems)
+    const stemCount = Math.floor(Math.random() * 3);
+    const baseAngle = Math.random() * Math.PI * 2; // Random starting angle
+    
+    for (let i = 0; i < stemCount; i++) {
+        // Calculate angle for this stem with some variation
+        const angle = baseAngle + (i * (Math.PI * 2) / stemCount) + (Math.random() * 0.5 - 0.25);
+        
+        // Create a stem sub-group
+        const stemGroup = new THREE.Group();
+        
+        // Create the stem - a thin cylinder shooting off from the main stalk
+        const stemLength = 0.5 + Math.random() * 2.5;
+        const stemGeometry = new THREE.CylinderGeometry(
+            0.05, // top radius (thin)
+            0.08, // bottom radius (slightly thicker at base)
+            stemLength,
+            5, // fewer segments for low-poly look
+            1
+        );
+        
+        const stemMaterial = new THREE.MeshStandardMaterial({
+            color: 0x7FFF00, // Light green for stem
+            roughness: 0.5,
+            flatShading: true
+        });
+        
+        const stem = new THREE.Mesh(stemGeometry, stemMaterial);
+        
+        // Position and rotate the stem to shoot outward from the stalk
+        // Move stem to start at the stalk surface and extend outward
+        stem.position.set(
+            Math.cos(angle) * (radius + stemLength/2),
+            0,
+            Math.sin(angle) * (radius + stemLength/2)
+        );
+        
+        // Rotate so the stem points outward from the stalk
+        stem.rotation.z = Math.PI/2; // Lay the stem horizontally
+        stem.rotation.y = -angle; // Point away from the stalk
+        
+        // Add a slight upward angle to stems
+        stem.rotation.x = -Math.PI/6 + (Math.random() * Math.PI/6); // Slight upward angle
+        
+        stemGroup.add(stem);
+        
+        // Create 3-6 leaves radiating from the end of the stem
+        const leafCount = 3 + Math.floor(Math.random() * 4);
+        const leafBaseAngle = Math.random() * Math.PI * 2;
+        
+        for (let j = 0; j < leafCount; j++) {
+            // Leaves should radiate in a somewhat fan-like arrangement
+            // When j=0, we want a leaf pointing up/outward
+            // When j=leafCount-1, we want a leaf pointing down/outward
+            
+            // Create a leaf shape - larger leaves as requested
+            const leafShape = new THREE.Shape();
+            const leafLength = 2.0 + Math.random() * 1.2; // Significantly increased length
+            const leafWidth = 0.3 + Math.random() * 0.2;  // Doubled width
+            
+            // Create a pointed leaf shape
+            leafShape.moveTo(0, 0);
+            leafShape.lineTo(-leafWidth/2, leafLength * 0.2);
+            leafShape.lineTo(-leafWidth/4, leafLength * 0.5);
+            leafShape.lineTo(0, leafLength);
+            leafShape.lineTo(leafWidth/4, leafLength * 0.5);
+            leafShape.lineTo(leafWidth/2, leafLength * 0.2);
+            leafShape.lineTo(0, 0);
+            
+            const leafGeometry = new THREE.ShapeGeometry(leafShape);
+            
+            // Vary the leaf color slightly
+            const colorVariation = 0.2;
+            const leafColor = new THREE.Color(0x32CD32).multiplyScalar(0.9 + Math.random() * colorVariation);
+            
+            const leafMaterial = new THREE.MeshStandardMaterial({ 
+                color: leafColor,
+                roughness: 0.8,
+                side: THREE.DoubleSide,
+                flatShading: true
+            });
+            
+            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
+            
+            // Distribute leaves in a fan-like arrangement at the end of the stem
+            // We'll use a semicircle arrangement with some randomization
+            
+            // Calculate the fan angle - leaves should spread in roughly 160° arc
+            const fanSpread = Math.PI * 0.8; // ~145 degrees
+            let fanAngle;
+            
+            // Distribute the leaves evenly in the fan
+            if (leafCount > 1) {
+                fanAngle = -fanSpread/2 + (j / (leafCount - 1)) * fanSpread;
+            } else {
+                fanAngle = 0; // Single leaf points straight
+            }
+            
+            // Add some randomness to the angle
+            fanAngle += (Math.random() * 0.2 - 0.1);
+            
+            // Position leaf at the end of the stem
+            const stemEndX = Math.cos(angle) * (radius + stemLength);
+            const stemEndY = 0;
+            const stemEndZ = Math.sin(angle) * (radius + stemLength);
+            
+            // Place leaf at the end of the stem
+            leaf.position.set(
+                stemEndX - Math.cos(angle) * 0.1, // Slightly inward from stem end
+                stemEndY,
+                stemEndZ - Math.sin(angle) * 0.1
+            );
+            
+            // Base rotation to align with stem direction
+            leaf.rotation.y = -angle;
+            
+            // Apply the fan angle rotation (around local X axis after the stem direction is set)
+            leaf.rotateOnAxis(new THREE.Vector3(1, 0, 0), fanAngle);
+            
+            // Add a slight twist for natural look
+            leaf.rotateOnAxis(new THREE.Vector3(0, 1, 0), (Math.random() * 1.0 - 0.5));
+            
+            stemGroup.add(leaf);
+        }
+        
+        cluster.add(stemGroup);
+    }
+    
+    cluster.position.y = posY;
+    return cluster;
+}
+
+// Updated createFlagPole function to use the new leaf cluster implementation
 function createFlagPole() {
     const group = new THREE.Group();
     
@@ -266,7 +401,7 @@ function createFlagPole() {
     );
     
     const stalkMaterial = new THREE.MeshStandardMaterial({
-        color: 0x7FFF00, // Chartreuse - brighter green for bamboo to match image
+        color: 0x0c9e0b, // Chartreuse - brighter green for bamboo to match image
         roughness: 0.5,  // Less roughness for a more vibrant appearance
         metalness: 0.1,
         flatShading: true // Add flat shading for low-poly look
@@ -301,89 +436,6 @@ function createFlagPole() {
         return ring;
     }
     
-    // Create a leaf cluster (geometric, low-poly leaves pointing outward)
-    function createLeafCluster(posY, radius) {
-        const cluster = new THREE.Group();
-        
-        // Create 2-5 leaves in a random arrangement
-        const leafCount = 1 + Math.floor(Math.random() * 3);
-        const baseAngle = Math.random() * Math.PI * 2; // Random starting angle
-        
-        for (let i = 0; i < leafCount; i++) {
-            // Calculate angle for this leaf with some variation
-            const angle = baseAngle + (i * (Math.PI * 2) / leafCount) + (Math.random() * 0.7 - 0.35);
-            
-            // Create a geometric shape for the leaf (low-poly, similar to the image)
-            let leafGeometry;
-            
-            // Randomize leaf shapes - create more variation
-            const shapeType = Math.random();
-            
-            if (shapeType < 0.3) {
-                // Hexagonal leaf
-                leafGeometry = new THREE.CircleGeometry(0.9 + Math.random() * 0.5, 4);
-                leafGeometry.scale(0.5 + Math.random() * 0.5, 1.5 + Math.random() * 0.8, 1);
-            } else if (shapeType < 0.6) {
-                // Diamond/rhombus leaf
-                leafGeometry = new THREE.PlaneGeometry(0.8 + Math.random() * 0.8, 2 + Math.random() * 1);
-                leafGeometry.rotateZ(Math.PI/4); // Rotate to make diamond shape
-                leafGeometry.scale(1, 1.2, 1); // Stretch slightly
-            } else if (shapeType < 0.8) {
-                // Triangular leaf
-                const shape = new THREE.Shape();
-                const size = 0.5 + Math.random() * 1.2;
-                shape.moveTo(0, size * 1.5);
-                shape.lineTo(-size, -size * 0.7);
-                shape.lineTo(size, -size * 0.7);
-                shape.lineTo(0, size * 1.5);
-                leafGeometry = new THREE.ShapeGeometry(shape);
-            } else {
-                // Quadrilateral with random vertices (very irregular shape)
-                const shape = new THREE.Shape();
-                const size = 0.6 + Math.random() * 0.8;
-                shape.moveTo(0, size);
-                shape.lineTo(-size * (0.5 + Math.random() * 0.5), size * (0.2 + Math.random() * 0.3));
-                shape.lineTo(0, -size * (0.8 + Math.random() * 0.4));
-                shape.lineTo(size * (0.5 + Math.random() * 0.5), size * (0.2 + Math.random() * 0.3));
-                shape.lineTo(0, size);
-                leafGeometry = new THREE.ShapeGeometry(shape);
-            }
-            
-            // Vary the leaf color slightly
-            const colorVariation = 0.2;
-            const leafColor = new THREE.Color(0x32CD32).multiplyScalar(0.9 + Math.random() * colorVariation);
-            
-            const leafMaterial = new THREE.MeshStandardMaterial({ 
-                color: leafColor,
-                roughness: 0.8,
-                side: THREE.DoubleSide,
-                flatShading: true // Essential for low-poly look
-            });
-            
-            const leaf = new THREE.Mesh(leafGeometry, leafMaterial);
-            
-            // Position with more variation
-            const distanceFromStem = radius * (1.2 + Math.random() * 1.0);
-            leaf.position.set(
-                Math.cos(angle) * distanceFromStem, 
-                Math.random() * 2.0 - 1.0, // Vary height slightly
-                Math.sin(angle) * distanceFromStem
-            );
-            
-            // Rotate to face outward with significant random variation
-            leaf.rotation.y = Math.PI/2 - angle + (Math.random() * 0.8 - 0.4);
-            
-            // More dramatic random rotations on all axes
-            leaf.rotation.x = -Math.PI/2 + (Math.random() * 1.2 - 0.6);
-            leaf.rotation.z = Math.random() * 1.0 - 0.5;
-            
-            cluster.add(leaf);
-        }
-        
-        cluster.position.y = posY;
-        return cluster;
-    }
-
     // Add node rings at regular intervals
     const segmentHeight = bambooHeight / 6; // Fewer segments to match image better
     const nodePositions = [];
@@ -397,8 +449,7 @@ function createFlagPole() {
         const ring = createNodeRing(posY, bambooRadius);
         group.add(ring);
         
-        // Create more prominent leaf clusters at each node
-        // The image shows very geometric, distinct leaf clusters at each node
+        // Create leaf clusters at each node using our updated function
         const leafCluster = createLeafCluster(posY, bambooRadius);
         group.add(leafCluster);
         
