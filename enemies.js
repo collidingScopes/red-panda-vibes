@@ -217,7 +217,11 @@ class EnemyManager {
             });
             
             const ring = new THREE.Mesh(geometry, material);
-            ring.position.copy(position);
+            
+            // Increase the y position by 1 to make it float higher
+            const elevatedPosition = position.clone();
+            elevatedPosition.y += 1.7;
+            ring.position.copy(elevatedPosition);            
             
             // Rotate ring to be horizontal
             ring.rotation.x = Math.PI / 2;
