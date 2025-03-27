@@ -22,6 +22,18 @@ class Cubicle {
         this.previousGameAnimationId = null;
         this.backgroundImage = null;
         
+        // Character model properties for canvas animation
+        this.character = {
+            x: 150,
+            y: 200,
+            width: 64,  // Width of the single sprite
+            height: 64, // Height of the single sprite
+            dx: 2.5,
+            dy: 2,
+            sprite: null,
+            scale: 1.5
+        };
+        
         // Social media links
         this.socialLinks = [
             { name: "Twitter", url: "https://x.com/measure_plan" },
@@ -275,6 +287,9 @@ class Cubicle {
         
         // Load the background image
         this.loadBackgroundImage();
+        
+        // Load character sprite
+        this.loadCharacterSprite();
     }
     
     loadBackgroundImage() {
@@ -290,6 +305,97 @@ class Cubicle {
         // Log an error if the image fails to load
         this.backgroundImage.onerror = (err) => {
             console.error("Error loading Windows XP background image:", err);
+        };
+    }
+    
+    // Load character spritesheet 
+    loadCharacterSprite() {
+        // Create an Image object for the character sprite
+        this.character.sprite = new Image();
+        
+        // Use the provided panda sprite
+        this.character.sprite.src = 'assets/panda-sprite.png';
+        
+        // Log image load status
+        this.character.sprite.onload = () => {
+            console.log("Panda sprite loaded successfully");
+            console.log("Sprite dimensions:", this.character.sprite.width, "x", this.character.sprite.height);
+            
+            // Update character dimensions to match the full sprite
+            this.character.width = this.character.sprite.width;
+            this.character.height = this.character.sprite.height;
+        };
+        
+        this.character.sprite.onerror = (err) => {
+            console.error("Error loading panda sprite:", err);
+            // Generate a fallback sprite if loading fails
+            this.generateFallbackCharacterSprite();
+        };
+    }
+    
+    // Get current character model name from game state
+    getCurrentModelName() {
+        if (window.gameState && window.gameState.currentModelName) {
+            return window.gameState.currentModelName;
+        }
+        return "Red Panda"; // Default
+    }
+    
+    // Create a fallback character sprite if loading the image fails
+    generateFallbackCharacterSprite() {
+        console.log("Generating fallback sprite");
+        
+        // Create a canvas for a simple character
+        const spriteCanvas = document.createElement('canvas');
+        spriteCanvas.width = 64;
+        spriteCanvas.height = 64;
+        const spriteCtx = spriteCanvas.getContext('2d');
+        
+        // Draw a simple panda-like character
+        // Body (circle)
+        spriteCtx.fillStyle = '#FF6347'; // Reddish color
+        spriteCtx.beginPath();
+        spriteCtx.arc(32, 34, 20, 0, Math.PI * 2);
+        spriteCtx.fill();
+        
+        // Ears
+        spriteCtx.beginPath();
+        spriteCtx.arc(22, 18, 8, 0, Math.PI * 2);
+        spriteCtx.fill();
+        
+        spriteCtx.beginPath();
+        spriteCtx.arc(42, 18, 8, 0, Math.PI * 2);
+        spriteCtx.fill();
+        
+        // Face features
+        spriteCtx.fillStyle = '#000000';
+        // Eyes
+        spriteCtx.beginPath();
+        spriteCtx.arc(26, 30, 3, 0, Math.PI * 2);
+        spriteCtx.fill();
+        
+        spriteCtx.beginPath();
+        spriteCtx.arc(38, 30, 3, 0, Math.PI * 2);
+        spriteCtx.fill();
+        
+        // Nose
+        spriteCtx.beginPath();
+        spriteCtx.arc(32, 36, 4, 0, Math.PI * 2);
+        spriteCtx.fill();
+        
+        // Mouth
+        spriteCtx.beginPath();
+        spriteCtx.arc(32, 45, 3, 0, Math.PI, false);
+        spriteCtx.stroke();
+        
+        // Convert canvas to image
+        const dataURL = spriteCanvas.toDataURL();
+        this.character.sprite = new Image();
+        this.character.sprite.src = dataURL;
+        this.character.sprite.onload = () => {
+            console.log("Fallback sprite created successfully");
+            this.character.width = 64;
+            this.character.height = 64;
         };
     }
     
@@ -500,7 +606,6 @@ class Cubicle {
         
         this.computerScreenContainer.appendChild(socialLinksContainer);
     }
-    
     // Start the computer screen animation
     startComputerScreenAnimation() {
         // Make the container visible
@@ -512,38 +617,69 @@ class Cubicle {
         // Set animation as active
         this.animationActive = true;
         
+        // Reset character position to a random location on screen
+        this.resetCharacterPosition();
+        
+        // Reset the last frame time for consistent animation
+        this.lastFrameTime = Date.now();
+        
+        // Ensure the sprite is loaded or use fallback
+        if (!this.character.sprite || !this.character.sprite.complete) {
+            console.log("Sprite not loaded in startComputerScreenAnimation, generating fallback");
+            this.generateFallbackCharacterSprite();
+        }
+        
         // Start the animation loop
         this.animateComputerScreen();
+    }
+    
+    // Reset character to a random position on screen
+    resetCharacterPosition() {
+        // Place character at a random position that's not too close to the edges
+        const buffer = 100;
+        this.character.x = buffer + Math.random() * (this.canvas.width - this.character.width * this.character.scale - buffer * 2);
+        this.character.y = buffer + Math.random() * (this.canvas.height - this.character.height * this.character.scale - buffer * 2);
+        
+        // Give it a random direction
+        const speed = 3;
+        const angle = Math.random() * Math.PI * 2;
+        this.character.dx = Math.cos(angle) * speed;
+        this.character.dy = Math.sin(angle) * speed;
     }
     
     // Animate the computer screen
     animateComputerScreen() {
         if (!this.animationActive) return;
         
+        const now = Date.now();
+        const deltaTime = (now - (this.lastFrameTime || now)) / 1000;
+        this.lastFrameTime = now;
+        
         // Clear the canvas
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
         
-        // Draw the Windows XP background image instead of black fill
+        // Draw the Windows XP background image 
         if (this.backgroundImage && this.backgroundImage.complete) {
-            // Draw the image to fill the entire canvas
             this.ctx.drawImage(this.backgroundImage, 0, 0, this.canvas.width, this.canvas.height);
         } else {
-            // Fallback to black if image isn't loaded
             this.ctx.fillStyle = 'black';
             this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
         }
+        
+        // Update and draw character sprite
+        this.updateCharacterPosition(deltaTime);
+        this.drawCharacter();
         
         // Update logo position
         this.logo.x += this.logo.dx;
         this.logo.y += this.logo.dy;
         
-        // Check for collision with edges
+        // Check for logo collision with edges
         let collision = false;
         if (this.logo.x + this.logo.width > this.canvas.width || this.logo.x < 0) {
             this.logo.dx = -this.logo.dx;
             collision = true;
             
-            // Correct position to prevent sticking to edges
             if (this.logo.x < 0) {
                 this.logo.x = 0;
             } else if (this.logo.x + this.logo.width > this.canvas.width) {
@@ -555,7 +691,6 @@ class Cubicle {
             this.logo.dy = -this.logo.dy;
             collision = true;
             
-            // Correct position to prevent sticking to edges
             if (this.logo.y < 0) {
                 this.logo.y = 0;
             } else if (this.logo.y + this.logo.height > this.canvas.height) {
@@ -570,18 +705,12 @@ class Cubicle {
             this.logo.color = this.colors[nextColorIndex];
         }
         
+        // Check for character and logo collision
+        this.checkCharacterLogoCollision();
+        
         // Draw the logo
         this.ctx.fillStyle = this.logo.color;
-        
-        // Draw the rounded rectangle for logo background
-        this.roundRect(
-            this.ctx, 
-            this.logo.x, 
-            this.logo.y, 
-            this.logo.width, 
-            this.logo.height, 
-            10
-        );
+        this.roundRect(this.ctx, this.logo.x, this.logo.y, this.logo.width, this.logo.height, 10);
         
         // Draw the text
         this.ctx.fillStyle = 'black';
@@ -599,6 +728,86 @@ class Cubicle {
         this.animationId = requestAnimationFrame(function() {
             self.animateComputerScreen();
         });
+    }
+    
+    updateCharacterPosition(deltaTime) {
+        // Update character position
+        this.character.x += this.character.dx;
+        this.character.y += this.character.dy;
+        
+        // Check for collision with canvas edges
+        if (this.character.x < 0) {
+            this.character.x = 0;
+            this.character.dx = -this.character.dx;
+        } else if (this.character.x + this.character.width * this.character.scale > this.canvas.width) {
+            this.character.x = this.canvas.width - this.character.width * this.character.scale;
+            this.character.dx = -this.character.dx;
+        }
+        
+        if (this.character.y < 0) {
+            this.character.y = 0;
+            this.character.dy = -this.character.dy;
+        } else if (this.character.y + this.character.height * this.character.scale > this.canvas.height) {
+            this.character.y = this.canvas.height - this.character.height * this.character.scale;
+            this.character.dy = -this.character.dy;
+        }
+    }
+    
+    // Draw the character sprite on canvas
+    drawCharacter() {
+        // First, check if the sprite image is loaded properly
+        if (!this.character.sprite || !this.character.sprite.complete) {
+            console.log("Sprite not loaded or incomplete");
+            
+            // Draw a placeholder rectangle so at least something is visible
+            this.ctx.fillStyle = 'red';
+            this.ctx.fillRect(this.character.x, this.character.y, 
+                              this.character.width * this.character.scale, 
+                              this.character.height * this.character.scale);
+            return;
+        }
+        
+        const scale = this.character.scale;
+        const width = this.character.width * scale;
+        const height = this.character.height * scale;
+        
+        this.ctx.save();
+        
+        try {
+            if (this.character.dx < 0) {
+                // Moving left - flip the sprite
+                this.ctx.translate(this.character.x + width, this.character.y);
+                this.ctx.scale(-1, 1);
+                this.ctx.drawImage(
+                    this.character.sprite,
+                    0, 0,  // Source position (0,0) to take the whole image
+                    this.character.sprite.width, this.character.sprite.height, // Use the entire sprite dimensions
+                    0, 0,
+                    width, height
+                );
+            } else {
+                // Moving right - normal orientation
+                this.ctx.drawImage(
+                    this.character.sprite,
+                    0, 0,  // Source position (0,0) to take the whole image
+                    this.character.sprite.width, this.character.sprite.height, // Use the entire sprite dimensions
+                    this.character.x, this.character.y,
+                    width, height
+                );
+            }
+        } catch (e) {
+            console.error("Error drawing sprite:", e);
+            
+            // Draw a fallback if there's an error
+            this.ctx.fillStyle = 'purple';
+            this.ctx.fillRect(
+                this.character.dx < 0 ? 0 : this.character.x,
+                this.character.dx < 0 ? 0 : this.character.y,
+                width, height
+            );
+        }
+        
+        this.ctx.restore();
     }
     
     // Helper function to draw rounded rectangles
@@ -634,6 +843,15 @@ class Cubicle {
             this.logo.y < 0) {
             this.logo.y = (this.canvas.height - this.logo.height) / 2;
         }
+        
+        // Reset character position if it's outside bounds
+        if (this.character && (
+            this.character.x + this.character.width * this.character.scale > this.canvas.width || 
+            this.character.x < 0 ||
+            this.character.y + this.character.height * this.character.scale > this.canvas.height ||
+            this.character.y < 0)) {
+            this.resetCharacterPosition();
+        }
     }
     
     // Exit the computer screen animation
@@ -643,6 +861,7 @@ class Cubicle {
         
         // Stop the animation
         this.animationActive = false;
+        this.lastFrameTime = null;
         
         if (this.animationId) {
             cancelAnimationFrame(this.animationId);
@@ -691,7 +910,7 @@ class Cubicle {
         // Start the computer screen animation
         this.startComputerScreenAnimation();
     }
-    
+
     resumeGame() {
         console.log("Resuming game after cubicle interaction");
         
@@ -736,6 +955,52 @@ class Cubicle {
         // Remove the 3D object from the scene
         if (this.object && this.object.parent) {
             this.scene.remove(this.object);
+        }
+    }
+
+    // Add this function to your Cubicle class
+    checkCharacterLogoCollision() {
+        // Calculate character hitbox
+        const charWidth = this.character.width * this.character.scale * 0.8;
+        const charHeight = this.character.height * this.character.scale * 0.8;
+        const charX = this.character.x + (this.character.width * this.character.scale - charWidth) / 2;
+        const charY = this.character.y + (this.character.height * this.character.scale - charHeight) / 2;
+        
+        // Check if character intersects with logo
+        if (charX < this.logo.x + this.logo.width &&
+            charX + charWidth > this.logo.x &&
+            charY < this.logo.y + this.logo.height &&
+            charY + charHeight > this.logo.y) {
+            
+            // Calculate collision response
+            const charCenterX = charX + charWidth / 2;
+            const charCenterY = charY + charHeight / 2;
+            const logoCenterX = this.logo.x + this.logo.width / 2;
+            const logoCenterY = this.logo.y + this.logo.height / 2;
+            
+            // Direction from logo to character
+            const dx = charCenterX - logoCenterX;
+            const dy = charCenterY - logoCenterY;
+            
+            // Normalize
+            const length = Math.sqrt(dx * dx + dy * dy);
+            if (length > 0) {
+                const normalX = dx / length;
+                const normalY = dy / length;
+                
+                // Bounce character
+                this.character.dx = Math.abs(this.character.dx) * (normalX > 0 ? 1 : -1);
+                this.character.dy = Math.abs(this.character.dy) * (normalY > 0 ? 1 : -1);
+                
+                // Bounce logo
+                this.logo.dx = Math.abs(this.logo.dx) * (normalX < 0 ? 1 : -1);
+                this.logo.dy = Math.abs(this.logo.dy) * (normalY < 0 ? 1 : -1);
+                
+                // Change logo color on collision
+                const currentColorIndex = this.colors.indexOf(this.logo.color);
+                const nextColorIndex = (currentColorIndex + 1) % this.colors.length;
+                this.logo.color = this.colors[nextColorIndex];
+            }
         }
     }
 }
