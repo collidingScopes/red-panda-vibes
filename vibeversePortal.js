@@ -335,7 +335,7 @@ class VibeversePortal {
         // 1. They are horizontally close enough
         // 2. They are horizontally aligned with the portal center
         // 3. They are within the portal's vertical range
-        if (horizontalDistanceToPortal < 2 &&
+        if (horizontalDistanceToPortal < 4 &&
             horizontalDistanceToPortal < this.portalWidth / 2 &&
             isInPortalVerticalRange) {
             
