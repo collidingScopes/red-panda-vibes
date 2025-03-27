@@ -243,7 +243,7 @@ class Gameboy {
         this.animationParams = {
             speed: 0.5 + Math.random() * 0.5,
             amplitude: 0.3,
-            rotationSpeed: 0.2,
+            rotationSpeed: 0.3,
             time: Math.random() * Math.PI * 2 // Random starting phase
         };
     }

@@ -5,7 +5,7 @@ class GrassSystem {
         this.getTerrainHeight = getTerrainHeightFunc;
         this.grassMesh = null;
         this.clock = new THREE.Clock();
-        this.instanceNumber = 400000; // Reduced from 1,240,000 to improve performance
+        this.instanceNumber = 200000; // Reduced from 1,240,000 to improve performance
         this.grassArea = 400; // Size of area covered by grass
         this.maxGrassHeight = 1.0; // Maximum terrain height for grass to appear
         
