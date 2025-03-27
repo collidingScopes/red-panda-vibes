@@ -3,10 +3,12 @@
 
 let pandaModelLocation = 'assets/pandaFBX/panda.fbx';
 let animationFiles = {
-    'idle': 'assets/pandaFBX/idle.fbx',
+    'idle': 'assets/pandaFBX/idle2.fbx',
     'jump': 'assets/pandaFBX/jump.fbx',
     'running': 'assets/pandaFBX/running.fbx',
     'walking': 'assets/pandaFBX/walking.fbx',
+    'spin': 'assets/pandaFBX/spin.fbx',
+    'dance': 'assets/pandaFBX/dance.fbx',
 };
 let pandaModelScale = 2;
 

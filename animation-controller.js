@@ -12,6 +12,16 @@ class AnimationController {
         this.isRunning = false;
         this.jumpStarted = false; // Add flag to track if jump animation has already been started
         this.jumpFinishedCallback = null;
+        
+        // New properties for idle variations
+        this.idleTimer = 0;
+        this.idleInterval = 5; // How often to potentially switch between idle and dance (in seconds)
+        this.isIdle = false;
+        this.isDancing = false;
+        
+        // New property for spin animation after jump kills
+        this.isSpinning = false;
+        this.spinFinishedCallback = null;
     }
     
     init(model, animations) {
@@ -35,9 +45,22 @@ class AnimationController {
     }
     
     playAnimation(name, transitionTime = this.defaultTransitionTime) {
-        // Block any animation changes if jumping (except finishing jump)
-        if (this.isJumping && name !== 'jump') {
+        // Allow spin animation to interrupt any other animation
+        if (name === 'spin') {
+            // If we're spinning already, don't restart it
+            if (this.isSpinning) {
+                return this.currentAction;
+            }
+            // Otherwise continue to play spin (even if jumping)
+        } 
+        // Block any animation changes if jumping (except finishing jump or spin)
+        else if (this.isJumping && name !== 'jump') {
             console.log(`Blocked animation ${name} - jumping in progress`);
+            return null;
+        }
+        // Block any animation changes if spinning (except finishing spin)
+        else if (this.isSpinning && name !== 'spin') {
+            console.log(`Blocked animation ${name} - spinning in progress`);
             return null;
         }
     
@@ -51,9 +74,15 @@ class AnimationController {
             console.log('Jump animation already in progress');
             return this.currentAction;
         }
+        
+        // If trying to start a spin animation that's already in progress, ignore
+        if (name === 'spin' && this.isSpinning) {
+            console.log('Spin animation already in progress');
+            return this.currentAction;
+        }
 
         // Stop any existing animations if jumping starts
-        if (name === 'jump' && this.currentAction) {
+        if ((name === 'jump' || name === 'spin') && this.currentAction) {
             this.currentAction.stop();
         }
 
@@ -67,6 +96,11 @@ class AnimationController {
             this.currentAction.reset();
             return this.currentAction;
         }
+        
+        // Update state flags based on animation
+        this.isRunning = (name === 'running');
+        this.isIdle = (name === 'idle');
+        this.isDancing = (name === 'dance');
         
         // Handle jump animation
         if (name === 'jump') {
@@ -103,8 +137,38 @@ class AnimationController {
             this.mixer.addEventListener('finished', this.jumpFinishedCallback);
         }
         
-        // Update state flags
-        this.isRunning = (name === 'running');
+        // Handle spin animation (similar to jump but for spin)
+        if (name === 'spin') {
+            this.isSpinning = true;
+            nextAction.setLoop(THREE.LoopOnce);
+            nextAction.clampWhenFinished = true;
+            nextAction.timeScale = 1.5; // Slightly faster playback for quick spin
+            nextAction.weight = 1.0;
+            
+            // Remove any existing listener to prevent duplicates
+            if (this.spinFinishedCallback) {
+                this.mixer.removeEventListener('finished', this.spinFinishedCallback);
+            }
+            
+            // Create new finish listener
+            this.spinFinishedCallback = (e) => {
+                // Only handle events for spin animation
+                if (e.action === this.currentAction) {
+                    console.log("Spin animation finished naturally");
+                    this.isSpinning = false;
+                    this.mixer.removeEventListener('finished', this.spinFinishedCallback);
+                    
+                    // Transition based on current movement state
+                    if (this.isRunning) {
+                        this.playAnimation('running');
+                    } else {
+                        this.playAnimation('idle');
+                    }
+                }
+            };
+            
+            this.mixer.addEventListener('finished', this.spinFinishedCallback);
+        }
         
         // Handle transitions
         if (this.previousAction && this.previousAction !== this.currentAction) {
@@ -121,12 +185,36 @@ class AnimationController {
     update(deltaTime) {
         if (this.mixer) {
             this.mixer.update(deltaTime);
+            
+            // Handle idle animation variations (dance) when player is in idle state
+            if ((this.isIdle || this.isDancing) && !this.isJumping && !this.isRunning && !this.isSpinning) {
+                this.idleTimer += deltaTime;
+                
+                if (this.idleTimer >= this.idleInterval) {
+                    this.idleTimer = 0;
+                    
+                    // 50% chance to switch between idle and dance
+                    if (Math.random() < 0.5) {
+                        // If we're currently idle, switch to dance (if available)
+                        if (this.isIdle && this.animations['dance']) {
+                            this.playAnimation('dance');
+                        }
+                        // If we're currently dancing, switch to idle
+                        else if (this.isDancing && this.animations['idle']) {
+                            this.playAnimation('idle');
+                        }
+                    }
+                    
+                    // Randomize the interval for next change (between 3 and 8 seconds)
+                    this.idleInterval = 3 + Math.random() * 5;
+                }
+            }
         }
     }
     
     handleMovementState(isMoving, isJumping) {
-        // Prevent any state changes during jump animation
-        if (this.isJumping) {
+        // Prevent any state changes during jump or spin animation
+        if (this.isJumping || this.isSpinning) {
             return;
         }
         
@@ -137,13 +225,35 @@ class AnimationController {
             return;
         }
         
-        // Handle running to idle transition - only if we're not jumping
-        if (!this.isJumping && !this.jumpStarted) {
+        // Handle running to idle transition - only if we're not jumping or spinning
+        if (!this.isJumping && !this.jumpStarted && !this.isSpinning) {
             if (isMoving && !this.isRunning) {
                 this.playAnimation('running');
             } else if (!isMoving && this.isRunning) {
+                // Reset idle timer when transitioning to idle
+                this.idleTimer = 0;
                 this.playAnimation('idle');
             }
+        }
+    }
+    
+    // New method to trigger spin animation after jump kill
+    playSpinAnimation() {
+        // Forcibly stop jump animation if it's playing
+        if (this.isJumping) {
+            // Remove any existing jump listener
+            if (this.jumpFinishedCallback) {
+                this.mixer.removeEventListener('finished', this.jumpFinishedCallback);
+            }
+            // Reset jump state flags
+            this.isJumping = false;
+            this.jumpStarted = false;
+        }
+        
+        // Only play spin if it's not already spinning
+        if (!this.isSpinning && this.animations['spin']) {
+            console.log("Starting spin animation after jump kill");
+            this.playAnimation('spin');
         }
     }
     
@@ -153,9 +263,17 @@ class AnimationController {
             this.currentAction.stop();
             this.isJumping = false;
             this.isRunning = false;
+            this.isIdle = false;
+            this.isDancing = false;
+            this.isSpinning = false;
             this.jumpStarted = false; // Reset jump started flag
+            
             if (this.jumpFinishedCallback) {
                 this.mixer.removeEventListener('finished', this.jumpFinishedCallback);
+            }
+            
+            if (this.spinFinishedCallback) {
+                this.mixer.removeEventListener('finished', this.spinFinishedCallback);
             }
         }
     }

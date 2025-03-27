@@ -294,6 +294,11 @@ class EnemyManager {
                 // Make player bounce
                 gameState.playerVelocity.y = 11.0; // Bounce up velocity
                 
+                // Play spin animation after jump kill if animation controller exists
+                if (gameState.animationController) {
+                    gameState.animationController.playSpinAnimation();
+                }
+                
                 // Only kill one enemy per frame
                 break;
             }
