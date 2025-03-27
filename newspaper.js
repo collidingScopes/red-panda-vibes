@@ -9,8 +9,8 @@ class Newspaper {
         this.object = null;
         this.cooldown = false;
         this.cooldownTime = 2000; // 2 seconds cooldown between interactions
-        this.detectionRadius = 6; // How close player needs to be to interact
-        this.floatHeight = 6;
+        this.detectionRadius = 5; // How close player needs to be to interact
+        this.floatHeight = 5;
         this.font = null; // Store the loaded font
         // Colors
         this.paperColor = 0xf5f5dc; // Beige/off-white for newspaper
@@ -154,7 +154,7 @@ class Newspaper {
         this.glow = glow;
         
         // Set initial rotation
-        newspaperGroup.rotation.x = -Math.PI / 18;
+        newspaperGroup.rotation.x = -Math.PI / 22;
         this.object = newspaperGroup;
         
         this.startFloatingAnimation();
@@ -437,19 +437,7 @@ class Newspaper {
         borderLine.style.display = 'flex';
         borderLine.style.justifyContent = 'center';
         borderLine.style.alignItems = 'center';
-        
-        const borderLabel = document.createElement('div');
-        borderLabel.textContent = 'BORDER LINE';
-        borderLabel.style.position = 'relative';
-        borderLabel.style.top = '-10px';
-        borderLabel.style.backgroundColor = '#000';
-        borderLabel.style.padding = '0 10px';
-        borderLabel.style.color = '#00FFFF';
-        borderLabel.style.fontSize = isMobile ? '10px' : '12px';
-        borderLabel.style.letterSpacing = isMobile ? '1px' : '2px';
-        
-        borderLine.appendChild(borderLabel);
-        
+
         // Create header with title panel - adjust for mobile
         const header = document.createElement('div');
         header.style.padding = isMobile ? '15px 15px 10px 15px' : '25px 80px 15px 80px';
@@ -463,7 +451,6 @@ class Newspaper {
         titlePanel.style.border = '2px solid #FF6600';
         titlePanel.style.padding = isMobile ? '5px 10px' : '10px 20px';
         titlePanel.style.marginBottom = '15px';
-        titlePanel.style.boxShadow = '0 0 15px rgba(255, 102, 0, 0.7)';
         titlePanel.style.width = isMobile ? 'calc(100% - 22px)' : 'auto'; // Full width minus padding and border
         
         const title = document.createElement('div');
@@ -482,7 +469,6 @@ class Newspaper {
         statusPanel.style.padding = '6px 15px';
         statusPanel.style.marginLeft = isMobile ? '0' : '20px';
         statusPanel.style.marginTop = isMobile ? '5px' : '0';
-        statusPanel.style.boxShadow = '0 0 15px rgba(255, 102, 0, 0.7)';
         statusPanel.style.width = isMobile ? 'calc(100% - 32px)' : 'auto'; // Full width minus padding and border
         
         // Hide on very small screens
@@ -632,7 +618,7 @@ class Newspaper {
         footer.style.textAlign = isMobile ? 'center' : 'left';
         
         const exitButton = document.createElement('button');
-        exitButton.textContent = isMobile ? 'EXIT' : 'EXIT SYSTEM';
+        exitButton.textContent = isMobile ? '🐼 EXIT' : '🐼 RETURN TO GAME';
         exitButton.style.padding = isMobile ? '10px 30px' : '8px 20px';
         exitButton.style.backgroundColor = 'transparent';
         exitButton.style.color = '#FF6600';
@@ -690,8 +676,8 @@ class Newspaper {
             const topStoriesResponse = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
             const storyIds = await topStoriesResponse.json();
             
-            // Get details for top 10 stories
-            const top10Ids = storyIds.slice(0, 10);
+            // Get details for top 20 stories
+            const top10Ids = storyIds.slice(0, 20);
             const storyPromises = top10Ids.map(id => 
                 fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)
                     .then(response => response.json())
@@ -770,7 +756,7 @@ class Newspaper {
                 link.textContent = story.title;
                 link.href = story.url || `https://news.ycombinator.com/item?id=${story.id}`;
                 link.target = '_blank';
-                link.style.color = '#FF6600';
+                link.style.color = '#ffd166';
                 link.style.textDecoration = 'none';
                 link.style.fontSize = '14px';
                 link.style.fontWeight = 'bold';
@@ -824,7 +810,6 @@ class Newspaper {
                 storyPanel.style.border = '2px solid #FF6600';
                 storyPanel.style.borderLeft = '10px solid #FF6600';
                 storyPanel.style.marginBottom = '8px';
-                storyPanel.style.boxShadow = '0 0 10px rgba(255, 102, 0, 0.5)';
                 storyPanel.style.transition = 'all 0.3s ease';
                 
                 // Hover effect for the entire panel
@@ -867,7 +852,7 @@ class Newspaper {
                 link.textContent = story.title;
                 link.href = story.url || `https://news.ycombinator.com/item?id=${story.id}`;
                 link.target = '_blank';
-                link.style.color = '#FF6600';
+                link.style.color = '#ffd166';
                 link.style.textDecoration = 'none';
                 link.style.fontSize = '14px';
                 link.style.fontWeight = 'bold';
