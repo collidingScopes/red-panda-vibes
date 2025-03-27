@@ -361,11 +361,6 @@ class Newspaper {
             
             window.gameState.gamePaused = true;
             
-            // If sound system exists, pause music
-            if (window.soundSystem && window.soundSystem.pauseMusic) {
-                window.soundSystem.pauseMusic();
-            }
-            
             // Mark as reading
             this.reading = true;
             
@@ -472,7 +467,7 @@ class Newspaper {
         titlePanel.style.width = isMobile ? 'calc(100% - 22px)' : 'auto'; // Full width minus padding and border
         
         const title = document.createElement('div');
-        title.textContent = isMobile ? 'HACKER NEWS' : 'HACKER NEWS INTERFACE SYSTEM';
+        title.textContent = 'PANDA HACKER NEWS 🐼';
         title.style.fontSize = isMobile ? '18px' : '24px';
         title.style.fontWeight = 'bold';
         title.style.letterSpacing = '1px';
@@ -1011,11 +1006,6 @@ class Newspaper {
             }
             
             window.gameState.gamePaused = false;
-            
-            // If sound system exists, resume music
-            if (window.soundSystem && window.soundSystem.unpauseMusic) {
-                window.soundSystem.unpauseMusic();
-            }
             
             // End reading state
             this.reading = false;
