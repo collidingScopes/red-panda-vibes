@@ -123,7 +123,7 @@ class GrassSystem {
         // Use the first and second colors from the palette, usually good for ground/foliage
         const baseColors = [
             this.currentPalette[2], // Darker color for bottom of grass
-            this.currentPalette[1]  // Lighter color for top of grass
+            this.currentPalette[4]  // Lighter color for top of grass
         ];
         
         baseColors.forEach(colorHex => {
