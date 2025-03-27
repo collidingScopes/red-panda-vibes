@@ -9,6 +9,7 @@ let animationFiles = {
     'walking': 'assets/pandaFBX/walking.fbx',
     'spin': 'assets/pandaFBX/spin.fbx',
     'dance': 'assets/pandaFBX/dance.fbx',
+    'fly': 'assets/pandaFBX/fly.fbx',
 };
 let pandaModelScale = 2;
 

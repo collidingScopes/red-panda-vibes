@@ -22,6 +22,9 @@ class AnimationController {
         // New property for spin animation after jump kills
         this.isSpinning = false;
         this.spinFinishedCallback = null;
+        
+        // New property for flying state
+        this.isFlying = false;
     }
     
     init(model, animations) {
@@ -36,6 +39,11 @@ class AnimationController {
             this.animations[clip.name] = clip;
             console.log("Animation controller registered: " + clip.name);
         });
+        
+        // Check if fly animation exists, log warning if not
+        if (!this.animations['fly']) {
+            console.warn("Fly animation not found but will be needed for high altitude");
+        }
         
         if (this.animations['idle']) {
             this.playAnimation('idle');
@@ -101,6 +109,7 @@ class AnimationController {
         this.isRunning = (name === 'running');
         this.isIdle = (name === 'idle');
         this.isDancing = (name === 'dance');
+        this.isFlying = (name === 'fly');
         
         // Handle jump animation
         if (name === 'jump') {
@@ -125,8 +134,12 @@ class AnimationController {
                     this.jumpStarted = false; // Reset jump started flag
                     this.mixer.removeEventListener('finished', this.jumpFinishedCallback);
                     
-                    // Transition based on current movement state
-                    if (this.isRunning) {
+                    // Check if player is high up - play fly animation
+                    if (window.player && window.player.position.y >= 20 && this.animations['fly']) {
+                        this.playAnimation('fly');
+                    }
+                    // Otherwise transition based on current movement state
+                    else if (this.isRunning) {
                         this.playAnimation('running');
                     } else {
                         this.playAnimation('idle');
@@ -135,6 +148,14 @@ class AnimationController {
             };
             
             this.mixer.addEventListener('finished', this.jumpFinishedCallback);
+        }
+        
+        // Handle fly animation
+        if (name === 'fly') {
+            // Set fly animation to loop continuously while in the air
+            nextAction.setLoop(THREE.LoopRepeat);
+            nextAction.timeScale = 1.0;
+            nextAction.weight = 1.0;
         }
         
         // Handle spin animation (similar to jump but for spin)
@@ -158,8 +179,12 @@ class AnimationController {
                     this.isSpinning = false;
                     this.mixer.removeEventListener('finished', this.spinFinishedCallback);
                     
-                    // Transition based on current movement state
-                    if (this.isRunning) {
+                    // Check if player is high up - play fly animation
+                    if (window.player && window.player.position.y >= 20 && this.animations['fly']) {
+                        this.playAnimation('fly');
+                    }
+                    // Otherwise transition based on current movement state
+                    else if (this.isRunning) {
                         this.playAnimation('running');
                     } else {
                         this.playAnimation('idle');
@@ -186,8 +211,27 @@ class AnimationController {
         if (this.mixer) {
             this.mixer.update(deltaTime);
             
+            // Check if player is high up in the air (y >= 20) and play fly animation
+            if (window.player && window.player.position.y >= 20 && this.animations['fly'] &&
+                !this.isSpinning && this.currentAction && 
+                this.currentAction._clip.name !== 'fly') {
+                this.playAnimation('fly');
+            }
+            // Return to normal animations if no longer high up
+            else if (window.player && window.player.position.y < 20 && 
+                    this.currentAction && this.currentAction._clip.name === 'fly' &&
+                    !this.isSpinning && !this.isJumping) {
+                // Return to appropriate animation when back under threshold
+                if (this.isRunning) {
+                    this.playAnimation('running');
+                } else {
+                    this.playAnimation('idle');
+                }
+            }
+            
             // Handle idle animation variations (dance) when player is in idle state
-            if ((this.isIdle || this.isDancing) && !this.isJumping && !this.isRunning && !this.isSpinning) {
+            if ((this.isIdle || this.isDancing) && !this.isJumping && !this.isRunning && !this.isSpinning &&
+                (!window.player || window.player.position.y < 20)) {
                 this.idleTimer += deltaTime;
                 
                 if (this.idleTimer >= this.idleInterval) {
@@ -266,6 +310,7 @@ class AnimationController {
             this.isIdle = false;
             this.isDancing = false;
             this.isSpinning = false;
+            this.isFlying = false;
             this.jumpStarted = false; // Reset jump started flag
             
             if (this.jumpFinishedCallback) {

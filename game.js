@@ -238,6 +238,15 @@ function updatePlayerPosition(deltaTime) {
         }
     }
     
+    // Check player height for high altitude "fly" animation
+    // This will be handled in the animation controller's update method
+    // but we log here for debugging
+    if (player.position.y >= 20 && gameState.animationController && 
+        gameState.animationController.animations['fly'] &&
+        !gameState.animationController.isFlying) {
+        console.log("Player is at high altitude: " + player.position.y.toFixed(2));
+    }
+    
     // Movement direction (in camera space)
     const moveDirection = new THREE.Vector3(0, 0, 0);
     
