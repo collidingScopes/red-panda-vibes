@@ -66,6 +66,14 @@ function createTerrain() {
         { position: 0, color: threeColorToHex(selectedPalette[0]) },
     ]);
 
+    // Make selectedPalette accessible globally
+    window.selectedPalette = selectedPalette;
+
+    // Update grass system colors if it exists
+    if (window.gameState && window.gameState.grassSystem) {
+        window.gameState.grassSystem.updateColors(selectedPalette);
+    }
+
     // Create a large flat base with soft gradient (unchanged)
     const terrainSize = 400;
     const baseGeometry = new THREE.BoxGeometry(terrainSize, 1, terrainSize);
@@ -385,7 +393,7 @@ function createPastelTree() {
         emissiveIntensity: 0.1
     });
     const trunk = new THREE.Mesh(trunkGeometry, trunkMaterial);
-    trunk.position.y = 1;
+    trunk.position.y = 4; // Changed from 1 to 4 to center the trunk
     trunk.castShadow = true;
     
     // Choose from pastel colors for the foliage
@@ -403,7 +411,7 @@ function createPastelTree() {
         emissiveIntensity: 0.6
     });
     const foliage = new THREE.Mesh(foliageGeometry, foliageMaterial);
-    foliage.position.y = 8;
+    foliage.position.y = 8 + treeHeight/2 - 0.5; // Adjusted to connect properly with trunk
     foliage.castShadow = true;
     
     treeGroup.add(trunk);

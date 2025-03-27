@@ -26,6 +26,8 @@ const gameState = {
     gameboy: null,
     cubicle: null,
     newspaper: null,
+    useGrassSystem: true,
+    grassSystem: null,
 };
 
 // Add trampoline properties to gameState
@@ -450,6 +452,16 @@ function resetGame() {
         gameState.snowSystem = new SnowSystem(scene, player);
     }
 
+    if (gameState.grassSystem && gameState.useGrassSystem) {
+        gameState.grassSystem.dispose();
+        gameState.grassSystem = new GrassSystem(scene, player, getTerrainHeight);
+        
+        // Ensure it has the correct colors
+        if (window.selectedPalette) {
+            gameState.grassSystem.updateColors(window.selectedPalette);
+        }
+    }
+
     // Remove old trampoline
     if (gameState.trampoline && gameState.trampoline.object) {
         scene.remove(gameState.trampoline.object);
@@ -564,6 +576,10 @@ function animate(currentTime) {
         gameState.snowSystem.update(deltaTime);
     }
 
+    if (gameState.grassSystem && gameState.useGrassSystem) {
+        gameState.grassSystem.update(deltaTime);
+    }
+
     if (gameState.changingRoom && !gameState.goalReached) {
         gameState.changingRoom.update(deltaTime);
     }
@@ -624,6 +640,12 @@ function init() {
 
     gameState.snowSystem = new SnowSystem(scene, player);
     console.log("Snow system initialized in game init");
+
+    // Initialize grass system
+    if(gameState.useGrassSystem){
+        gameState.grassSystem = new GrassSystem(scene, player, getTerrainHeight);
+        console.log("Grass system initialized in game init");
+    }
 
     if(!isMobile){
         gameState.changingRoom = new ChangingRoom(scene, player, getTerrainHeight);
@@ -804,11 +826,27 @@ function regenerateTerrain() {
                 }
             }
         });
+
+        // Dispose of the grass system before creating a new one
+        if (gameState.grassSystem && gameState.useGrassSystem) {
+            gameState.grassSystem.dispose();
+            gameState.grassSystem = null;
+        }
     }
     
     // Create new terrain
     gameState.terrain = createTerrain();
     scene.add(gameState.terrain);
+    
+    // Create new grass system AFTER terrain is created so it uses the new palette
+    if(gameState.useGrassSystem){
+        if (!gameState.grassSystem) {
+            gameState.grassSystem = new GrassSystem(scene, player, getTerrainHeight);
+        } else {
+            // If for some reason the grass system wasn't disposed, update its colors
+            gameState.grassSystem.updateColors(window.selectedPalette || selectedPalette);
+        }
+    }
 }
 
 // Start the game
