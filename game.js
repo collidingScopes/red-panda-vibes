@@ -15,11 +15,7 @@ const gameState = {
     levelSystem: null, // Add the level system reference
     gameStarted: false,
     gameOver: false,   // Add game over state
-    animationId: null, // Track animation frame ID
-    pandaModel: null,  // Reference to the actual 3D model inside the player group
-    pandaModelLoaded: false, // Flag to track if the 3D model was loaded
-    pandaAnimationMixer: null, // Animation mixer for the panda model
-    pandaAnimations: {}, // Storage for different animations
+    //animationController: window.animationController || null,
     changingRoom: null,
     jetpack: null,
     ipod: null,
@@ -29,6 +25,9 @@ const gameState = {
     useGrassSystem: true,
     grassSystem: null,
 };
+
+// Create global animation controller
+window.animationController = new AnimationController();
 
 // Add trampoline properties to gameState
 gameState.trampoline = {
@@ -43,7 +42,7 @@ gameState.trampoline = {
 //physics
 const jumpForce = 10.0;
 const gravity = 16.0;
-const turnSpeed = 8.0;  // How quickly the panda rotates to face movement direction
+const turnSpeed = 10.0;  // How quickly the panda rotates to face movement direction
 
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
@@ -115,25 +114,11 @@ window.setPandaModel = function(model, animations) {
     gameState.pandaModel = model;
     gameState.pandaModelLoaded = true;
     
-    if (animations && animations.length > 0) {
-        // Set up animation mixer
-        gameState.pandaAnimationMixer = new THREE.AnimationMixer(model);
-        
-        // Store animations by name for easy access
-        animations.forEach(clip => {
-            gameState.pandaAnimations[clip.name] = clip;
-            console.log("Found animation: " + clip.name);
-        });
-        
-        // Set default animation if available
-        if (gameState.pandaAnimations['idle']) {
-            const idleAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['idle']);
-            idleAction.play();
-        } else if (animations.length > 0) {
-            // Just play the first animation if no idle animation is found
-            const defaultAction = gameState.pandaAnimationMixer.clipAction(animations[0]);
-            defaultAction.play();
-        }
+    // Initialize animation controller
+    if (window.animationController) {
+        window.animationController.init(model, animations);
+        gameState.animationController = window.animationController;
+        console.log("Animation controller initialized with " + animations.length + " animations");
     }
     
     console.log("Panda model reference set in game state");
@@ -212,6 +197,7 @@ function updatePlayerPosition(deltaTime) {
         
     // Ground check
     const groundHeight = getTerrainHeight(player.position.x, player.position.z);
+    const wasOnGround = gameState.playerOnGround;
     gameState.playerOnGround = player.position.y <= groundHeight + 0.5;
     
     // Apply gravity
@@ -226,34 +212,29 @@ function updatePlayerPosition(deltaTime) {
         }
     }
     
-    // Handle jumping
-    if (gameState.keyStates['Space'] && gameState.playerOnGround) {
+    // Track if we just initiated a jump this frame
+    let jumpInitiated = false;
+    
+    // Handle jumping - only when on ground and not already jumping
+    if (gameState.keyStates['Space'] && gameState.playerOnGround && 
+        (!gameState.animationController || 
+         (!gameState.animationController.isJumping && !gameState.animationController.jumpStarted))) {
+        
         gameState.playerVelocity.y = jumpForce;
-
-        // Add this line to play jump sound
+        jumpInitiated = true;
+        console.log("Jump initiated in game logic");
+    
+        // Play jump sound
         if (window.soundSystem && window.soundSystem.initialized) {
             window.soundSystem.playJumpSound();
         }
         
-        // Play jump animation if available
-        if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['jump']) {
-            gameState.pandaAnimationMixer.stopAllAction();
-            const jumpAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['jump']);
-            jumpAction.setLoop(THREE.LoopOnce);
-            jumpAction.clampWhenFinished = true;
-            jumpAction.play();
-            
-            // Switch back to idle or run after animation completes
+        // Play jump animation using the controller - only at the start of the jump
+        if (gameState.animationController) {
+            // Set a slight delay before changing animation state
             setTimeout(() => {
-                if (!gameState.gameOver && gameState.pandaModelLoaded) {
-                    gameState.pandaAnimationMixer.stopAllAction();
-                    const nextAnim = isMoving() ? 'run' : 'idle';
-                    if (gameState.pandaAnimations[nextAnim]) {
-                        const action = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations[nextAnim]);
-                        action.play();
-                    }
-                }
-            }, 1000); // Adjust timing based on your jump animation length
+                gameState.animationController.handleMovementState(false, true);
+            }, 50);
         }
     }
     
@@ -292,7 +273,7 @@ function updatePlayerPosition(deltaTime) {
         const moveDelta = worldMoveDirection.clone().multiplyScalar(gameState.speed * deltaTime);
         player.position.add(moveDelta);
 
-        // Add this code to play footstep sounds when walking on ground:
+        // Add footstep sounds when walking on ground
         if (gameState.playerOnGround) {
             const now = Date.now();
             if (now - (gameState.lastFootstepTime || 0) > 300) {
@@ -301,51 +282,36 @@ function updatePlayerPosition(deltaTime) {
             }
         }
         
-        // Adjust player to terrain height - improved to prevent sinking
+        // Adjust player to terrain height
         const newGroundHeight = getTerrainHeight(player.position.x, player.position.z);
-        
-        // Only adjust height if we're on the ground, and make sure player stays on top
         if (gameState.playerOnGround) {
-            player.position.y = newGroundHeight + 0.5; // Keep player on top of terrain
+            player.position.y = newGroundHeight + 0.5;
         }
         
-        //smooth turn rotation
+        // Smooth turn rotation
         if (worldMoveDirection.length() > 0) {
-            // Calculate the target rotation (in radians)
             const targetRotation = Math.atan2(worldMoveDirection.x, worldMoveDirection.z);
-            
-            // Get current rotation
             let currentRotation = player.rotation.y;
             
-            // Calculate shortest rotation path
+            // Calculate the shortest path to rotate
             let rotationDiff = targetRotation - currentRotation;
-            if (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
-            if (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
             
-            // Apply smoothed rotation based on delta time
+            // Normalize the difference to be between -PI and PI
+            while (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
+            while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
+            
+            // Apply smooth rotation with speed limit
             player.rotation.y += rotationDiff * Math.min(turnSpeed * deltaTime, 1.0);
         }
         
-        // Play run animation if available and not already running
-        if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['run']) {
-            // Check if we're not already playing the run animation
-            const currentAction = gameState.pandaAnimationMixer._actions.find(a => a.isRunning());
-            if (!currentAction || currentAction._clip.name !== 'run') {
-                gameState.pandaAnimationMixer.stopAllAction();
-                const runAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['run']);
-                runAction.play();
-            }
+        // Only update running animation if we're not in the middle of a jump
+        if (gameState.animationController && !gameState.animationController.isJumping) {
+            gameState.animationController.handleMovementState(true, false);
         }
-    } else if (gameState.playerOnGround) {
-        // Play idle animation when not moving and on ground
-        if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['idle']) {
-            // Check if we're not already playing the idle animation
-            const currentAction = gameState.pandaAnimationMixer._actions.find(a => a.isRunning());
-            if (!currentAction || currentAction._clip.name !== 'idle') {
-                gameState.pandaAnimationMixer.stopAllAction();
-                const idleAction = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations['idle']);
-                idleAction.play();
-            }
+    } else {
+        // When movement stops, transition to idle if not jumping
+        if (gameState.animationController && !gameState.animationController.isJumping) {
+            gameState.animationController.handleMovementState(false, false);
         }
     }
     
@@ -357,17 +323,12 @@ function updatePlayerPosition(deltaTime) {
     if (player.position.y < currentGroundHeight + 0.5 && gameState.playerVelocity.y <= 0) {
         player.position.y = currentGroundHeight + 0.5;
         gameState.playerVelocity.y = 0;
-        
-        // If we just landed, play idle or run animation
-        if (!gameState.playerOnGround) {
-            if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer) {
-                gameState.pandaAnimationMixer.stopAllAction();
-                const nextAnim = isMoving() ? 'run' : 'idle';
-                if (gameState.pandaAnimations[nextAnim]) {
-                    const action = gameState.pandaAnimationMixer.clipAction(gameState.pandaAnimations[nextAnim]);
-                    action.play();
-                }
-            }
+    }
+    
+    // Detect landing on ground (was in air, now on ground)
+    if (!wasOnGround && gameState.playerOnGround) {
+        if (window.soundSystem && window.soundSystem.initialized && window.soundSystem.playLandSound) {
+            window.soundSystem.playLandSound();
         }
     }
     
@@ -379,7 +340,6 @@ function updatePlayerPosition(deltaTime) {
     const dz = player.position.z - flagPole.position.z;
     const horizontalDistanceToGoal = Math.sqrt(dx * dx + dz * dz);
 
-    // Use a horizontal threshold of 2 units to detect touching any part of the pole
     if (horizontalDistanceToGoal < 2 && !gameState.goalReached) {
         gameState.goalReached = true;
 
@@ -393,14 +353,13 @@ function updatePlayerPosition(deltaTime) {
             element.classList.add('hidden');
         });
 
-        // Add this line to play goal sound:
+        // Play goal sound
         if (window.playGoalSound) window.playGoalSound();
         
         // Use level system instead of showing the simple goal message
         if (gameState.levelSystem) {
             gameState.levelSystem.showLevelComplete();
         } else {
-            // Fallback to original message if level system isn't initialized
             document.getElementById('goal-message').style.display = 'block';
         }
     }
@@ -569,8 +528,10 @@ function animate(currentTime) {
         lastFpsUpdate = currentTime;
     }
     
-    // Update animation mixer if available
-    if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer) {
+    // Update animation systems
+    if (gameState.animationController) {
+        gameState.animationController.update(deltaTime);
+    } else if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer) {
         gameState.pandaAnimationMixer.update(deltaTime);
     }
     

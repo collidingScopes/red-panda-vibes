@@ -24,7 +24,7 @@
     <meta property="twitter:description" content="Be a red panda, explore the world, find bamboo.">
     <meta property="twitter:image" content="https://raw.githubusercontent.com/collidingScopes/red-panda-vibes/main/assets/siteOGImage3.jpeg">
     <!-- Load Tone.js without defer to ensure it's available before other scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script> -->
 
     <link rel="icon" href="assets/favicon.png">
     <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
@@ -129,9 +129,14 @@
     
     <!-- Scripts with defer to improve page load time -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" integrity="sha512-dLxUelApnYxpLt6K2iomGngnHO83iUvZytA3YjDUCjT0HDOHKXnVYdf3hU4JjM8uEhxf9nD1/ey98U3t2vZ0qQ==" crossorigin="anonymous" referrerpolicy="no-referrer" defer></script>
-    <!-- Add GLTF Loader -->
+    <!-- Add FBXLoader after three.min.js and before your game scripts -->
+    <!-- Add fflate.min.js before FBXLoader -->
+    <script src="https://cdn.jsdelivr.net/npm/fflate@0.7.4/umd/index.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js" defer></script>
+    <!-- Existing GLTFLoader can remain if you still want to support GLTF -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js" defer></script>
     <script src="panda-loader.js" defer></script>
+    <script src="animation-controller.js" defer></script>
     <script src="geometry.js" defer></script>
     <script src="river.js" defer></script>
     <script src="helperFunctions.js" defer></script>
