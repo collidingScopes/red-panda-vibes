@@ -43,6 +43,7 @@ gameState.trampoline = {
 //physics
 const jumpForce = 10.0;
 const gravity = 16.0;
+const turnSpeed = 8.0;  // How quickly the panda rotates to face movement direction
 
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
@@ -308,8 +309,22 @@ function updatePlayerPosition(deltaTime) {
             player.position.y = newGroundHeight + 0.5; // Keep player on top of terrain
         }
         
-        // Rotate player to face direction of movement
-        player.lookAt(player.position.clone().add(worldMoveDirection));
+        //smooth turn rotation
+        if (worldMoveDirection.length() > 0) {
+            // Calculate the target rotation (in radians)
+            const targetRotation = Math.atan2(worldMoveDirection.x, worldMoveDirection.z);
+            
+            // Get current rotation
+            let currentRotation = player.rotation.y;
+            
+            // Calculate shortest rotation path
+            let rotationDiff = targetRotation - currentRotation;
+            if (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
+            if (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
+            
+            // Apply smoothed rotation based on delta time
+            player.rotation.y += rotationDiff * Math.min(turnSpeed * deltaTime, 1.0);
+        }
         
         // Play run animation if available and not already running
         if (gameState.pandaModelLoaded && gameState.pandaAnimationMixer && gameState.pandaAnimations['run']) {
