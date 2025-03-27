@@ -143,7 +143,6 @@ gameState.terrain = createTerrain();
 const flagPole = createFlagPole();
 const obstacles = createObstacles();
 const river = createRiver();
-setupRiverGameplay();
 
 function initEventListeners() {
     // Input handling

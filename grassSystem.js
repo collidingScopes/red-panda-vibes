@@ -122,8 +122,8 @@ class GrassSystem {
         // Select 2-3 colors from the palette that work well for grass
         // Use the first and second colors from the palette, usually good for ground/foliage
         const baseColors = [
-            this.currentPalette[1], // Darker color for bottom of grass
-            this.currentPalette[2]  // Lighter color for top of grass
+            this.currentPalette[2], // Darker color for bottom of grass
+            this.currentPalette[1]  // Lighter color for top of grass
         ];
         
         baseColors.forEach(colorHex => {
@@ -159,7 +159,7 @@ class GrassSystem {
                 
                 // Random scale variation for natural look
                 const scale = 0.2 + Math.random() * 1.6;
-                dummy.scale.set(scale, scale * (0.8 + Math.random() * 0.4), scale);
+                dummy.scale.set(Math.min(scale/2,0.6), scale * (0.6 + Math.random() * 0.6), scale);
                 
                 // Random rotation for variation
                 dummy.rotation.y = Math.random() * Math.PI * 2;

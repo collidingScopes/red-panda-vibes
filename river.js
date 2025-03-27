@@ -8,7 +8,7 @@ window.createRiver = function() {
     const riverDepth = -0.7;
     const curveSegments = 80;
     const curveResolution = 80;
-    const mapRadius = 150;
+    const mapRadius = 225;
     
     const generateRiverPath = () => {
         const startAngle = Math.random() * Math.PI * 2;
@@ -51,8 +51,8 @@ window.createRiver = function() {
             uTime: { value: waterShaderTime },
             uFlowSpeed: { value: 0.5 },
             uSwirlIntensity: { value: 0.3 },
-            uBaseColor: { value: new THREE.Color(0x06d6d6) },
-            uFoamColor: { value: new THREE.Color(0xffffff) },
+            uBaseColor: { value: new THREE.Color(0x04e7e7) },
+            uFoamColor: { value: new THREE.Color(0xba04e7) },
             uWaveHeight: { value: 0.2 },
             uNormalStrength: { value: 0.6 }
         },
@@ -108,9 +108,9 @@ window.createRiver = function() {
             }
             
             void main() {
-                vec2 flowUV = vUv + flowDirection(vUv) * uTime;
-                float swirl = smoothNoise(flowUV * 8.0);
-                float turbulence = smoothNoise(flowUV * 1.0 + vec2(uTime * 0.5));
+                vec2 flowUV = vUv + flowDirection(vUv) * uTime*3.4;
+                float swirl = smoothNoise(flowUV * 4.0);
+                float turbulence = smoothNoise(flowUV * 1.0 + vec2(uTime * 1.5));
                 vec3 normalPerturb = vec3(
                     smoothNoise(flowUV + vec2(0.1, 0.0)) - smoothNoise(flowUV - vec2(0.1, 0.0)),
                     smoothNoise(flowUV + vec2(0.0, 0.1)) - smoothNoise(flowUV - vec2(0.0, 0.1)),
@@ -119,7 +119,7 @@ window.createRiver = function() {
                 vec3 perturbedNormal = normalize(vNormal + normalPerturb * uNormalStrength);
                 vec3 color = uBaseColor * (0.6 + swirl * 0.6);
                 float foamFactor = smoothstep(0.7, 1.0, turbulence);
-                color = mix(color, uFoamColor, foamFactor * 0.6);
+                color = mix(color, uFoamColor, foamFactor * 0.7);
                 vec3 lightDir = normalize(vec3(0.5, 1.0, 0.5));
                 float diff = max(dot(perturbedNormal, lightDir), 0.0);
                 color *= (0.5 + diff * 0.5);
@@ -292,7 +292,7 @@ function addRiverRocks(riverGroup, riverCurve, riverWidth) {
             const distance = Math.random() * clusterSize;
             const rockX = x + Math.cos(angle) * distance * 0.5;
             const rockZ = z + Math.sin(angle) * distance * 0.5;
-            const rockSize = 0.5 + Math.random() * 1.5;
+            const rockSize = 0.5 + Math.random() * 3.5;
             let rockGeometry;
             const rockType = Math.floor(Math.random() * 3);
             
@@ -321,203 +321,4 @@ function addRiverRocks(riverGroup, riverCurve, riverWidth) {
         }
         return cluster;
     }
-}
-
-window.setupRiverGameplay = function() {
-    if (!window.gameState || !window.gameState.riverPath) return;
-    
-    const originalUpdatePlayerPosition = window.updatePlayerPosition;
-    window.updatePlayerPosition = function(deltaTime) {
-        originalUpdatePlayerPosition(deltaTime);
-        checkRiverCollision(deltaTime);
-    };
-    
-    function checkRiverCollision(deltaTime) {
-        if (window.gameState.gameOver) return;
-        const player = window.player;
-        const riverPath = window.gameState.riverPath;
-        const riverWidth = window.gameState.riverWidth;
-        const riverCurve = window.gameState.riverCurve;
-        
-        let closestDist = Infinity;
-        let closestPoint = null;
-        let closestIndex = 0;
-        
-        for (let i = 0; i < riverPath.length; i++) {
-            const point = riverPath[i];
-            const dx = player.position.x - point.x;
-            const dz = player.position.z - point.z;
-            const distance = Math.sqrt(dx * dx + dz * dz);
-            if (distance < closestDist) {
-                closestDist = distance;
-                closestPoint = point;
-                closestIndex = i;
-            }
-        }
-        
-        const verticalDistanceToRiver = Math.abs(player.position.y - closestPoint.y);
-        const verticalThreshold = 1.5;
-        
-        if (closestDist < riverWidth / 2 && verticalDistanceToRiver < verticalThreshold) {
-            if (gameState.playerVelocity.x !== 0 || gameState.playerVelocity.z !== 0) {
-                gameState.playerVelocity.x *= 0.7;
-                gameState.playerVelocity.z *= 0.7;
-            }
-            
-            let flowDirection;
-            if (riverCurve) {
-                const t = closestIndex / (riverPath.length - 1);
-                flowDirection = riverCurve.getTangent(t);
-            } else {
-                const prevIndex = Math.max(0, closestIndex - 1);
-                const nextIndex = Math.min(riverPath.length - 1, closestIndex + 1);
-                const prevPoint = riverPath[prevIndex];
-                const nextPoint = riverPath[nextIndex];
-                const dx = nextPoint.x - prevPoint.x;
-                const dz = nextPoint.z - prevPoint.z;
-                const mag = Math.sqrt(dx * dx + dz * dz);
-                flowDirection = { x: dx / mag, z: dz / mag };
-            }
-            
-            player.position.x += flowDirection.x * 4 * deltaTime;
-            player.position.z += flowDirection.z * 4 * deltaTime;
-            
-            if (!gameState.playerInRiver) {
-                if (window.soundSystem && window.soundSystem.initialized) {
-                    window.playWaterSplashSound();
-                }
-                createWaterSplash(player.position.x, player.position.y, player.position.z);
-            }
-            
-            if (Math.random() > 0.95) {
-                createSmallRipple(player.position.x, player.position.y, player.position.z);
-            }
-            
-            gameState.playerInRiver = true;
-            return;
-        }
-        gameState.playerInRiver = false;
-    }
-    
-    function createWaterSplash(x, y, z) {
-        if (!window.enableParticles) return;
-        const particleCount = 20;
-        const particleGroup = new THREE.Group();
-        const splashMaterial = new THREE.MeshBasicMaterial({
-            color: 0xaaddff,
-            transparent: true,
-            opacity: 0.7
-        });
-        
-        for (let i = 0; i < particleCount; i++) {
-            const size = 0.05 + Math.random() * 0.15;
-            const geometry = new THREE.SphereGeometry(size, 4, 4);
-            const particle = new THREE.Mesh(geometry, splashMaterial);
-            particle.position.set(
-                x + (Math.random() * 1 - 0.5),
-                y,
-                z + (Math.random() * 1 - 0.5)
-            );
-            const angle = Math.random() * Math.PI * 2;
-            const speed = 0.5 + Math.random() * 2;
-            particle.userData = {
-                velocity: {
-                    x: Math.cos(angle) * speed,
-                    y: 1 + Math.random() * 3,
-                    z: Math.sin(angle) * speed
-                },
-                gravity: 9.8,
-                age: 0,
-                maxAge: 0.5 + Math.random() * 0.5
-            };
-            particleGroup.add(particle);
-        }
-        
-        scene.add(particleGroup);
-        
-        const animateSplash = (deltaTime) => {
-            let allDead = true;
-            particleGroup.children.forEach((particle, index) => {
-                particle.userData.age += deltaTime;
-                if (particle.userData.age >= particle.userData.maxAge) {
-                    particleGroup.remove(particle);
-                    return;
-                }
-                allDead = false;
-                particle.userData.velocity.y -= particle.userData.gravity * deltaTime;
-                particle.position.x += particle.userData.velocity.x * deltaTime;
-                particle.position.y += particle.userData.velocity.y * deltaTime;
-                particle.position.z += particle.userData.velocity.z * deltaTime;
-                const life = 1 - (particle.userData.age / particle.userData.maxAge);
-                particle.material.opacity = life * 0.7;
-                particle.scale.set(life, life, life);
-            });
-            if (allDead) {
-                scene.remove(particleGroup);
-                window.removeAnimationCallback(animateSplash);
-            }
-        };
-        if (window.addAnimationCallback) {
-            window.addAnimationCallback(animateSplash);
-        }
-    }
-    
-    function createSmallRipple(x, y, z) {
-        if (!window.enableParticles) return;
-        const rippleMaterial = new THREE.MeshBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: 0.4,
-            side: THREE.DoubleSide
-        });
-        const rippleGeometry = new THREE.CircleGeometry(0.2, 16);
-        const ripple = new THREE.Mesh(rippleGeometry, rippleMaterial);
-        ripple.position.set(x, y + 0.01, z);
-        ripple.rotation.x = -Math.PI / 2;
-        scene.add(ripple);
-        
-        const startTime = waterShaderTime;
-        const duration = 1.0;
-        
-        const animateRipple = (deltaTime) => {
-            const elapsed = waterShaderTime - startTime;
-            const progress = elapsed / duration;
-            if (progress >= 1) {
-                scene.remove(ripple);
-                window.removeAnimationCallback(animateRipple);
-                return;
-            }
-            const scale = 0.2 + progress * 2;
-            ripple.scale.set(scale, scale, scale);
-            ripple.material.opacity = 0.4 * (1 - progress);
-        };
-        if (window.addAnimationCallback) {
-            window.addAnimationCallback(animateRipple);
-        }
-    }
-    
-    if (!window.animationCallbacks) {
-        window.animationCallbacks = [];
-        window.addAnimationCallback = function(callback) {
-            window.animationCallbacks.push(callback);
-        };
-        window.removeAnimationCallback = function(callbackToRemove) {
-            window.animationCallbacks = window.animationCallbacks.filter(
-                callback => callback !== callbackToRemove
-            );
-        };
-        
-        let lastTime = 0;
-        const originalAnimationLoop = window.animationLoop || function(){};
-        
-        window.animationLoop = function(timestamp) {
-            const deltaTime = lastTime ? (timestamp - lastTime) / 1000 : 1/60;
-            lastTime = timestamp;
-            waterShaderTime += deltaTime;
-            window.animationCallbacks.forEach(callback => callback(deltaTime));
-            originalAnimationLoop(timestamp);
-        };
-    }
-    
-    window.enableParticles = true;
 }
