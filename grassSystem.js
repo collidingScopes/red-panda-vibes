@@ -5,7 +5,7 @@ class GrassSystem {
         this.getTerrainHeight = getTerrainHeightFunc;
         this.grassMesh = null;
         this.clock = new THREE.Clock();
-        this.instanceNumber = isMobile ? 150000 : 200000;
+        this.instanceNumber = isMobile ? 200000 : 250000;
         this.grassArea = 400; // Size of area covered by grass
         this.maxGrassHeight = 1.0; // Maximum terrain height for grass to appear
         
@@ -15,9 +15,9 @@ class GrassSystem {
         this.activeInstances = 0;
         
         // Clumping parameters
-        this.clusterCount = 100; // Number of cluster centers
+        this.clusterCount = 80; // Number of cluster centers
         this.clusterRadius = 20; // Maximum radius of each cluster
-        this.clusterDensityFalloff = 0.8; // How quickly density falls off from cluster center (0-1)
+        this.clusterDensityFalloff = 0.85; // How quickly density falls off from cluster center (0-1)
         this.noiseScale = 0.03; // Scale of the noise function for additional variation
         this.clusterCenters = []; // Will store cluster center positions
         
