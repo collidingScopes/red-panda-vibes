@@ -8,12 +8,11 @@ class LevelWarnings {
         
         // Warning messages for specific levels
         this.warnings = {
-            2: "☣️ Warning: avoid the evil bubble monsters 🫧",
+            2: "☣️ Warning: avoid the evil bubble monsters (or jump on their head to smush them!) 🫧",
             3: "🔺 Each level brings more monsters and a harder bamboo to find 🧐",
-            4: "Keep exploring! There are jetpacks, gameboys, and other treasures to find... 👀",
-            5: "Tip: you can smush your enemies by jumping on top of their heads! 🦘",
-            6: "Tip: find the speed / invisibility powerups to escape from monsters 👻",
-            7: "What level can you reach? My personal best was level 24 😎",
+            4: "Keep exploring! There are jetpacks, gameboys, and many other treasures... 👀",
+            5: "Tip: find the speed / invisibility powerups to escape from monsters 👻",
+            6: "What level can you reach? My personal best is level 24 😎",
         };
         
         // Track whether we've shown warnings for specific levels
@@ -57,7 +56,7 @@ class LevelWarnings {
                 setTimeout(() => {
                     warningEl.classList.add('hidden');
                 }, 1000);
-            }, 4000);
+            }, 4500);
         }
     }
     
