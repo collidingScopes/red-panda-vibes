@@ -24,7 +24,6 @@ class HighScoreSystem {
     
     // Set up the modified game over screen
     setupGameOverScreen() {
-
         // Rebuild the game over screen with new format
         this.gameOverScreen.innerHTML = `
             <h2>Game Over!</h2>
@@ -134,20 +133,33 @@ class HighScoreSystem {
     // Submit a new score to the Google Sheet
     async submitScore(username, level) {
         try {
+            // Convert level to a number to ensure proper comparison in Apps Script
+            const numericLevel = parseInt(level);
+            
+            // Log what we're about to send for debugging
+            console.log('Submitting score:', {
+                name: username,
+                level: numericLevel
+            });
+            
             const response = await fetch(this.apiUrl, {
                 method: 'POST',
+                mode: 'no-cors', // Important for cross-origin requests to GAS
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     name: username,
-                    level: level
+                    level: numericLevel
                 })
             });
             
-            if (!response.ok) {
-                console.error('Error submitting score:', response.statusText);
-            }
+            console.log('Score submitted successfully');
+            
+            // Force refresh of high scores after submitting
+            this.highScores = null;
+            this.fetchHighScores();
+            
         } catch (error) {
             console.error('Error submitting score:', error);
         }
@@ -156,12 +168,14 @@ class HighScoreSystem {
     // Fetch high scores from the Google Sheet
     async fetchHighScores() {
         try {
+            console.log('Fetching high scores...');
             const response = await fetch(`${this.apiUrl}?action=getScores`);
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
             
             const data = await response.json();
+            console.log('Fetched scores data:', data);
             
             // Transform data to match the expected format
             this.highScores = data.scores.map(row => ({
