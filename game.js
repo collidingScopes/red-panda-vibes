@@ -42,7 +42,7 @@ gameState.trampoline = {
 //physics
 const jumpForce = 10.0;
 const gravity = 16.0;
-const turnSpeed = 10.0;  // How quickly the panda rotates to face movement direction
+const turnSpeed = 5.0;  // How quickly the panda rotates to face movement direction
 
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
@@ -56,6 +56,8 @@ const fpsCounter = document.getElementById('fps-counter');
 // Camera setup
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
+const cameraOffset = new THREE.Vector3(0, 6, -10); // Offset from player (behind and slightly above)
+const cameraLerpSpeed = 2.0; // Speed of camera interpolation (adjust for smoothness)
 
 // Renderer setup with post-processing for dithering
 const renderer = new THREE.WebGLRenderer({ antialias: false }); // Disable antialiasing for pixelated look
@@ -155,34 +157,23 @@ function initEventListeners() {
 // Camera controls
 let cameraAngleHorizontal = 0;
 let cameraAngleVertical = 0;
-window.cameraDistance = 8.0;
 
 // Add min and max for vertical camera angle to prevent looking below ground
-const MIN_VERTICAL_ANGLE = -Math.PI/11; // Minimum (looking up)
-const MAX_VERTICAL_ANGLE = Math.PI/6;  // Maximum (looking down, but not below ground)
 const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
-function updateCamera() {
-    // Update camera angles based on arrow key inputs
-    if (gameState.keyStates['ArrowLeft']) window.cameraAngleHorizontal += 0.03;
-    if (gameState.keyStates['ArrowRight']) window.cameraAngleHorizontal -= 0.03;
-    // Apply the min/max vertical angle limits
-    if (gameState.keyStates['ArrowUp']) window.cameraAngleVertical = Math.max(window.cameraAngleVertical - 0.03, MIN_VERTICAL_ANGLE);
-    if (gameState.keyStates['ArrowDown']) window.cameraAngleVertical = Math.min(window.cameraAngleVertical + 0.03, MAX_VERTICAL_ANGLE);
-    
-    // Calculate camera position with orbit controls
-    const horizontalDistance = window.cameraDistance * Math.cos(window.cameraAngleVertical);
-    const verticalDistance = window.cameraDistance * Math.sin(window.cameraAngleVertical);
-    
-    // Update camera position using player's position without cloning
-    camera.position.x = player.position.x + horizontalDistance * Math.sin(window.cameraAngleHorizontal);
-    camera.position.z = player.position.z + horizontalDistance * Math.cos(window.cameraAngleHorizontal);
-    camera.position.y = player.position.y + 4.5 + verticalDistance; // 2.5 is a height offset
-    
-    // Reuse the target vector
-    cameraTarget.copy(player.position);
-    cameraTarget.y += 1; // Look at player's head level
-    camera.lookAt(cameraTarget);
+function updateCamera(deltaTime) {
+    // Target position behind the player based on player's rotation
+    const targetOffset = cameraOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+    const targetPosition = player.position.clone().add(targetOffset);
+
+    // Smoothly interpolate camera position
+    camera.position.lerp(targetPosition, cameraLerpSpeed * deltaTime);
+
+    // Look at the player's head position
+    const lookAtTarget = new THREE.Vector3()
+        .copy(player.position)
+        .add(new THREE.Vector3(0, 1, 0)); // Slightly above player base
+    camera.lookAt(lookAtTarget);
 }
 
 // Game physics and movement
@@ -244,11 +235,12 @@ function updatePlayerPosition(deltaTime) {
     // Movement direction (in camera space)
     const moveDirection = new THREE.Vector3(0, 0, 0);
     
-    if (gameState.keyStates['KeyW']) moveDirection.z = 1.0;
-    if (gameState.keyStates['KeyS']) moveDirection.z = -1.0;
-    if (gameState.keyStates['KeyA']) moveDirection.x = 1.0;
-    if (gameState.keyStates['KeyD']) moveDirection.x = -1.0;
-    
+    // Check both W/A/S/D and Arrow keys for movement
+    if (gameState.keyStates['KeyW'] || gameState.keyStates['ArrowUp']) moveDirection.z = 1.0;    // Forward
+    if (gameState.keyStates['KeyS'] || gameState.keyStates['ArrowDown']) moveDirection.z = -1.0; // Backward
+    if (gameState.keyStates['KeyA'] || gameState.keyStates['ArrowLeft']) moveDirection.x = 1.0;  // Left
+    if (gameState.keyStates['KeyD'] || gameState.keyStates['ArrowRight']) moveDirection.x = -1.0; // Right
+
     moveDirection.normalize();
     
     // Helper function to check if player is moving horizontally
@@ -336,7 +328,7 @@ function updatePlayerPosition(deltaTime) {
     }
     
     // Update camera position
-    updateCamera();
+    updateCamera(deltaTime);
     
     // Check for goal (flag pole) - horizontal distance only for better pole collision
     const dx = player.position.x - flagPole.position.x;
@@ -515,7 +507,6 @@ function animate(currentTime) {
     
     // Store the animation ID so we can cancel it
     gameState.animationId = requestAnimationFrame(animate);
-    
     const deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
     
@@ -542,6 +533,7 @@ function animate(currentTime) {
     if (!gameState.gameOver) {
         // Game logic updates
         updatePlayerPosition(deltaTime);
+        updateCamera(deltaTime); // Pass deltaTime here
         checkCollisions();
         
         // Update enemies

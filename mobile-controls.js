@@ -1,130 +1,5 @@
 // Mobile Controls for Red Panda Explorer
 
-// Animation settings for smooth rotations
-const ROTATION_DURATION = 400; // Duration of rotation animation in ms
-const ROTATION_STEPS = 20; // Number of steps for smoother animation
-let isRotating = false; // Flag to prevent multiple rotations at once
-let cameraRotationAngle = Math.PI/4; //45 degree turns
-/**
- * Enhanced mobileCameraTurnRight function with a callback when rotation completes
- */
-function mobileCameraTurnRight() {
-    if (isRotating) return; // Prevent multiple simultaneous rotations
-    
-    isRotating = true;
-    
-    // Calculate target angle (60 degrees clockwise)
-    const startAngle = window.cameraAngleHorizontal;
-    const targetAngle = (startAngle - cameraRotationAngle) % (Math.PI * 2);
-    
-    // Store player's current rotation
-    const startPlayerRotation = window.player.rotation.y;
-    const targetPlayerRotation = startPlayerRotation + cameraRotationAngle;
-
-    // Start time for animation
-    const startTime = performance.now();
-    
-    // Animation function
-    function animateRotation(currentTime) {
-        const elapsedTime = currentTime - startTime;
-        const progress = Math.min(elapsedTime / ROTATION_DURATION, 1);
-        
-        // Use easeInOutQuad for smoother animation
-        const easeProgress = progress < 0.5 
-            ? 2 * progress * progress 
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        
-        // Update camera angle with smooth transition
-        window.cameraAngleHorizontal = startAngle - (cameraRotationAngle * easeProgress);
-        
-        // Update player rotation to match camera movement
-        if (window.player) {
-            window.player.rotation.y = startPlayerRotation + (cameraRotationAngle * easeProgress);
-        }
-        
-        // Continue animation if not complete
-        if (progress < 1) {
-            requestAnimationFrame(animateRotation);
-        } else {
-            // Ensure final values are exact
-            window.cameraAngleHorizontal = targetAngle;
-            if (window.player) {
-                window.player.rotation.y = targetPlayerRotation;
-            }
-            
-            console.log(`Camera and player rotated to ${targetAngle}`);
-            
-            // Important: Reset isRotating flag when animation completes
-            setTimeout(() => {
-                isRotating = false;
-            }, 50); // Small delay to prevent accidental immediate re-triggering
-        }
-    }
-    
-    // Start the animation
-    requestAnimationFrame(animateRotation);
-}
-
-/**
- * Enhanced mobileCameraTurnLeft function with a callback when rotation completes
- */
-function mobileCameraTurnLeft() {
-    if (isRotating) return; // Prevent multiple simultaneous rotations
-    
-    isRotating = true;
-    
-    // Calculate target angle (60 degrees clockwise)
-    const startAngle = window.cameraAngleHorizontal;
-    const targetAngle = (startAngle + cameraRotationAngle) % (Math.PI * 2);
-    
-    // Store player's current rotation
-    const startPlayerRotation = window.player.rotation.y;
-    const targetPlayerRotation = startPlayerRotation - cameraRotationAngle; // Fixed - was incorrect in original
-
-    // Start time for animation
-    const startTime = performance.now();
-    
-    // Animation function
-    function animateRotation(currentTime) {
-        const elapsedTime = currentTime - startTime;
-        const progress = Math.min(elapsedTime / ROTATION_DURATION, 1);
-        
-        // Use easeInOutQuad for smoother animation
-        const easeProgress = progress < 0.5 
-            ? 2 * progress * progress 
-            : 1 - Math.pow(-2 * progress + 2, 2) / 2;
-        
-        // Update camera angle with smooth transition
-        window.cameraAngleHorizontal = startAngle + (cameraRotationAngle * easeProgress);
-        
-        // Update player rotation to match camera movement
-        if (window.player) {
-            window.player.rotation.y = startPlayerRotation - (cameraRotationAngle * easeProgress);
-        }
-        
-        // Continue animation if not complete
-        if (progress < 1) {
-            requestAnimationFrame(animateRotation);
-        } else {
-            // Ensure final values are exact
-            window.cameraAngleHorizontal = targetAngle;
-            if (window.player) {
-                window.player.rotation.y = targetPlayerRotation;
-            }
-            
-            console.log(`Camera and player rotated to ${targetAngle}`);
-            
-            // Important: Reset isRotating flag when animation completes
-            setTimeout(() => {
-                isRotating = false;
-            }, 200); // Small delay to prevent accidental immediate re-triggering
-        }
-    }
-    
-    // Start the animation
-    requestAnimationFrame(animateRotation);
-}
-
 class MobileControls {
     // Constants for configuration
     static DEBUG = false;                // Set to true to enable debug logging
@@ -151,7 +26,7 @@ class MobileControls {
         this.camera = null;
         this.gameState = null;
 
-        // Touch tracking variables - updated for multi-touch
+        // Touch tracking variables
         this.moveTouchId = null;
         this.jumpTouchId = null;
         this.moveStartX = 0;
@@ -160,9 +35,6 @@ class MobileControls {
         this.moveCurrentY = 0;
         this.jumpTriggered = false;
         this.activeTouches = new Map(); // Track all active touches by ID
-        
-        // New tracking variables for camera rotation via drag
-        this.dragThreshold = 15; // Minimum horizontal drag distance to trigger rotation
         
         // Cache DOM elements
         this.instructionsElement = document.getElementById('instructions');
@@ -187,24 +59,6 @@ class MobileControls {
         
         // Start connecting to the game with a safety timeout
         this.connectToGameWithTimeout();
-
-        // Initialize camera angles for mobile
-        // Check if we're in portrait mode
-        const isPortrait = window.innerWidth / window.innerHeight < 1;
-        
-        // Set default camera angle for mobile
-        window.cameraAngleHorizontal = Math.PI/4; // 45 degrees
-        
-        // Set vertical angle based on orientation
-        if (isPortrait) {
-            // In portrait, look more from above to see more of the scene
-            window.cameraAngleVertical = Math.PI/12;
-        } else {
-            // In landscape, use normal angle
-            window.cameraAngleVertical = 0;
-        }
-        
-        this.log(`Mobile detected, setting initial camera angles: horizontal=${window.cameraAngleHorizontal}, vertical=${window.cameraAngleVertical}`);
     }
 
     /**
@@ -296,7 +150,6 @@ class MobileControls {
         // Set the new camera distance
         window.cameraDistance = baseDistance * aspectFactor;
         
-
         this.log(`Adjusted camera distance to ${window.cameraDistance} (aspect: ${currentAspect}, portrait: ${isPortrait})`);
         
         // Maintain pixel ratio setting
@@ -459,7 +312,7 @@ class MobileControls {
     }
 
     /**
-     * Handles touch movement for player control - updated for multi-touch and drag rotation
+     * Handles touch movement for player control - updated for multi-touch
      * @param {TouchEvent} event - The touch move event
      */
     handleTouchMove(event) {
@@ -475,9 +328,6 @@ class MobileControls {
             if (this.activeTouches.has(touch.identifier)) {
                 const touchData = this.activeTouches.get(touch.identifier);
                 
-                // Store previous X position before updating
-                const previousX = touchData.currentX;
-                
                 // Update touch data
                 touchData.currentX = touch.clientX;
                 touchData.currentY = touch.clientY;
@@ -486,9 +336,6 @@ class MobileControls {
                 if (touch.identifier === this.moveTouchId) {
                     this.moveCurrentX = touch.clientX;
                     this.moveCurrentY = touch.clientY;
-                    
-                    // Check for horizontal drag gesture
-                    this.checkForDragRotation(previousX, touch.clientX);
                     
                     // Update player movement
                     this.updateMovement();
@@ -499,55 +346,6 @@ class MobileControls {
         // Prevent default behavior to avoid scrolling
         if (!this.isUIElement(event.target)) {
             event.preventDefault();
-        }
-    }
-
-    /**
-     * Improved checkForDragRotation method for the MobileControls class
-     * This allows for continuous camera rotation during drag gestures
-     */
-    checkForDragRotation(previousX, currentX) {
-        // If already rotating, don't trigger another rotation
-        if (isRotating) return;
-        
-        // Calculate the horizontal drag distance
-        const dragDistance = currentX - previousX;
-        
-        // Check if drag exceeds threshold
-        if (Math.abs(dragDistance) >= this.dragThreshold) {
-            // Determine which rotation to trigger
-            if (dragDistance > 0) {
-                // Dragging right
-                this.log("Detected right drag, rotating camera right");
-                mobileCameraTurnRight();
-                
-                // Reset the movement touch start position after rotation
-                // This allows for consecutive rotations
-                this.moveStartX = this.moveCurrentX;
-                this.moveStartY = this.moveCurrentY;
-                
-                // Update the start position in the active touches map
-                if (this.activeTouches.has(this.moveTouchId)) {
-                    const touchData = this.activeTouches.get(this.moveTouchId);
-                    touchData.startX = touchData.currentX;
-                    touchData.startY = touchData.currentY;
-                }
-            } else {
-                // Dragging left
-                this.log("Detected left drag, rotating camera left");
-                mobileCameraTurnLeft();
-                
-                // Reset the movement touch start position after rotation
-                this.moveStartX = this.moveCurrentX;
-                this.moveStartY = this.moveCurrentY;
-                
-                // Update the start position in the active touches map
-                if (this.activeTouches.has(this.moveTouchId)) {
-                    const touchData = this.activeTouches.get(this.moveTouchId);
-                    touchData.startX = touchData.currentX;
-                    touchData.startY = touchData.currentY;
-                }
-            }
         }
     }
 
@@ -631,7 +429,6 @@ class MobileControls {
                target.closest('#goal-message') || 
                target.closest('#level-complete-content') || 
                target.closest('#game-over-screen') ||
-               target.closest('#camera-flip-button') ||
                target.closest('#instruction-button') ||
                target.closest('#sound-toggle') ||
                target.closest('#level-select') ||
