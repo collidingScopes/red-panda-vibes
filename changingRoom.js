@@ -6,97 +6,65 @@ class ChangingRoom {
         this.changingRoomMesh = null;
         this.isPlayerInside = false;
         this.lastModelChange = 0;
-        this.cooldownTime = 1800;
+        this.cooldownTime = 1800; // Cooldown in milliseconds
         this.modelOptions = [
-            { name: "Red Panda", path: pandaModelLocation },
-            { name: "Bernie", path: 'assets/bernie4.glb' },
-            { name: "Levels", path: 'assets/levels3.glb' },
-            { name: "Pixar", path: 'assets/pixar4.glb' },
-            { name: "Judge Judy", path: 'assets/judgeJudy.glb' },
-            //{ name: "Saratoga Water", path: 'assets/saratoga3.glb' },
-            //{ name: "OpenAI", path: 'assets/openai.glb' },
-            //{ name: "Sloth", path: 'assets/sloth.glb' },
+            { name: "Red Panda", path: 'assets/pandaFBX/panda.fbx' }, // Original panda model
+            { name: "Levels", path: 'assets/levelsFBX/levels.fbx' }   // Target model
         ];
-        this.currentModelIndex = 0;
-        this.preloadedModels = {};
-        this.modelsLoaded = false;
-        this.currentPlayerModel = null; // Track the current model for disposal
+        this.currentModelIndex = 0; // Start with Red Panda
+        this.loader = null;
+        this.preloadedModels = {}; // For storing model paths that have been preloaded
     }
 
     initialize() {
         this.createChangingRoom();
         this.placeRandomly();
         
-        // Preload models immediately but with a throttle
-        this.preloadAllModels();
+        // Initialize FBX loader
+        if (THREE && THREE.FBXLoader) {
+            this.loader = new THREE.FBXLoader();
+            console.log("FBX Loader initialized for changing room");
+            
+            // Start preloading the Levels model
+            this.preloadLevelsModel();
+        } else {
+            console.error("THREE.FBXLoader not available for changing room");
+        }
     }
 
-    // Preload models with better resource management
-    preloadAllModels() {
-        console.log("Preloading character models...");
-        const totalModels = this.modelOptions.length;
-        let loadedCount = 0;
+    // Preload just the Levels model to ensure it loads quickly when needed
+    preloadLevelsModel() {
+        if (!this.loader) {
+            console.error("Cannot preload models: FBX Loader not available");
+            return;
+        }
 
-        const loader = new THREE.GLTFLoader();
-
-        const loadNextModel = (index) => {
-            if (index >= totalModels) {
-                this.modelsLoaded = true;
-                console.log("All models preloaded!");
-                return;
+        // Only preload the Levels model (index 1)
+        const levelsModel = this.modelOptions[1];
+        console.log(`Preloading model: ${levelsModel.name} from ${levelsModel.path}`);
+        
+        // Mark this model path as "being preloaded"
+        this.preloadedModels[levelsModel.path] = true;
+        
+        // Load the model file but don't store the actual model object
+        this.loader.load(
+            levelsModel.path,
+            (fbx) => {
+                console.log(`Successfully preloaded ${levelsModel.name} model`);
+                // Simply mark that the model has been preloaded, but don't keep the model instance
+                this.preloadedModels[levelsModel.path] = true;
+            },
+            (xhr) => {
+                // Progress callback
+                const progress = Math.round(xhr.loaded / xhr.total * 100);
+                console.log(`Preloading ${levelsModel.name}: ${progress}% loaded`);
+            },
+            (error) => {
+                console.error(`Error preloading ${levelsModel.name} model:`, error);
+                // Mark preloading failed
+                this.preloadedModels[levelsModel.path] = false;
             }
-
-            const model = this.modelOptions[index];
-            console.log(`Loading: ${model.name} (${index + 1}/${totalModels})`);
-
-            loader.load(
-                model.path,
-                (gltf) => {
-                    const processedModel = {
-                        scene: gltf.scene,
-                        animations: gltf.animations || []
-                    };
-                    this.processModel(processedModel);
-                    this.preloadedModels[model.name] = processedModel;
-                    loadedCount++;
-
-                    // Throttle next load
-                    setTimeout(() => loadNextModel(index + 1), 500);
-                },
-                (xhr) => {
-                    if (xhr.lengthComputable) {
-                        console.log(`Loading ${model.name}: ${Math.round((xhr.loaded / xhr.total) * 100)}%`);
-                    }
-                },
-                (error) => {
-                    console.error(`Failed to load ${model.name}:`, error);
-                    loadedCount++;
-                    // Continue even if a model fails (use a fallback later)
-                    setTimeout(() => loadNextModel(index + 1), 500);
-                }
-            );
-        };
-
-        loadNextModel(0);
-    }
-
-    processModel(modelData) {
-        const model = modelData.scene;
-        model.scale.set(1.5, 1.5, 1.5);
-        const box = new THREE.Box3().setFromObject(model);
-        const center = box.getCenter(new THREE.Vector3());
-        model.position.sub(center);
-        const size = box.getSize(new THREE.Vector3());
-        model.position.y += size.y / 2;
-
-        model.traverse((node) => {
-            if (node.isMesh) {
-                node.castShadow = true;
-                node.receiveShadow = true;
-            }
-        });
-
-        return model;
+        );
     }
 
     // Create the changing room mesh
@@ -305,16 +273,13 @@ class ChangingRoom {
             this.onPlayerExit();
         }
     }
+
     onPlayerEnter() {
         console.log("Player entered changing room");
-        if (this.particles) this.particles.visible = true;
-
         const now = Date.now();
-        if (now - this.lastModelChange > this.cooldownTime && this.modelsLoaded) {
+        if (now - this.lastModelChange > this.cooldownTime) {
             this.changePlayerModel();
             this.lastModelChange = now;
-        } else if (!this.modelsLoaded) {
-            console.log("Models not yet loaded, skipping change.");
         }
     }
 
@@ -323,100 +288,153 @@ class ChangingRoom {
     }
 
     changePlayerModel() {
-        this.currentModelIndex = (this.currentModelIndex + 1) % this.modelOptions.length;
-        const newModel = this.modelOptions[this.currentModelIndex];
-        console.log(`Changing to: ${newModel.name}`);
-        
-        // Remove all existing models from the player
-        while (this.player.children.length > 0) {
-            const child = this.player.children[0];
-            this.player.remove(child);
-            this.disposeModel(child);
+        // Check if we can load models
+        if (!this.loader) {
+            console.error("FBX Loader not available for model change");
+            return;
         }
-        this.currentPlayerModel = null;
         
-        // Use preloaded model if available
-        if (this.preloadedModels[newModel.name]) {
-            const modelData = this.preloadedModels[newModel.name];
-            const modelClone = modelData.scene.clone();
-            this.processModel({ scene: modelClone }); // Ensure new model is processed
-            this.player.add(modelClone);
-            this.currentPlayerModel = modelClone;
-            
-            // Check if invisibility is active and apply transparency to new model
-            if (window.powerupSystem && 
-                window.powerupSystem.activeEffects && 
-                window.powerupSystem.activeEffects.invisibility &&
-                window.powerupSystem.activeEffects.invisibility.active) {
+        // Save current animation state before model change
+        const wasJumping = window.animationController ? window.animationController.isJumping : false;
+        const wasRunning = window.animationController ? window.animationController.isRunning : false;
+        const jumpStarted = window.animationController ? window.animationController.jumpStarted : false;
+        
+        // Reset animation controller state before changing model
+        if (window.animationController) {
+            window.animationController.stopCurrentAnimation();
+        }
+        
+        // Advance to next model (toggle between Red Panda and Levels)
+        this.currentModelIndex = (this.currentModelIndex === 0) ? 1 : 0;
+        const newModel = this.modelOptions[this.currentModelIndex];
+        
+        console.log(`Loading model: ${newModel.name} from ${newModel.path}`);
+        
+        // Show loading notification
+        this.showNotification(`Changing into: ${newModel.name}...`);
+        
+        // Use the FBX loader directly, as in the original code
+        this.loader.load(
+            newModel.path,
+            (fbx) => {
+                console.log(`Successfully loaded ${newModel.name} model`);
                 
-                // Clear stored materials since the model changed
-                window.powerupSystem.activeEffects.invisibility.originalMaterials = [];
+                // Remove existing model from player
+                while (this.player.children.length > 0) {
+                    const child = this.player.children[0];
+                    this.player.remove(child);
+                    this.disposeModel(child);
+                }
                 
-                // Apply transparency to new model (reuse the applyPlayerTransparency method)
-                modelClone.traverse((node) => {
-                    if (node.isMesh && node.material) {
-                        // Handle arrays of materials
-                        if (Array.isArray(node.material)) {
-                            node.material.forEach(material => {
-                                // Store original properties
-                                window.powerupSystem.activeEffects.invisibility.originalMaterials.push({
-                                    material: material,
-                                    transparent: material.transparent,
-                                    opacity: material.opacity
-                                });
-                                
-                                // Apply transparency
-                                material.transparent = true;
-                                material.opacity = 0.4; // 40% opacity
-                                material.needsUpdate = true;
-                            });
-                        } else {
-                            // Store original properties
-                            window.powerupSystem.activeEffects.invisibility.originalMaterials.push({
-                                material: node.material,
-                                transparent: node.material.transparent,
-                                opacity: node.material.opacity
-                            });
-                            
-                            // Apply transparency
-                            node.material.transparent = true;
-                            node.material.opacity = 0.4; // 40% opacity
-                            node.material.needsUpdate = true;
-                        }
+                // Configure the new model based on which one it is
+                if (newModel.name === "Levels") {
+                    // Scale adjustment for levels model
+                    fbx.scale.set(0.035, 0.035, 0.035);
+                    
+                    // Center the model
+                    const box = new THREE.Box3().setFromObject(fbx);
+                    const center = box.getCenter(new THREE.Vector3());
+                    fbx.position.sub(center);
+                    fbx.position.y = 2.5; // Ground level
+                } else {
+                    // Configure Red Panda model using parameters from panda-loader.js
+                    // Apply the panda model scale from panda-loader.js
+                    const pandaModelScale = 2.0; // Same as in panda-loader.js
+                    fbx.scale.set(pandaModelScale, pandaModelScale, pandaModelScale);
+                    
+                    // Center the model and adjust height properly
+                    const box = new THREE.Box3().setFromObject(fbx);
+                    const center = box.getCenter(new THREE.Vector3());
+                    fbx.position.sub(center); // Center horizontally
+                    
+                    // Get the size for proper vertical positioning
+                    const size = box.getSize(new THREE.Vector3());
+                    fbx.position.y += size.y / 2; // Position at proper height like in panda-loader.js
+                }
+                
+                // Apply shadows to all meshes
+                fbx.traverse((node) => {
+                    if (node.isMesh) {
+                        node.castShadow = true;
+                        node.receiveShadow = true;
                     }
                 });
+                
+                // Add the model to the player
+                this.player.add(fbx);
+                
+                // Update the global panda model reference if it exists
+                if (window.setPandaModel) {
+                    window.setPandaModel(fbx, fbx.animations || []);
+                    
+                    // Reset jump state flags to allow jumping again
+                    // We create a short delay to ensure the animations are properly loaded
+                    setTimeout(() => {
+                        if (window.animationController) {
+                            // Ensure animation controller state is reset properly
+                            window.animationController.isJumping = false;
+                            window.animationController.jumpStarted = false;
+                            
+                            // Play appropriate animation based on previous state
+                            if (wasRunning) {
+                                window.animationController.playAnimation('running');
+                            } else {
+                                window.animationController.playAnimation('idle');
+                            }
+                        }
+                    }, 100);
+                }
+                
+                // Show success notification
+                this.showNotification(`Changed into: ${newModel.name}!`);
+            },
+            (xhr) => {
+                console.log(`Loading ${newModel.name}: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+            },
+            (error) => {
+                console.error(`Error loading ${newModel.name} model:`, error);
+                this.showNotification(`Failed to change model: ${error.message}`, true);
+                // Revert the index since we failed
+                this.currentModelIndex = (this.currentModelIndex === 0) ? 1 : 0;
             }
-            
-            // Create and display the notification div
-            const notification = document.createElement('div');
-            notification.className = 'level-warning';
-            notification.textContent = `Changed into: ${newModel.name}`;
-            document.body.appendChild(notification);
-            
-            // Remove the notification after 2 seconds
+        );
+    }
+
+    showNotification(message, isError = false) {
+        // Remove any existing notifications
+        document.querySelectorAll('.model-change-notification').forEach(el => {
+            el.parentNode.removeChild(el);
+        });
+        
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = 'level-warning model-change-notification';
+        if (isError) notification.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        
+        // Remove after delay unless it's a loading message
+        if (!message.includes('...')) {
             setTimeout(() => {
                 if (notification.parentNode) {
                     notification.parentNode.removeChild(notification);
                 }
-            }, 2000);
-            
-            if (window.setPandaModel) {
-                window.setPandaModel(modelClone, modelData.animations);
-            }
-        } else {
-            console.log(`Model ${newModel.name} not preloaded, skipping.`);
+            }, 3000);
         }
     }
 
-    // Dispose of a model to free memory
     disposeModel(model) {
         model.traverse((node) => {
             if (node.isMesh) {
                 if (node.geometry) node.geometry.dispose();
                 if (node.material) {
                     if (Array.isArray(node.material)) {
-                        node.material.forEach(mat => mat.dispose());
+                        node.material.forEach(mat => {
+                            if (mat.map) mat.map.dispose();
+                            mat.dispose();
+                        });
                     } else {
+                        if (node.material.map) node.material.map.dispose();
                         node.material.dispose();
                     }
                 }

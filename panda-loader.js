@@ -2,6 +2,7 @@
 // Enhanced with support for custom avatar URLs and separate animation files
 
 let pandaModelLocation = 'assets/pandaFBX/panda.fbx';
+//let pandaModelLocation = 'assets/levelsFBX/levels.fbx';
 let animationFiles = {
     'idle': 'assets/pandaFBX/idle2.fbx',
     'jump': 'assets/pandaFBX/jump.fbx',
@@ -11,27 +12,7 @@ let animationFiles = {
     'dance': 'assets/pandaFBX/dance.fbx',
     'fly': 'assets/pandaFBX/fly.fbx',
 };
-let pandaModelScale = 2;
-
-// Wait for DOM and Three.js to load
-document.addEventListener('DOMContentLoaded', () => {
-    let checkLoaderInterval = setInterval(() => {
-        if (window.THREE && window.THREE.GLTFLoader) {
-            console.log('GLTFLoader is ready');
-            clearInterval(checkLoaderInterval);
-        } else {
-            console.log('Waiting for GLTFLoader to be available...');
-        }
-    }, 500);
-
-    // Safety timeout after 10 seconds
-    setTimeout(() => {
-        clearInterval(checkLoaderInterval);
-        if (!window.THREE || !window.THREE.GLTFLoader) {
-            console.error('GLTFLoader failed to load properly after timeout');
-        }
-    }, 10000);
-});
+let pandaModelScale = 2.0;
 
 // Function to parse URL parameters
 function getUrlParameters() {
