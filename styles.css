@@ -489,10 +489,9 @@ h2, h3 {
     background-color: rgba(132, 255, 239, 0.3);
 }
 
-#sound-toggle {
+#sound-toggle, #instruction-button {
     position: fixed;
-    top: 3px;
-    right: 3px;
+
     width: 50px;
     height: 50px;
 
@@ -512,6 +511,16 @@ h2, h3 {
     transition: background-color 0.2s ease;
     margin: 0;
     padding: 0;
+}
+
+#sound-toggle {
+    top: 3px;
+    right: 3px;
+}
+
+#instruction-button {
+    top: 3px;
+    right: 53px;
 }
 
 /* Optimize touch targets for mobile */

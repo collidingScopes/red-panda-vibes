@@ -246,8 +246,8 @@ class Jetpack {
         this.fuelBarContainer = document.createElement('div');
         this.fuelBarContainer.className = 'fuel-bar-container';
         this.fuelBarContainer.style.position = 'absolute';
-        this.fuelBarContainer.style.bottom = '45%';
-        this.fuelBarContainer.style.right = '20%';
+        this.fuelBarContainer.style.bottom = '40%';
+        this.fuelBarContainer.style.right = '15%';
         this.fuelBarContainer.style.width = '180px';
         this.fuelBarContainer.style.height = '20px';
         this.fuelBarContainer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
@@ -259,8 +259,8 @@ class Jetpack {
         const label = document.createElement('div');
         label.textContent = 'JETPACK FUEL';
         label.style.position = 'absolute';
-        label.style.bottom = '48%';
-        label.style.right = '20%';
+        label.style.bottom = '43%';
+        label.style.right = '15%';
         label.style.color = 'white';
         label.style.fontFamily = 'Arial, sans-serif';
         label.style.fontSize = '12px';
@@ -498,7 +498,7 @@ class Jetpack {
             this.player.add(this.object);
             
             // Position it on the panda's back
-            this.object.position.set(-0.5, 1.2, -1.5); // Adjust these values as needed
+            this.object.position.set(0, 1.6, -1.5); // Adjust these values as needed
             
             // Scale it down to fit the character better
             const jetpackScale = 0.6; // Adjust scale as needed

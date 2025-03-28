@@ -7,7 +7,7 @@ function createSun() {
     const sunMaterial = new THREE.MeshBasicMaterial({
         color: 0xffdd00,
         transparent: true,
-        opacity: 0.9,
+        opacity: 1.0,
         blending: THREE.AdditiveBlending
     });
     
@@ -18,7 +18,7 @@ function createSun() {
     const glowMaterial = new THREE.MeshBasicMaterial({
         color: 0xffaa00,
         transparent: true,
-        opacity: 0.7,
+        opacity: 0.8,
         blending: THREE.AdditiveBlending
     });
     
@@ -30,7 +30,7 @@ function createSun() {
     const glowMaterial2 = new THREE.MeshBasicMaterial({
         color: 0xff6c00,
         transparent: true,
-        opacity: 0.5,
+        opacity: 0.6,
         blending: THREE.AdditiveBlending
     });
     
