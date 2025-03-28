@@ -4,13 +4,14 @@
 let pandaModelLocation = 'assets/pandaFBX/panda.fbx';
 //let pandaModelLocation = 'assets/levelsFBX/levels.fbx';
 let animationFiles = {
-    'idle': 'assets/pandaFBX/idle2.fbx',
+    'idle': 'assets/pandaFBX/lookBehind.fbx',
     'jump': 'assets/pandaFBX/jump.fbx',
     'running': 'assets/pandaFBX/running.fbx',
     'walking': 'assets/pandaFBX/walking.fbx',
     'spin': 'assets/pandaFBX/spin.fbx',
     'dance': 'assets/pandaFBX/dance.fbx',
     'fly': 'assets/pandaFBX/fly.fbx',
+    'walkingBackward': 'assets/pandaFBX/walkingBackward.fbx',
 };
 let pandaModelScale = 2.0;
 

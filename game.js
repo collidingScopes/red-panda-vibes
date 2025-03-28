@@ -297,8 +297,8 @@ function updatePlayerPosition(deltaTime) {
             while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
             
             player.rotation.y += rotationDiff * Math.min(turnSpeed * deltaTime, 1.0);
-        } else if(gameState.movingBackward){
-            player.rotation.y += rotationDiff;
+        } else if(gameState.isMovingBackward){
+            player.rotation.y = -1;
         }
         
         // Only update running animation if we're not in the middle of a jump
@@ -672,14 +672,12 @@ function showTutorialMessages() {
         'instruction-message-1-mobile',
         'instruction-message-2-mobile',
         'instruction-message-3-mobile',
-        'instruction-message-4-mobile'
       ];
     } else {
       messageIds = [
         'instruction-message-1',
         'instruction-message-2',
         'instruction-message-3',
-        'instruction-message-4'
       ];
     }
     
