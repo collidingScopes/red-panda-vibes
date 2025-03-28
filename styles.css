@@ -685,3 +685,36 @@ button {
     color: #ffffff;
     box-shadow: 0 0 15px rgba(132, 255, 239, 0.8); /* Enhanced cyan glow */
 }
+
+#hover-instructions {
+    position: fixed;
+    top: 70px;
+    right: 10px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 15px;
+    border-radius: 10px;
+    font-family: Helvetica, system-ui, sans-serif;
+    font-size: 14px;
+    z-index: 1000;
+    max-width: 300px;
+    display: none;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: opacity 0.3s ease;
+}
+
+#hover-instructions p {
+    margin: 8px 0;
+}
+
+@media (max-width: 768px) {
+    #hover-instructions {
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+        width: 80%;
+        max-width: none;
+        font-size: 16px;
+    }
+}

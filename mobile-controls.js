@@ -632,6 +632,7 @@ class MobileControls {
                target.closest('#level-complete-content') || 
                target.closest('#game-over-screen') ||
                target.closest('#camera-flip-button') ||
+               target.closest('#instruction-button') ||
                target.closest('#sound-toggle') ||
                target.closest('#level-select') ||
                target.closest('#level-select-container') ||
