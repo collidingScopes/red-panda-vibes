@@ -10,6 +10,7 @@ class AnimationController {
         // State tracking
         this.isJumping = false;
         this.isRunning = false;
+        this.isWalkingBackward = false; // New state for backward walking
         this.jumpStarted = false; // Add flag to track if jump animation has already been started
         this.jumpFinishedCallback = null;
         
@@ -43,6 +44,11 @@ class AnimationController {
         // Check if fly animation exists, log warning if not
         if (!this.animations['fly']) {
             console.warn("Fly animation not found but will be needed for high altitude");
+        }
+        
+        // Check if walkingBackward animation exists, log warning if not
+        if (!this.animations['walkingBackward']) {
+            console.warn("walkingBackward animation not found but will be needed for backward movement");
         }
         
         if (this.animations['idle']) {
@@ -107,6 +113,7 @@ class AnimationController {
         
         // Update state flags based on animation
         this.isRunning = (name === 'running');
+        this.isWalkingBackward = (name === 'walkingBackward'); // New state for backward walking
         this.isIdle = (name === 'idle');
         this.isDancing = (name === 'dance');
         this.isFlying = (name === 'fly');
@@ -139,6 +146,9 @@ class AnimationController {
                         this.playAnimation('fly');
                     }
                     // Otherwise transition based on current movement state
+                    else if (window.gameState && window.gameState.isMovingBackward && this.animations['walkingBackward']) {
+                        this.playAnimation('walkingBackward');
+                    }
                     else if (this.isRunning) {
                         this.playAnimation('running');
                     } else {
@@ -184,6 +194,9 @@ class AnimationController {
                         this.playAnimation('fly');
                     }
                     // Otherwise transition based on current movement state
+                    else if (window.gameState && window.gameState.isMovingBackward && this.animations['walkingBackward']) {
+                        this.playAnimation('walkingBackward');
+                    }
                     else if (this.isRunning) {
                         this.playAnimation('running');
                     } else {
@@ -211,6 +224,14 @@ class AnimationController {
         if (this.mixer) {
             this.mixer.update(deltaTime);
             
+            // Check if player is moving backward and update animation accordingly
+            if (window.gameState && window.gameState.isMovingBackward && 
+                this.animations['walkingBackward'] && 
+                !this.isJumping && !this.isSpinning && 
+                !this.isWalkingBackward && window.player.position.y < 20) {
+                this.playAnimation('walkingBackward');
+            }
+            
             // Check if player is high up in the air (y >= 20) and play fly animation
             if (window.player && window.player.position.y >= 20 && this.animations['fly'] &&
                 !this.isSpinning && this.currentAction && 
@@ -222,7 +243,10 @@ class AnimationController {
                     this.currentAction && this.currentAction._clip.name === 'fly' &&
                     !this.isSpinning && !this.isJumping) {
                 // Return to appropriate animation when back under threshold
-                if (this.isRunning) {
+                if (window.gameState && window.gameState.isMovingBackward && this.animations['walkingBackward']) {
+                    this.playAnimation('walkingBackward');
+                }
+                else if (this.isRunning) {
                     this.playAnimation('running');
                 } else {
                     this.playAnimation('idle');
@@ -230,7 +254,8 @@ class AnimationController {
             }
             
             // Handle idle animation variations (dance) when player is in idle state
-            if ((this.isIdle || this.isDancing) && !this.isJumping && !this.isRunning && !this.isSpinning &&
+            if ((this.isIdle || this.isDancing) && !this.isJumping && !this.isRunning && 
+                !this.isSpinning && !this.isWalkingBackward &&
                 (!window.player || window.player.position.y < 20)) {
                 this.idleTimer += deltaTime;
                 
@@ -269,11 +294,21 @@ class AnimationController {
             return;
         }
         
-        // Handle running to idle transition - only if we're not jumping or spinning
+        // Handle running, backward walking, and idle transitions
         if (!this.isJumping && !this.jumpStarted && !this.isSpinning) {
-            if (isMoving && !this.isRunning) {
+            // Check for backward movement
+            if (window.gameState && window.gameState.isMovingBackward && this.animations['walkingBackward']) {
+                // Only transition if we're not already playing backward walking
+                if (!this.isWalkingBackward) {
+                    this.playAnimation('walkingBackward');
+                }
+            }
+            // Forward movement
+            else if (isMoving && !this.isRunning) {
                 this.playAnimation('running');
-            } else if (!isMoving && this.isRunning) {
+            } 
+            // Idle state (no movement)
+            else if (!isMoving && (this.isRunning || this.isWalkingBackward)) {
                 // Reset idle timer when transitioning to idle
                 this.idleTimer = 0;
                 this.playAnimation('idle');
@@ -307,6 +342,7 @@ class AnimationController {
             this.currentAction.stop();
             this.isJumping = false;
             this.isRunning = false;
+            this.isWalkingBackward = false; // Added this state reset
             this.isIdle = false;
             this.isDancing = false;
             this.isSpinning = false;

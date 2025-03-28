@@ -26,7 +26,6 @@ const gameState = {
     sunset: null,
     isMovingBackward: false,
     fixedCameraPosition: null,  // Will store camera position when backward movement starts
-    backwardCameraOffset: new THREE.Vector3(0, 6, 10) // Offset in front of player
 };
 
 // Create global animation controller
@@ -45,7 +44,7 @@ gameState.trampoline = {
 //physics
 const jumpForce = 10.0;
 const gravity = 16.0;
-const turnSpeed = 5.0;  // How quickly the panda rotates to face movement direction
+const turnSpeed = isMobile ? 3.0 : 5.0;  // How quickly the panda rotates to face movement direction
 
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;
@@ -59,8 +58,11 @@ const fpsCounter = document.getElementById('fps-counter');
 // Camera setup
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
-const cameraOffset = new THREE.Vector3(0, 6, -10); // Offset from player (behind and slightly above)
-const cameraLerpSpeed = 2.0; // Speed of camera interpolation (adjust for smoothness)
+const cameraOffset = new THREE.Vector3(0, 6, -10); // Will be dynamically changed
+const normalCameraOffset = new THREE.Vector3(0, 6, -10); // Normal offset
+const backwardCameraOffset = new THREE.Vector3(0, 7, -15); // Increased distance when moving backward
+const cameraTransitionSpeed = 3.0; // Speed of transition between normal and backward camera
+const cameraLerpSpeed = 1.5; // Speed of camera interpolation (adjust for smoothness)
 
 // Renderer setup with post-processing for dithering
 const renderer = new THREE.WebGLRenderer({ antialias: false }); // Disable antialiasing for pixelated look
@@ -165,6 +167,14 @@ let cameraAngleVertical = 0;
 const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera(deltaTime) {
+    // Use different camera offset based on movement direction
+    if (gameState.isMovingBackward) {
+        // Smoothly transition to backward camera position
+        cameraOffset.lerp(backwardCameraOffset, cameraTransitionSpeed * deltaTime);
+    } else {
+        // Smoothly transition back to normal camera position
+        cameraOffset.lerp(normalCameraOffset, cameraTransitionSpeed * deltaTime);
+    }
 
     const targetOffset = cameraOffset.clone()
         .applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
@@ -297,10 +307,8 @@ function updatePlayerPosition(deltaTime) {
             while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
             
             player.rotation.y += rotationDiff * Math.min(turnSpeed * deltaTime, 1.0);
-        } else if(gameState.isMovingBackward){
-            player.rotation.y = -1;
         }
-        
+
         // Only update running animation if we're not in the middle of a jump
         if (gameState.animationController && !gameState.animationController.isJumping) {
             gameState.animationController.handleMovementState(true, false);

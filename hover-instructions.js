@@ -4,13 +4,13 @@ document.addEventListener('DOMContentLoaded', function() {
     hoverInstructions.id = 'hover-instructions';
     if(isMobile){
         hoverInstructions.innerHTML = `
-        <p>Drag to move</p> 
-        <p>Tap to jump</p>
-        <p>Find the bamboo stalk to move to the next level!</p>
+        <p>⬆️ Drag to move</p> 
+        <p>👆 Tap to jump</p>
+        <p>🎋 Find the bamboo stalk to move to the next level!</p>
         `;
     } else {
         hoverInstructions.innerHTML = `
-        <p>⌨️ Move with arrow keys (or WASD if you prefer)</p> 
+        <p>⌨️ Move with arrow keys (or W/A/S/D)</p> 
         <p>🚀 Jump with spacebar</p>
         <p>🎋 Find the bamboo stalk to move to the next level!</p>
         `;
