@@ -579,7 +579,7 @@ function createLowPolyTree() {
     const treeGroup = new THREE.Group();
     
     // Tree size parameters
-    const treeHeight = 7 + Math.random() * 16; // Vary tree heights
+    const treeHeight = 8 + Math.random() * 18; // Vary tree heights
     const trunkHeight = treeHeight * 0.5;
     const trunkWidth = 0.5 + Math.random() * 0.7;
     const foliageSize = 2 + Math.random() * 2;
