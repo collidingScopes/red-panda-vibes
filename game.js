@@ -24,6 +24,9 @@ const gameState = {
     useGrassSystem: true,
     grassSystem: null,
     sunset: null,
+    isMovingBackward: false,
+    fixedCameraPosition: null,  // Will store camera position when backward movement starts
+    backwardCameraOffset: new THREE.Vector3(0, 6, 10) // Offset in front of player
 };
 
 // Create global animation controller
@@ -162,17 +165,16 @@ let cameraAngleVertical = 0;
 const cameraTarget = new THREE.Vector3(); // Reusable vector for camera target
 
 function updateCamera(deltaTime) {
-    // Target position behind the player based on player's rotation
-    const targetOffset = cameraOffset.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
+
+    const targetOffset = cameraOffset.clone()
+        .applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
     const targetPosition = player.position.clone().add(targetOffset);
 
-    // Smoothly interpolate camera position
     camera.position.lerp(targetPosition, cameraLerpSpeed * deltaTime);
 
-    // Look at the player's head position
     const lookAtTarget = new THREE.Vector3()
         .copy(player.position)
-        .add(new THREE.Vector3(0, 1, 0)); // Slightly above player base
+        .add(new THREE.Vector3(0, 1, 0));
     camera.lookAt(lookAtTarget);
 }
 
@@ -235,14 +237,17 @@ function updatePlayerPosition(deltaTime) {
     // Movement direction (in camera space)
     const moveDirection = new THREE.Vector3(0, 0, 0);
     
-    // Check both W/A/S/D and Arrow keys for movement
-    if (gameState.keyStates['KeyW'] || gameState.keyStates['ArrowUp']) moveDirection.z = 1.0;    // Forward
-    if (gameState.keyStates['KeyS'] || gameState.keyStates['ArrowDown']) moveDirection.z = -1.0; // Backward
-    if (gameState.keyStates['KeyA'] || gameState.keyStates['ArrowLeft']) moveDirection.x = 1.0;  // Left
-    if (gameState.keyStates['KeyD'] || gameState.keyStates['ArrowRight']) moveDirection.x = -1.0; // Right
+    const movingForward = gameState.keyStates['KeyW'] || gameState.keyStates['ArrowUp'];
+    const movingBackward = gameState.keyStates['KeyS'] || gameState.keyStates['ArrowDown'];
+    
+    if (movingForward) moveDirection.z = 1.0;
+    if (movingBackward) moveDirection.z = -1.0;
+    if (gameState.keyStates['KeyA'] || gameState.keyStates['ArrowLeft']) moveDirection.x = 1.0;
+    if (gameState.keyStates['KeyD'] || gameState.keyStates['ArrowRight']) moveDirection.x = -1.0;
 
     moveDirection.normalize();
-    
+    gameState.isMovingBackward = movingBackward && !movingForward;
+
     // Helper function to check if player is moving horizontally
     function isMoving() {
         return moveDirection.length() > 0;
@@ -264,7 +269,6 @@ function updatePlayerPosition(deltaTime) {
     if (worldMoveDirection.length() > 0) {
         worldMoveDirection.normalize();
         
-        // Calculate new position
         const moveDelta = worldMoveDirection.clone().multiplyScalar(gameState.speed * deltaTime);
         player.position.add(moveDelta);
 
@@ -284,19 +288,17 @@ function updatePlayerPosition(deltaTime) {
         }
         
         // Smooth turn rotation
-        if (worldMoveDirection.length() > 0) {
+        if (worldMoveDirection.length() > 0 && !gameState.isMovingBackward) {
             const targetRotation = Math.atan2(worldMoveDirection.x, worldMoveDirection.z);
             let currentRotation = player.rotation.y;
             
-            // Calculate the shortest path to rotate
             let rotationDiff = targetRotation - currentRotation;
-            
-            // Normalize the difference to be between -PI and PI
             while (rotationDiff > Math.PI) rotationDiff -= Math.PI * 2;
             while (rotationDiff < -Math.PI) rotationDiff += Math.PI * 2;
             
-            // Apply smooth rotation with speed limit
             player.rotation.y += rotationDiff * Math.min(turnSpeed * deltaTime, 1.0);
+        } else if(gameState.movingBackward){
+            player.rotation.y += rotationDiff;
         }
         
         // Only update running animation if we're not in the middle of a jump
