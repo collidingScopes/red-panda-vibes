@@ -335,11 +335,10 @@ class ChangingRoom {
                     const box = new THREE.Box3().setFromObject(fbx);
                     const center = box.getCenter(new THREE.Vector3());
                     fbx.position.sub(center);
-                    fbx.position.y = 2.5; // Ground level
+                    fbx.position.y = 3.0;
                 } else {
                     // Configure Red Panda model using parameters from panda-loader.js
                     // Apply the panda model scale from panda-loader.js
-                    const pandaModelScale = 2.0; // Same as in panda-loader.js
                     fbx.scale.set(pandaModelScale, pandaModelScale, pandaModelScale);
                     
                     // Center the model and adjust height properly

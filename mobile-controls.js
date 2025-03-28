@@ -133,7 +133,6 @@ class MobileControls {
         // Get current viewport dimensions and aspect ratio
         const currentAspect = window.innerWidth / window.innerHeight;
         const isPortrait = currentAspect < 1;
-        const baseAspect = 16 / 9; // Reference aspect ratio (landscape)
         const baseDistance = 8.0;  // Original camera distance
         
         // Calculate new camera distance: 
@@ -446,21 +445,26 @@ class MobileControls {
         if (!this.gameState) {
             return;
         }
-
+    
         const deltaX = (this.moveCurrentX - this.moveStartX) * MobileControls.MOVEMENT_SCALE;
         const deltaY = (this.moveCurrentY - this.moveStartY) * MobileControls.MOVEMENT_SCALE;
         const deadzone = MobileControls.MOVEMENT_DEADZONE * MobileControls.MOVEMENT_SCALE;
-
+        
+        // Add a stronger horizontal deadzone specifically for turning
+        // This value should be 2-3x the regular deadzone
+        const horizontalDeadzone = deadzone * 2;
+    
         // Reset all movement keys first
         this.resetMovementKeys();
-
-        // Apply horizontal movement if beyond deadzone
-        if (Math.abs(deltaX) > deadzone) {
+    
+        // Apply horizontal movement ONLY if beyond the increased horizontal deadzone
+        if (Math.abs(deltaX) > horizontalDeadzone) {
             this.gameState.keyStates['KeyA'] = deltaX < 0;
             this.gameState.keyStates['KeyD'] = deltaX > 0;
+            this.log(`Horizontal movement: ${deltaX < 0 ? 'left' : 'right'}, delta: ${Math.abs(deltaX).toFixed(2)}`);
         }
         
-        // Apply vertical movement if beyond deadzone
+        // Apply vertical movement with regular deadzone (unchanged)
         if (Math.abs(deltaY) > deadzone) {
             this.gameState.keyStates['KeyW'] = deltaY < 0;
             this.gameState.keyStates['KeyS'] = deltaY > 0;

@@ -13,7 +13,7 @@ let animationFiles = {
     'fly': 'assets/pandaFBX/fly.fbx',
     'walkingBackward': 'assets/pandaFBX/walkingBackward.fbx',
 };
-let pandaModelScale = 2.0;
+let pandaModelScale = 2.4;
 
 // Function to parse URL parameters
 function getUrlParameters() {
