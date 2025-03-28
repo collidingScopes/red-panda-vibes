@@ -7,6 +7,7 @@ class HighScoreSystem {
         // Cache for high scores to avoid unnecessary API calls
         this.highScores = null;
         this.percentileCache = null;
+        this.isLoadingScores = false;
         
         // DOM elements
         this.gameOverScreen = document.getElementById('game-over-screen');
@@ -20,6 +21,17 @@ class HighScoreSystem {
         
         // Modify the game over screen to add highscore elements
         this.setupGameOverScreen();
+        
+        // Pre-load high scores when the game starts
+        this.preloadHighScores();
+    }
+    
+    // Pre-load high scores when the game initializes
+    preloadHighScores() {
+        console.log('Pre-loading high scores...');
+        this.fetchHighScores()
+            .then(() => console.log('High scores pre-loaded successfully'))
+            .catch(error => console.error('Error pre-loading high scores:', error));
     }
     
     // Set up the modified game over screen
@@ -91,6 +103,14 @@ class HighScoreSystem {
         document.getElementById('final-level').textContent = `Level ${level}`;
         document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
         
+        // Create a temporary score object for current player
+        const currentPlayerScore = {
+            name: this.username,
+            level: level,
+            date: new Date(),
+            isCurrentPlayer: true
+        };
+        
         // Submit score if it's better than the player's personal best
         if (level > this.personalBest) {
             this.submitScore(this.username, level);
@@ -100,11 +120,26 @@ class HighScoreSystem {
             document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
         }
         
-        // Fetch and display high scores
-        this.fetchHighScores().then(() => {
-            this.displayHighScores();
+        // If we already have high scores cached, display them immediately with the current score
+        if (this.highScores && this.highScores.length > 0) {
+            // Create a combined array with the current player's score
+            const combinedScores = [...this.highScores, currentPlayerScore];
+            this.displayHighScores(combinedScores, level);
             this.displayPercentile(level);
-        });
+            
+            // Then fetch fresh scores in the background to update if needed
+            this.fetchHighScores().then(() => {
+                this.displayHighScores(null, level);
+                this.displayPercentile(level);
+            });
+        } else {
+            // If no cached scores, show loading and fetch them
+            document.getElementById('high-scores-body').innerHTML = '<tr><td colspan="3">Loading scores...</td></tr>';
+            this.fetchHighScores().then(() => {
+                this.displayHighScores(null, level);
+                this.displayPercentile(level);
+            });
+        }
         
         // Show the game over screen
         this.gameOverScreen.classList.remove('hidden');
@@ -156,9 +191,24 @@ class HighScoreSystem {
             
             console.log('Score submitted successfully');
             
-            // Force refresh of high scores after submitting
-            this.highScores = null;
-            this.fetchHighScores();
+            // Add the new score to the local cache optimistically
+            if (this.highScores) {
+                const newScore = {
+                    name: username,
+                    level: numericLevel,
+                    date: new Date().toISOString(),
+                    isCurrentPlayer: true
+                };
+                
+                // Add the new score to the existing scores
+                this.highScores.push(newScore);
+            }
+            
+            // Schedule a refresh of high scores after submission (after a delay to allow server processing)
+            setTimeout(() => {
+                this.highScores = null; // Clear cache to force a fresh fetch
+                this.fetchHighScores();
+            }, 1000);
             
         } catch (error) {
             console.error('Error submitting score:', error);
@@ -167,9 +217,17 @@ class HighScoreSystem {
     
     // Fetch high scores from the Google Sheet
     async fetchHighScores() {
+        // If already loading scores, return the existing promise
+        if (this.isLoadingScores) {
+            console.log('Already loading scores, waiting for completion...');
+            return this.highScores || [];
+        }
+        
+        this.isLoadingScores = true;
+        
         try {
             console.log('Fetching high scores...');
-            const response = await fetch(`${this.apiUrl}?action=getScores`);
+            const response = await fetch(`${this.apiUrl}?action=getScores&t=${Date.now()}`); // Add timestamp to prevent caching
             if (!response.ok) {
                 throw new Error('Network response was not ok');
             }
@@ -180,29 +238,35 @@ class HighScoreSystem {
             // Transform data to match the expected format
             this.highScores = data.scores.map(row => ({
                 name: row[0],
-                level: row[1],
-                date: row[2]
+                level: parseInt(row[1]), // Ensure level is a number
+                date: row[2],
+                isCurrentPlayer: false
             }));
             
+            this.isLoadingScores = false;
             return this.highScores;
         } catch (error) {
             console.error('Error fetching high scores:', error);
-            this.highScores = [];
-            return [];
+            this.highScores = this.highScores || []; // Keep existing scores on error
+            this.isLoadingScores = false;
+            return this.highScores;
         }
     }
     
     // Display high scores in the table
-    displayHighScores() {
+    displayHighScores(scoresOverride = null, currentLevel = null) {
         const tableBody = document.getElementById('high-scores-body');
         
-        if (!this.highScores || this.highScores.length === 0) {
+        // Use provided scores or the cached high scores
+        const scores = scoresOverride || this.highScores;
+        
+        if (!scores || scores.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="3">No high scores yet. Be the first!</td></tr>';
             return;
         }
         
         // Sort scores by level (descending) and then by date (ascending) if levels are tied
-        const sortedScores = [...this.highScores].sort((a, b) => {
+        const sortedScores = [...scores].sort((a, b) => {
             // First sort by level (descending)
             if (b.level !== a.level) {
                 return b.level - a.level;
@@ -216,20 +280,50 @@ class HighScoreSystem {
         // Take only top 10
         const topScores = sortedScores.slice(0, 10);
         
+        // Track if the current player is in the top 10
+        let currentPlayerInTop10 = false;
+        
+        // Check if current player is in top 10
+        if (currentLevel !== null) {
+            currentPlayerInTop10 = topScores.some(score => 
+                (score.isCurrentPlayer === true) || 
+                (score.name === this.username && score.level === currentLevel)
+            );
+        }
+        
         // Create HTML for each score row
         tableBody.innerHTML = topScores.map((score, index) => {
-            // Highlight the current user's score
-            const isCurrentUser = score.name === this.username;
+            // Check if this is the current user's score
+            const isCurrentUser = score.isCurrentPlayer === true || 
+                                 (score.name === this.username && 
+                                  (score.level === currentLevel || (!currentLevel && score.level === this.personalBest)));
+            
+            // Apply special styling for current user
             const rowClass = isCurrentUser ? 'current-user' : '';
+            
+            // Apply vibrant pink styling for current user in top 10
+            const nameStyle = isCurrentUser ? 'color: #FF1493; font-weight: bold;' : '';
             
             return `
                 <tr class="${rowClass}">
                     <td>${index + 1}</td>
-                    <td>${this.escapeHtml(score.name)}</td>
-                    <td>Level ${score.level}</td>
+                    <td style="${nameStyle}">${this.escapeHtml(score.name)}</td>
+                    <td style="${nameStyle}">Level ${score.level}</td>
                 </tr>
             `;
         }).join('');
+        
+        // Add CSS for the current-user class if not already added
+        if (!document.getElementById('highscore-styles')) {
+            const styleTag = document.createElement('style');
+            styleTag.id = 'highscore-styles';
+            styleTag.textContent = `
+                .current-user {
+                    background-color: rgba(255, 20, 147, 0.1);
+                }
+            `;
+            document.head.appendChild(styleTag);
+        }
     }
     
     // Display percentile message

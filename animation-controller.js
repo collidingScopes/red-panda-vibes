@@ -136,7 +136,7 @@ class AnimationController {
             this.jumpFinishedCallback = (e) => {
                 // Only handle events for jump animation
                 if (e.action === this.currentAction) {
-                    console.log("Jump animation finished naturally");
+                    //console.log("Jump animation finished naturally");
                     this.isJumping = false;
                     this.jumpStarted = false; // Reset jump started flag
                     this.mixer.removeEventListener('finished', this.jumpFinishedCallback);
