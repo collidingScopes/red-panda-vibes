@@ -59,7 +59,7 @@ class VibeversePortal {
     getRandomPosition() {
         // Generate a random position away from the player
         const angle = Math.random() * Math.PI * 2;
-        const distance = 40 + Math.random() * 40; // Between 40-80 units away
+        const distance = 50 + Math.random() * 60;
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;

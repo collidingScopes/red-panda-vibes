@@ -409,7 +409,7 @@ class Cubicle {
         
         // Find a random position on the map, not too close to the origin
         const angle = Math.random() * Math.PI * 2;
-        const distance = 30 + Math.random() * 60; // Between 20 and 60 units from center
+        const distance = 45 + Math.random() * 65;
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;

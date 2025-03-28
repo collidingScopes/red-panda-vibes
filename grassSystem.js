@@ -17,7 +17,7 @@ class GrassSystem {
         // Clumping parameters
         this.clusterCount = 80; // Number of cluster centers
         this.clusterRadius = 20; // Maximum radius of each cluster
-        this.clusterDensityFalloff = 0.85; // How quickly density falls off from cluster center (0-1)
+        this.clusterDensityFalloff = 0.95; // How quickly density falls off from cluster center (0-1)
         this.noiseScale = 0.03; // Scale of the noise function for additional variation
         this.clusterCenters = []; // Will store cluster center positions
         

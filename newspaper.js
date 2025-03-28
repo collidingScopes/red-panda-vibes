@@ -277,7 +277,7 @@ class Newspaper {
         
         // Find a random position on the map, not too close to the origin
         const angle = Math.random() * Math.PI * 2;
-        const distance = 25 + Math.random() * 50; // Between 25 and 75 units from center
+        const distance = 45 + Math.random() * 60;
         
         const x = Math.cos(angle) * distance;
         const z = Math.sin(angle) * distance;
