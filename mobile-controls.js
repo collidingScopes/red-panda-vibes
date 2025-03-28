@@ -452,7 +452,7 @@ class MobileControls {
         
         // Add a stronger horizontal deadzone specifically for turning
         // This value should be 2-3x the regular deadzone
-        const horizontalDeadzone = deadzone * 2;
+        const horizontalDeadzone = deadzone * 2.5;
     
         // Reset all movement keys first
         this.resetMovementKeys();
