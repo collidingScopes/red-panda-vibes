@@ -38,7 +38,6 @@ class MobileControls {
         
         // Cache DOM elements
         this.instructionsElement = document.getElementById('instructions');
-        this.goalMessageElement = document.getElementById('goal-message');
         this.gameOverElement = document.getElementById('game-over-screen');
         this.levelCompleteElement = document.getElementById('level-complete-content');
         
@@ -425,7 +424,6 @@ class MobileControls {
     isUIElement(target) {
         return target.tagName === 'BUTTON' || 
                target.closest('#instructions') || 
-               target.closest('#goal-message') || 
                target.closest('#level-complete-content') || 
                target.closest('#game-over-screen') ||
                target.closest('#instruction-button') ||

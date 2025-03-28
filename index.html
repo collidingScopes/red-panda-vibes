@@ -76,12 +76,6 @@
 
     <button id="instruction-button">⚙️</button>
     <button id="sound-toggle">🔊</button>
-    
-    <div id="goal-message">
-        <h2>Congratulations!</h2>
-        <button onclick="resetGame()">Play Again</button>
-        <div class="keyboard-hint">[ENTER]</div>
-    </div>
 
     <div id="level-complete-content" class="hidden">
         <h2>Level Complete!</h2>
@@ -95,8 +89,8 @@
         <!-- <p>You were caught by an oil slick monster!</p> -->
         <div class="current-game-level"></div>
         <div class="high-score"></div>
-        <button id="retry-button">Try Level Again</button>
-        <div class="keyboard-hint">[ENTER]</div>
+        <!-- <button id="retry-button">Try Level Again</button>
+        <div class="keyboard-hint">[ENTER]</div> -->
     </div>
 
     <div id="pause-screen-container" class="hidden">
@@ -135,6 +129,7 @@
     <script src="level-warnings.js" defer></script>
     <script src="level-system.js" defer></script>
     <script src="enemies.js" defer></script>
+    <script src="high-score-system.js" defer></script>
     <script src="powerups.js" defer></script>
     <script src="snow.js" defer></script>
     <script src="grassSystem.js" defer></script>

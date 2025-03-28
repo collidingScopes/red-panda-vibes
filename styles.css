@@ -52,25 +52,6 @@ canvas {
     color: #00ff00;
 }
 
-#goal-message {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #84ffef; /* Neon cyan */
-    padding: 25px;
-    border: 2px solid #ff84df; /* Neon pink */
-    border-radius: 5px;
-    text-align: center;
-    display: none;
-    z-index: 100;
-    font-family: 'Courier New', monospace;
-    text-transform: uppercase;
-    box-shadow: 0 0 20px rgba(132, 255, 239, 0.6); /* Cyan glow */
-    backdrop-filter: blur(5px);
-}
-
 button {
     background-color: rgba(0, 0, 0, 0.5);
     color: #a2ff84; /* Neon green */
@@ -328,16 +309,6 @@ h2, h3 {
     text-shadow: 0 0 8px rgba(255, 238, 132, 0.8);
 }
 
-.game-overlay-screen {
-    position: fixed;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #84ffef;
-    font-family: 'Courier New', monospace;
-    text-transform: uppercase;
-    z-index: 100;
-    backdrop-filter: blur(5px);
-}
-  
 /* Keyboard hint for overlays */
 .keyboard-hint {
     margin-top: 15px;
@@ -717,5 +688,152 @@ button {
         right: auto;
         width: 80%;
         max-width: none;
+    }
+}
+
+.game-over-content h2 {
+    font-size: 32px;
+    margin-bottom: 20px;
+    color: #f5af89;
+    text-shadow: 0 0 8px rgba(245, 175, 137, 0.8);
+}
+
+.game-over-stats {
+    margin-bottom: 20px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    font-size: 16px;
+    padding: 5px 0;
+}
+
+#final-level, #final-score {
+    color: #5ef8f8;
+    font-weight: bold;
+}
+
+.high-score-table {
+    margin: 20px 0;
+}
+
+.high-score-table h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    color: #f8d05c;
+}
+
+.table-container {
+    max-height: 250px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+#high-scores-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+#high-scores-table th {
+    background-color: rgba(248, 167, 233, 0.2);
+    padding: 8px;
+    font-size: 14px;
+    color: #f8d05c;
+    position: sticky;
+    top: 0;
+}
+
+#high-scores-table td {
+    padding: 8px;
+    font-size: 14px;
+    border-bottom: 1px solid rgba(248, 167, 233, 0.1);
+}
+
+#high-scores-table tr:last-child td {
+    border-bottom: none;
+}
+
+#high-scores-table tr.current-user {
+    background-color: rgba(94, 248, 248, 0.1);
+}
+
+#high-scores-table tr.current-user td {
+    color: #5ef8f8;
+    font-weight: bold;
+}
+
+.percentile-message {
+    font-size: 14px;
+    margin: 15px 0;
+    color: #5ef8f8;
+    background-color: rgba(94, 248, 248, 0.1);
+    padding: 10px;
+    border-radius: 6px;
+}
+
+.game-over-buttons {
+    margin-top: 20px;
+}
+
+.game-over-buttons button {
+    background-color: #f5af89;
+    color: #000;
+    border: none;
+    padding: 10px 15px;
+    margin: 0 5px;
+    border-radius: 6px;
+    font-family: 'Press Start 2P', monospace, system-ui;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.game-over-buttons button:hover {
+    background-color: #f8d05c;
+    transform: scale(1.05);
+}
+
+.keyboard-hint {
+    font-size: 12px;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+@media (max-width: 600px) {
+    .game-over-content {
+        width: 90%;
+        padding: 15px;
+    }
+    
+    .game-over-content h2 {
+        font-size: 24px;
+    }
+    
+    .stat-row {
+        font-size: 14px;
+    }
+    
+    .high-score-table h3 {
+        font-size: 16px;
+    }
+    
+    #high-scores-table th, 
+    #high-scores-table td {
+        padding: 5px;
+        font-size: 12px;
+    }
+    
+    .percentile-message {
+        font-size: 12px;
+    }
+    
+    .game-over-buttons button {
+        font-size: 14px;
+        padding: 8px 12px;
     }
 }

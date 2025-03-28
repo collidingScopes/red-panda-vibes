@@ -36,6 +36,12 @@ class EnemyManager {
         
         // Initialize the kill counter display
         this.updateKillCounterDisplay();
+        
+        // Initialize high score system
+        this.highScoreSystem = null;
+        if (window.HighScoreSystem) {
+            this.highScoreSystem = new HighScoreSystem();
+        }
     }
     
     // Create shared resources for all enemies
@@ -475,29 +481,32 @@ class EnemyManager {
         
         // Save high score to localStorage
         const highScore = localStorage.getItem('redPandaHighScore') || 0;
-        const currentScore = gameState.levelSystem ? gameState.currentLevel : 1;
+        const currentLevel = gameState.levelSystem ? gameState.currentLevel : 1;
         
-        if (currentScore > highScore) {
-            localStorage.setItem('redPandaHighScore', currentScore);
+        if (currentLevel > highScore) {
+            localStorage.setItem('redPandaHighScore', currentLevel);
         }
         
-        // Update game over screen with high score
-        const gameOverScreen = document.getElementById('game-over-screen');
-        const highScoreElement = gameOverScreen.querySelector('.high-score');
-        
-        document.querySelector('.current-game-level').textContent = `Current Score: Level ${currentScore}`;
-        highScoreElement.textContent = `High Score: Level ${Math.max(highScore, currentScore)}`;
-        
-        // Show game over screen
-        document.getElementById('game-over-screen').classList.remove("hidden");
+        // Use the high score system if available
+        if (this.highScoreSystem) {
+            this.highScoreSystem.displayGameOver(currentLevel, this.killCount);
+        } else {
+            // Fall back to the original behavior
+            // Update game over screen with high score
+            const gameOverScreen = document.getElementById('game-over-screen');
+            const highScoreElement = gameOverScreen.querySelector('.high-score');
+            
+            document.querySelector('.current-game-level').textContent = `Current Score: Level ${currentLevel}`;
+            highScoreElement.textContent = `High Score: Level ${Math.max(highScore, currentLevel)}`;
+            
+            // Show game over screen
+            document.getElementById('game-over-screen').classList.remove("hidden");
+        }
     }
     
     // Create game over screen
     createGameOverScreen() {
-        // Add event listener for retry button
-        document.getElementById('retry-button').addEventListener('click', () => {
-            resetGame(); // This function is defined in game.js
-        });
+
     }
     
     disposeEnemy(enemy) {

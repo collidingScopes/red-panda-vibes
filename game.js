@@ -364,8 +364,6 @@ function updatePlayerPosition(deltaTime) {
         // Use level system instead of showing the simple goal message
         if (gameState.levelSystem) {
             gameState.levelSystem.showLevelComplete();
-        } else {
-            document.getElementById('goal-message').style.display = 'block';
         }
     }
 }
@@ -400,8 +398,8 @@ function resetGame() {
     gameState.goalReached = false;
     
     // Hide all UI messages
-    document.getElementById('goal-message').style.display = 'none';
-    
+    document.getElementById('game-over-screen').classList.add('hidden');
+
     // If level system exists, reset current level
     if (gameState.levelSystem) {
         gameState.levelSystem.applyLevelSettings(gameState.currentLevel);
