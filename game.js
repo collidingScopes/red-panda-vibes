@@ -15,7 +15,6 @@ const gameState = {
     levelSystem: null, // Add the level system reference
     gameStarted: false,
     gameOver: false,   // Add game over state
-    //animationController: window.animationController || null,
     changingRoom: null,
     jetpack: null,
     ipod: null,
@@ -24,6 +23,7 @@ const gameState = {
     newspaper: null,
     useGrassSystem: true,
     grassSystem: null,
+    sunset: null,
 };
 
 // Create global animation controller
@@ -80,6 +80,7 @@ const ambientLight = new THREE.AmbientLight(0xffe0c0, 0.9); // Warm amber glow
 scene.add(ambientLight);
 
 // Strong directional light with warm sunset color
+
 const directionalLight = new THREE.DirectionalLight(0xff9966, 1.2); // Warm orange sunset
 directionalLight.position.set(-25, 20, 30); // Position to create dramatic shadows
 directionalLight.castShadow = true;
@@ -94,13 +95,6 @@ directionalLight.shadow.camera.bottom = -20;
 // Increase shadow darkness for more contrast
 directionalLight.shadow.bias = 0.001;
 scene.add(directionalLight);
-
-/*
-// Add a secondary light for dramatic effect - cool blue to complement warm light
-const secondaryLight = new THREE.DirectionalLight(0x84b9ff, 0.6); // Bluish light
-secondaryLight.position.set(50, 30, -30);
-scene.add(secondaryLight);
-*/
 
 // Create the red panda player
 const player = createRedPandaPlayer();
@@ -621,6 +615,8 @@ function init() {
     if (window.mobileControls) {
         console.log("Mobile controls found - ensuring proper integration");
     }
+
+    gameState.sunset = createSunsetEnvironment(scene);
 
     gameState.snowSystem = new SnowSystem(scene, player);
     console.log("Snow system initialized in game init");
