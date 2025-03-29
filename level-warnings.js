@@ -12,7 +12,6 @@ class LevelWarnings {
             3: "🔺 Each level brings more monsters and a harder bamboo to find 🧐",
             4: "Keep exploring! There are jetpacks, gameboys, and many other treasures... 👀",
             5: "Tip: find the speed / invisibility powerups to escape from monsters 👻",
-            6: "What level can you reach? My personal best is level 24 😎",
         };
         
         // Track whether we've shown warnings for specific levels

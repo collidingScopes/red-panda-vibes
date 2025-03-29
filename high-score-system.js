@@ -104,26 +104,41 @@ class HighScoreSystem {
         localStorage.setItem('redPandaUsername', this.username);
         
         // Update the display with current level and score
-        document.getElementById('final-level').textContent = `Level ${level}`;
+        if(gameState.levelsCompleted>0){
+            document.getElementById('final-level').textContent = `Level ${level-1}`;
+        } else {
+            document.getElementById('final-level').textContent = `n/a`;
+        }
         document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
         
+        // FIXED: Calculate the completed level (current level - 1)
+        // If player is on level 1, they haven't completed any levels yet
+        const completedLevel = level > 1 ? level - 1 : 0;
+
         // Create a temporary score object for current player
         const currentPlayerScore = {
             name: this.username,
-            level: level,
+            level: completedLevel, // Use completedLevel instead of current level
             date: new Date(),
             isCurrentPlayer: true
         };
         
-        // Check if we need to submit the score
-        const shouldSubmitScore = this.shouldSubmitHighScore(level);
+        // FIXED: Check if we need to submit the score
+        // Only submit if:
+        // 1. They actually completed a level (completedLevel > 0)
+        // 2. It's not a retry attempt where they failed
+        // 3. The score is worthy of submission based on our criteria
+        const shouldSubmitScore = 
+            completedLevel > 0 && 
+            gameState.levelsCompleted > 0 && 
+            this.shouldSubmitHighScore(completedLevel);
         
         if (shouldSubmitScore) {
-            this.submitScore(this.username, level);
+            this.submitScore(this.username, completedLevel);
             
-            // Update personal best if necessary
-            if (level > this.personalBest) {
-                this.personalBest = level;
+            // Update personal best if necessary - using completedLevel
+            if (completedLevel > this.personalBest) {
+                this.personalBest = completedLevel;
                 localStorage.setItem('redPandaPersonalBest', this.personalBest.toString());
                 document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
             }
@@ -133,7 +148,7 @@ class HighScoreSystem {
         if (this.highScores && this.highScores.length > 0) {
             // Mark this run's score in the cached scores if it exists
             for (const score of this.highScores) {
-                if (score.name === this.username && score.level === level) {
+                if (score.name === this.username && score.level === completedLevel) {
                     score.isCurrentPlayer = true;
                 }
             }
@@ -142,28 +157,29 @@ class HighScoreSystem {
             const combinedScores = [...this.highScores];
             
             // Only add the current score if it's not already in the high scores
+            // AND if it should be submitted
             const scoreExists = combinedScores.some(s => 
-                s.name === this.username && s.level === level
+                s.name === this.username && s.level === completedLevel
             );
             
-            if (!scoreExists) {
+            if (!scoreExists && shouldSubmitScore) {
                 combinedScores.push(currentPlayerScore);
             }
             
-            this.displayHighScores(combinedScores, level);
-            this.displayPercentile(level);
+            this.displayHighScores(combinedScores, completedLevel);
+            this.displayPercentile(completedLevel);
         } else {
             // If no cached scores, show loading and fetch them
             document.getElementById('high-scores-body').innerHTML = '<tr><td colspan="3">Loading scores...</td></tr>';
             this.fetchHighScores().then(() => {
                 // After fetching, mark this run's score
                 for (const score of this.highScores) {
-                    if (score.name === this.username && score.level === level) {
+                    if (score.name === this.username && score.level === completedLevel) {
                         score.isCurrentPlayer = true;
                     }
                 }
-                this.displayHighScores(null, level);
-                this.displayPercentile(level);
+                this.displayHighScores(null, completedLevel);
+                this.displayPercentile(completedLevel);
             });
         }
         
@@ -171,7 +187,7 @@ class HighScoreSystem {
         this.gameOverScreen.classList.remove('hidden');
     }
     
-    // Check if the score should be submitted to the high score system
+    // FIXED: Updated to consider completedLevel
     shouldSubmitHighScore(level) {
         // Submit if better than personal best
         if (level > this.personalBest) {
@@ -200,6 +216,7 @@ class HighScoreSystem {
     
     // Prompt the user for a username with pre-filled value
     promptForUsername() {
+        resetAllKeyStates();
         // Generate a suggested username for the prompt
         let suggestedUsername = '';
         
@@ -424,15 +441,19 @@ class HighScoreSystem {
     displayPercentile(level) {
         const percentileMsg = document.getElementById('percentile-msg');
         
-        if (this.percentileCache && this.percentileCache[level]) {
-            // Use cached percentile if available
-            const percentile = this.percentileCache[level];
-            percentileMsg.textContent = `Your level is better than ${percentile}% of all players`;
+        if(gameState.levelsCompleted > 0){
+            if (this.percentileCache && this.percentileCache[level]) {
+                // Use cached percentile if available
+                const percentile = this.percentileCache[level];
+                percentileMsg.textContent = `Your level is better than ${percentile}% of all players`;
+            } else {
+                // Calculate percentile if not cached
+                this.calculatePercentile(level).then(percentile => {
+                    percentileMsg.textContent = `Your level of ${level} is better than ${percentile}% of all players`;
+                });
+            }
         } else {
-            // Calculate percentile if not cached
-            this.calculatePercentile(level).then(percentile => {
-                percentileMsg.textContent = `Your level of ${level} is better than ${percentile}% of all players`;
-            });
+            percentileMsg.textContent = '';
         }
     }
     

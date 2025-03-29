@@ -6,6 +6,7 @@ if(isMobile) document.querySelector("#enemy-kill-counter").classList.add("hidden
 const gameState = {
     speed: 16.0,
     currentLevel: 1,
+    levelsCompleted: 0,
     playerVelocity: new THREE.Vector3(),
     playerOnGround: false,
     keyStates: {},
@@ -347,6 +348,7 @@ function updatePlayerPosition(deltaTime) {
 
     if (horizontalDistanceToGoal < 2 && !gameState.goalReached) {
         gameState.goalReached = true;
+        gameState.levelsCompleted ++;
 
         // Hide all tutorial messages if this is level 1
         if (gameState.levelSystem && gameState.currentLevel === 1) {
@@ -391,7 +393,8 @@ function resetGame() {
     console.log("reset game");
     // Reset game over state
     gameState.gameOver = false;
-    
+    gameState.levelsCompleted = 0;
+
     // Reset player position
     player.position.set(0, 50, 0);
     gameState.playerVelocity.set(0, 0, 0);
@@ -476,11 +479,17 @@ function resetGame() {
         gameState.newspaper.placeRandomly();
     }
     
-    // Refresh high scores when resetting the game
-    if (window.highScoreSystem) {
-        window.highScoreSystem.fetchHighScores()
-            .then(() => console.log('High scores refreshed for new game'))
-            .catch(error => console.error('Error refreshing high scores:', error));
+    // Refresh high scores using the instance
+    if (gameState.highScoreSystem) {
+        console.log("refreshing high scores");
+        try {
+            gameState.highScoreSystem.fetchHighScores();
+            console.log('High scores refreshed for new game');
+        } catch (error) {
+            console.error('Error refreshing high scores:', error);
+        }
+    } else {
+        console.warn("HighScoreSystem not initialized");
     }
 }
 
@@ -662,6 +671,9 @@ function init() {
     gameState.newspaper = new Newspaper(scene, player, getTerrainHeight);
     gameState.newspaper.initialize();
     console.log("newspaper initialized");
+
+    gameState.highScoreSystem = new HighScoreSystem();
+    console.log("HighScoreSystem initialized");
 }
 
 function handleViewportResize() {
