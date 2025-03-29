@@ -3,7 +3,7 @@
 class MobileControls {
     // Constants for configuration
     static DEBUG = false;                // Set to true to enable debug logging
-    static MOVEMENT_DEADZONE = 10;       // Pixels of movement to ignore
+    static MOVEMENT_DEADZONE = 12;       // Pixels of movement to ignore
     static MOVEMENT_SCALE = 0.015;       // Scaling factor for touch movement
     static JUMP_DURATION = 100;          // Ms for jump touch duration
     static MAX_INIT_WAIT = 10000;        // Max time to wait for game initialization (ms)
