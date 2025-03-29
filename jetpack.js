@@ -498,7 +498,7 @@ class Jetpack {
             this.player.add(this.object);
             
             // Position it on the panda's back
-            this.object.position.set(0, 1.6, -1.5); // Adjust these values as needed
+            this.object.position.set(0, 2.1, -1.5); // Adjust these values as needed
             
             // Scale it down to fit the character better
             const jetpackScale = 0.6; // Adjust scale as needed
