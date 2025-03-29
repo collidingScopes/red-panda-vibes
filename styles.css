@@ -135,6 +135,7 @@ h2, h3 {
     cursor: pointer;
     font-family: 'Courier New', monospace;
     transition: all 0.3s ease;
+    margin-bottom: 5px;
 }
 
 #retry-button:hover {
@@ -733,6 +734,8 @@ button {
     padding: 8px;
     font-size: 14px;
     color: #f8d05c;
+    border: none;
+    margin: 0;
     position: sticky;
     top: 0;
 }
@@ -794,7 +797,7 @@ button {
     }
     
     .high-score-table h3 {
-        font-size: 16px;
+        font-size: 14px;
     }
     
     #high-scores-table th, 
@@ -840,3 +843,25 @@ button {
     shape-rendering: crispEdges;
     pointer-events: none;
 }
+
+#links-div {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+#links-div > a:link {
+    color: red;
+    
+}
+.socialMediaButton{
+    font-size: 22px;
+    padding: 0;
+    margin: 0;
+    background-color: rgb(10, 222, 233);
+}
+
+.socialMediaButton:hover {
+    background-color: rgb(255, 196, 0);
+}
+

@@ -51,46 +51,6 @@ class HighScoreSystem {
     
     // Set up the modified game over screen
     setupGameOverScreen() {
-        // Rebuild the game over screen with new format
-        this.gameOverScreen.innerHTML = `
-            <h2>Game Over!</h2>
-            <div class="game-over-stats">
-                <div class="stat-row">
-                    <span>Final Level:</span>
-                    <span id="final-level">Level 1</span>
-                </div>
-                <div class="stat-row">
-                    <span>Personal Best:</span>
-                    <span id="personal-best">Level ${this.personalBest}</span>
-                </div>
-            </div>
-            
-            <div class="high-score-table">
-                <h3>Global Top 10</h3>
-                <div class="table-container">
-                    <table id="high-scores-table">
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>Player</th>
-                                <th>Level</th>
-                            </tr>
-                        </thead>
-                        <tbody id="high-scores-body">
-                            <tr><td colspan="3">Loading scores...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            
-            <div id="percentile-msg" class="percentile-message">
-                Your score of 0 is better than 0% of all players
-            </div>
-            
-            <div class="game-over-buttons">
-                <button id="retry-button">Try Level Again</button>
-            </div>
-        `;
 
         // Add event listener for retry button
         document.getElementById('retry-button').addEventListener('click', () => {

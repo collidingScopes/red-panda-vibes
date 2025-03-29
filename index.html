@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Red Panda Vibes</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-9usAa10IRO0HhonpyAIVpjrylPvoDwiPUiKdWk5t3PyolY1cOd4DSE0Ga+ri4AuTroPR5aQvXU9xC6qOPnzFeg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <!-- Primary Meta Tags -->
     <meta name="title" content="Red Panda Vibes">
@@ -76,12 +77,49 @@
     </div>
 
     <div id="game-over-screen" class="game-over-content hidden">
-        <h2>Game Over</h2>
-        <!-- <p>You were caught by an oil slick monster!</p> -->
-        <div class="current-game-level"></div>
-        <div class="high-score"></div>
-        <!-- <button id="retry-button">Try Level Again</button>
-        <div class="keyboard-hint">[ENTER]</div> -->
+        <h2>Game Over!</h2>
+        <div class="game-over-stats">
+            <div class="stat-row">
+                <span>Final Level:</span>
+                <span id="final-level">Level 1</span>
+            </div>
+            <div class="stat-row">
+                <span>Personal Best:</span>
+                <span id="personal-best"></span>
+            </div>
+        </div>
+        
+        <div class="high-score-table">
+            <h3>Global Top 10</h3>
+            <div class="table-container">
+                <table id="high-scores-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Player</th>
+                            <th>Level</th>
+                        </tr>
+                    </thead>
+                    <tbody id="high-scores-body">
+                        <tr><td colspan="3">Loading scores...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="percentile-msg" class="percentile-message">
+            Your score of 0 is better than 0% of all players
+        </div>
+        
+        <div class="game-over-buttons">
+            <button id="retry-button">Try Level Again</button>
+        </div>
+
+        <div id="linksDiv">
+            <button id="instagramButton" class="socialMediaButton"><a href="https://www.instagram.com/stereo.drift/" target="_blank" rel="noopener"><i class="fa-brands fa-instagram"></i></a></button>
+            <button id="xButton" class="socialMediaButton"><a class="x-link" href="https://x.com/measure_plan" target="_blank" rel="noopener">𝕏</i></a></button>
+            <button id="coffeeButton" class="socialMediaButton"><a href="https://www.buymeacoffee.com/stereoDrift" target="_blank" rel="noopener"><i class="fa-solid fa-heart"></i></a></button>
+        </div>
     </div>
 
     <div id="pause-screen-container" class="hidden">
