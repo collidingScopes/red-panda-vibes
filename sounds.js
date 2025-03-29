@@ -17,14 +17,13 @@ class SoundSystem {
         
         // Background music properties
         this.musicTracks = [
-            { path: 'assets/song-0.mp3', audio: null, loaded: false },
-            { path: 'assets/panda-rnb-2.mp3', audio: null, loaded: false },
-            { path: 'assets/vibe-coding.mp3', audio: null, loaded: false },
-            { path: 'assets/panda-rnb-1.mp3', audio: null, loaded: false },
-            { path: 'assets/song-1.mp3', audio: null, loaded: false },
-            { path: 'assets/song-2.mp3', audio: null, loaded: false },
-            { path: 'assets/song-3.mp3', audio: null, loaded: false },
-            { path: 'assets/bamboo-nomad.mp3', audio: null, loaded: false },
+            { path: 'assets/music/song-0.mp3', audio: null, loaded: false },
+            { path: 'assets/music/panda-rnb-2.mp3', audio: null, loaded: false },
+            { path: 'assets/music/vibe-coding.mp3', audio: null, loaded: false },
+            { path: 'assets/music/panda-rnb-1.mp3', audio: null, loaded: false },
+            { path: 'assets/music/song-1.mp3', audio: null, loaded: false },
+            { path: 'assets/music/song-2.mp3', audio: null, loaded: false },
+            { path: 'assets/music/song-3.mp3', audio: null, loaded: false },
         ];
         this.currentTrackIndex = 0;
         this.musicLoaded = false;
