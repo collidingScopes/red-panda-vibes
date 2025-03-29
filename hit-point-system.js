@@ -11,9 +11,6 @@ class HitPointsSystem {
         
         // Create the UI elements
         this.createHitPointBar();
-        
-        // Add custom styles
-        this.addStyles();
     }
     
     // Decrease hit points when player is hit
@@ -54,13 +51,6 @@ class HitPointsSystem {
         // Create container for the hit point bar
         this.hitPointBar = document.createElement('div');
         this.hitPointBar.id = 'hit-point-bar';
-        this.hitPointBar.style.position = 'absolute';
-        this.hitPointBar.style.bottom = '20px';
-        this.hitPointBar.style.left = '50%';
-        this.hitPointBar.style.transform = 'translateX(-50%)';
-        this.hitPointBar.style.display = 'flex';
-        this.hitPointBar.style.gap = '8px';
-        this.hitPointBar.style.zIndex = '100';
         
         // Create hearts for each hit point - using a more pixelated, low-poly design
         for (let i = 0; i < this.maxHitPoints; i++) {
@@ -189,42 +179,5 @@ class HitPointsSystem {
                 }
             }
         }
-    }
-    
-    // Add CSS styles
-    addStyles() {
-        const style = document.createElement('style');
-        style.textContent = `
-            #hit-point-bar {
-                filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
-            }
-            
-            .hit-point-heart {
-                transition: opacity 0.3s ease;
-                image-rendering: pixelated;
-            }
-            
-            .hit-point-heart svg {
-                image-rendering: pixelated;
-                transform: scale(1.25); /* Make hearts slightly larger */
-            }
-            
-            /* Apply pixelation effect to the SVG path */
-            .hit-point-heart svg path {
-                shape-rendering: crispEdges;
-            }
-            
-            @media (max-width: 768px) {
-                #hit-point-bar {
-                    bottom: 60px; /* Position above mobile controls */
-                }
-                
-                .hit-point-heart svg {
-                    width: 24px;
-                    height: 24px;
-                }
-            }
-        `;
-        document.head.appendChild(style);
     }
 }
