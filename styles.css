@@ -825,18 +825,22 @@ button {
     gap: 10px;
     z-index: 200;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+    pointer-events: none;
 }
 
 .hit-point-heart {
     transition: opacity 0.3s ease;
     image-rendering: pixelated;
+    pointer-events: none;
 }
 
 .hit-point-heart svg {
     image-rendering: pixelated;
+    pointer-events: none;
 }
 
 /* Apply pixelation effect to the SVG path */
 .hit-point-heart svg path {
     shape-rendering: crispEdges;
+    pointer-events: none;
 }

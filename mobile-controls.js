@@ -431,6 +431,8 @@ class MobileControls {
                target.closest('#level-select') ||
                target.closest('#level-select-container') ||
                target.closest('#feedback-button') ||
+               target.closest('#hit-point-bar') ||
+               target.classList.contains('hit-point-heart') || 
                target.closest('#level-indicator');
     }
     

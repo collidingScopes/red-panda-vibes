@@ -687,7 +687,6 @@ function init() {
 
     // Initialize hit points system
     gameState.hitPointsSystem = new HitPointsSystem();
-    gameState.hitPointsSystem.addStyles();
     console.log("Hit points system initialized");
 }
 
