@@ -660,11 +660,11 @@ button {
 
 #hover-instructions {
     position: fixed;
-    top: 70px;
+    top: 60px;
     right: 10px;
     background-color: rgba(0, 0, 0, 0.7);
     color: white;
-    padding: 15px;
+    padding: 10px;
     font-family: Helvetica, system-ui, sans-serif;
     font-size: 16px;
     z-index: 3000;
@@ -744,6 +744,7 @@ button {
     padding: 8px;
     font-size: 14px;
     border-bottom: 1px solid rgb(189, 158, 184);
+    color: rgb(214, 243, 255);
 }
 
 #high-scores-table tr:last-child td {
@@ -865,3 +866,6 @@ button {
     background-color: rgb(255, 196, 0);
 }
 
+.socialMediaButton > a {
+    text-decoration: none !important;
+}
