@@ -753,6 +753,7 @@ class Newspaper {
                 
                 // Title with link - LARGER touch targets
                 const link = document.createElement('a');
+                link.classList.add('newspaper-link');
                 link.textContent = story.title;
                 link.href = story.url || `https://news.ycombinator.com/item?id=${story.id}`;
                 link.target = '_blank';

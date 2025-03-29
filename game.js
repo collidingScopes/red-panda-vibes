@@ -45,7 +45,7 @@ gameState.trampoline = {
 //physics
 const jumpForce = 10.0;
 const gravity = 16.0;
-const turnSpeed = isMobile ? 2.0 : 5.0;  // How quickly the panda rotates to face movement direction
+const turnSpeed = isMobile ? 1.5 : 5.0;  // How quickly the panda rotates to face movement direction
 
 // Make gameState globally accessible for mobile controls
 window.gameState = gameState;

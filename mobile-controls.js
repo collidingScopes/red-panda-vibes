@@ -434,8 +434,9 @@ class MobileControls {
                target.closest('#hit-point-bar') ||
                target.classList.contains('hit-point-heart') || 
                target.closest('#level-indicator') ||
-               target.closest('#social-links-container') || // Add this
-               target.classList.contains('link-element');   // Add this
+               target.closest('#social-links-container') || 
+               target.classList.contains('link-element') || 
+               target.classList.contains('newspaper-link');
     }
     
     // =============== GAME CONTROL METHODS ===============
@@ -454,7 +455,7 @@ class MobileControls {
         
         // Add a stronger horizontal deadzone specifically for turning
         // This value should be 2-3x the regular deadzone
-        const horizontalDeadzone = deadzone * 1.5;
+        const horizontalDeadzone = deadzone * 2.0;
     
         // Reset all movement keys first
         this.resetMovementKeys();
