@@ -160,6 +160,17 @@ class LevelSystem {
                 window.createPortals();
             }
         }, 1000);
+
+        // Remove old trampoline if it exists
+        if (gameState.trampoline && gameState.trampoline.object) {
+            scene.remove(gameState.trampoline.object);
+            gameState.trampoline.object = null;
+        }
+        
+        // Create a new trampoline for this level
+        setTimeout(() => {
+            initTrampoline();
+        }, 1000);
     }
     
     // Show level complete screen
@@ -179,33 +190,12 @@ class LevelSystem {
         if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
             window.removeAllPortals();
         }
-    }
-    
-    // Restart the entire game
-    restartGame() {
-        gameState.currentLevel = 1;
-        this.applyLevelSettings(gameState.currentLevel);
-        this.updateLevelIndicator();
-        
-        // Reset game state
-        gameState.goalReached = false;
 
-        // Reset warnings
-        if (window.levelWarnings) {
-            window.levelWarnings.reset();
+        // Remove trampoline when level is completed
+        if (gameState.trampoline && gameState.trampoline.object) {
+            scene.remove(gameState.trampoline.object);
+            gameState.trampoline.object = null;
         }
-
-        // Handle portals for the new game
-        if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
-            window.removeAllPortals();
-        }
-        
-        // Create new portals after a short delay
-        setTimeout(() => {
-            if (window.createPortals && typeof window.createPortals === 'function') {
-                window.createPortals();
-            }
-        }, 1000);
     }
 }
 

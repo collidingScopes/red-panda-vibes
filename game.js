@@ -237,7 +237,6 @@ function updatePlayerPosition(deltaTime) {
     if (player.position.y >= 20 && gameState.animationController && 
         gameState.animationController.animations['fly'] &&
         !gameState.animationController.isFlying) {
-        console.log("Player is at high altitude: " + player.position.y.toFixed(2));
     }
     
     // Movement direction (in camera space)
@@ -253,11 +252,6 @@ function updatePlayerPosition(deltaTime) {
 
     moveDirection.normalize();
     gameState.isMovingBackward = movingBackward && !movingForward;
-
-    // Helper function to check if player is moving horizontally
-    function isMoving() {
-        return moveDirection.length() > 0;
-    }
     
     // Convert movement from camera space to world space
     const cameraDirection = new THREE.Vector3();
@@ -336,6 +330,10 @@ function updatePlayerPosition(deltaTime) {
     // Update camera position
     updateCamera(deltaTime);
     
+    if (!gameState.goalReached && !gameState.gameOver) {
+        checkTrampolineCollision();
+    }
+
     // Check for goal (flag pole) - horizontal distance only for better pole collision
     const dx = player.position.x - flagPole.position.x;
     const dz = player.position.z - flagPole.position.z;
@@ -441,6 +439,11 @@ function resetGame() {
         scene.remove(gameState.trampoline.object);
         gameState.trampoline.object = null;
     }
+            
+    // Create a new trampoline for this level
+    setTimeout(() => {
+        initTrampoline();
+    }, 1000);
 
     // Remove old portals and create new ones
     if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
@@ -653,6 +656,8 @@ function init() {
         gameState.changingRoom.initialize();
         console.log("Changing room initialized");
     }
+
+    initTrampoline();
 
     //init jetpack
     gameState.jetpack = new Jetpack(scene, player, getTerrainHeight);

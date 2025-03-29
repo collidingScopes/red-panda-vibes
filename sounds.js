@@ -433,6 +433,13 @@ class SoundSystem {
             this.playTone(600, 0.2, 'sine', volume, 0.1);
         }
     }
+
+    playTrampolineSound() {
+        this.playTone(300, 0.1, 'sine', 0.3);
+        this.playTone(400, 0.1, 'sine', 0.3, 0.1);
+        this.playTone(500, 0.2, 'sine', 0.3, 0.2);
+        this.playTone(600, 0.3, 'sine', 0.3, 0.3);
+    }
     
     // Play footstep sound
     playFootstepSound() {
@@ -905,6 +912,10 @@ window.addEventListener('load', () => {
 // Expose key functions to ensure they're available to the game
 window.playJumpSound = function() {
     if (soundSystem) soundSystem.playJumpSound();
+};
+
+window.playTrampolineSound = function() {
+    if (soundSystem) soundSystem.playTrampolineSound();
 };
 
 window.playFootstepSound = function() {

@@ -82,19 +82,13 @@ function createTrampoline() {
 
 // Initialize the trampoline system
 function initTrampoline() {
-    gameState.trampoline.object = createTrampoline();
-    
-    // Create trampoline bounce sound
-    if (window.soundSystem && window.soundSystem.initialized) {
-        // Will be used when the panda bounces
-        gameState.trampoline.bounceSound = function() {
-            // Play a fun "boing" sound using the existing sound system
-            window.soundSystem.playTone(300, 0.1, 'sine', 0.3);
-            window.soundSystem.playTone(400, 0.1, 'sine', 0.3, 0.1);
-            window.soundSystem.playTone(500, 0.2, 'sine', 0.3, 0.2);
-            window.soundSystem.playTone(600, 0.3, 'sine', 0.3, 0.3);
-        };
+    // If a trampoline already exists, remove it first
+    if (gameState.trampoline.object) {
+        scene.remove(gameState.trampoline.object);
+        gameState.trampoline.object = null;
     }
+    
+    gameState.trampoline.object = createTrampoline();
     
     console.log("Trampoline initialized at", 
         gameState.trampoline.object.position.x,
@@ -137,8 +131,8 @@ function checkTrampolineCollision() {
         animateTrampolineBounce();
         
         // Play bounce sound
-        if (gameState.trampoline.bounceSound) {
-            gameState.trampoline.bounceSound();
+        if (window.playTrampolineSound) {
+            window.playTrampolineSound();
         }
         
         // Set cooldown
@@ -202,50 +196,4 @@ function isMoving() {
             gameState.keyStates['KeyA'] || 
             gameState.keyStates['KeyS'] || 
             gameState.keyStates['KeyD']);
-}
-
-// Add trampoline checking to the game loop
-const originalUpdateFunction = updatePlayerPosition;
-updatePlayerPosition = function(deltaTime) {
-    // Call the original function first
-    originalUpdateFunction(deltaTime);
-    
-    // Check for trampoline collision (if game is still active)
-    if (!gameState.goalReached && !gameState.gameOver) {
-        checkTrampolineCollision();
-    }
-};
-
-// Properly handle level transitions and cleanup
-if (gameState.levelSystem) {
-    // Hook into level completion
-    const originalShowLevelComplete = gameState.levelSystem.showLevelComplete;
-    gameState.levelSystem.showLevelComplete = function() {
-        // Call the original function first
-        originalShowLevelComplete.call(this);
-        
-        // Remove trampoline when level is completed
-        if (gameState.trampoline && gameState.trampoline.object) {
-            scene.remove(gameState.trampoline.object);
-            gameState.trampoline.object = null;
-        }
-    };
-    
-    // Hook into new level creation
-    const originalApplyLevelSettings = gameState.levelSystem.applyLevelSettings;
-    gameState.levelSystem.applyLevelSettings = function(level) {
-        // Call the original function
-        originalApplyLevelSettings.call(this, level);
-        
-        // Remove old trampoline if it exists
-        if (gameState.trampoline && gameState.trampoline.object) {
-            scene.remove(gameState.trampoline.object);
-            gameState.trampoline.object = null;
-        }
-        
-        // Create a new trampoline for this level
-        setTimeout(() => {
-            initTrampoline();
-        }, 500);
-    };
 }

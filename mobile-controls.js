@@ -255,6 +255,10 @@ class MobileControls {
             this.log("Touch start ignored - not initialized yet");
             return;
         }
+        // Prevent default behavior to avoid scrolling
+        if (!this.isUIElement(event.target)) {
+            event.preventDefault();
+        }
 
         // Check first if this could be a simple tap-to-jump
         // If there's no active movement touch, consider this a potential jump
@@ -302,11 +306,6 @@ class MobileControls {
                 this.log(`Additional touch detected - triggering jump with ID: ${touch.identifier}`);
             }
         }
-        
-        // Prevent default behavior to avoid scrolling
-        if (!this.isUIElement(event.target)) {
-            event.preventDefault();
-        }
     }
 
     /**
@@ -316,6 +315,10 @@ class MobileControls {
     handleTouchMove(event) {
         if (!this.initialized) {
             return;
+        }
+        // Prevent default behavior to avoid scrolling
+        if (!this.isUIElement(event.target)) {
+            event.preventDefault();
         }
 
         // Process each moved touch
@@ -340,11 +343,6 @@ class MobileControls {
                 }
             }
         }
-        
-        // Prevent default behavior to avoid scrolling
-        if (!this.isUIElement(event.target)) {
-            event.preventDefault();
-        }
     }
 
     /**
@@ -354,6 +352,10 @@ class MobileControls {
     handleTouchEnd(event) {
         if (!this.initialized) {
             return;
+        }
+        // Prevent default behavior
+        if (!this.isUIElement(event.target)) {
+            event.preventDefault();
         }
     
         // Process each ended touch
@@ -408,11 +410,6 @@ class MobileControls {
                 // Remove the touch from our map
                 this.activeTouches.delete(touch.identifier);
             }
-        }
-        
-        // Prevent default behavior
-        if (!this.isUIElement(event.target)) {
-            event.preventDefault();
         }
     }
     
