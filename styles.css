@@ -950,3 +950,76 @@ button {
     font-size: 14px;
     cursor: pointer;
 }
+
+/* HN Newspaper */
+
+#HN-exit-button {
+    padding: 8px 20px; /* Default for non-mobile */
+    background-color: transparent;
+    color: #a2ff84;
+    border: 2px solid #a2ff84;
+    cursor: pointer;
+    font-size: 16px; /* Default for non-mobile */
+    font-family: monospace;
+    letter-spacing: 2px; /* Default for non-mobile */
+    box-shadow: 0 0 15px rgba(255, 102, 0, 0.7);
+    transition: all 0.3s ease;
+    position: absolute;
+    top: 0px;
+    right: 0px;
+    animation: pulse 2.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+#HN-date-panel {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #00FFFF;
+    padding: 5px 10px; /* Default for non-mobile */
+    color: #00FFFF;
+    font-size: 11px; /* Default for non-mobile */
+}
+
+#HN-title-panel {
+    background-color: rgba(0,0,0,0.7);
+    border: 2px solid #FF6600;
+    padding: 5px 10px;
+    margin-bottom: 10px;
+    width: auto;
+}
+
+#HN-title {
+    font-size: 20px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-align: left;
+}
+
+#HN-status-panel {
+    background-color: rgba(0,0,0,0.7);
+    border: 2px solid #FF6600;
+    padding: 10px;
+    width: auto;
+}
+
+#HN-status {
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-align: left;
+}
+
+#HN-content {
+    padding: 0 20px;
+    max-height: calc(100% - 200px);
+    overflow-y: auto;
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: #FF6600 #000;
+}

@@ -390,98 +390,36 @@ class Newspaper {
         
         // Check if we're on mobile
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        
-        // Create left side marker lines - hide on mobile to save space
-        const sideMarkers = document.createElement('div');
-        sideMarkers.style.position = 'absolute';
-        sideMarkers.style.left = '35px';
-        sideMarkers.style.top = '0';
-        sideMarkers.style.bottom = '0';
-        sideMarkers.style.width = '30px';
-        sideMarkers.style.display = 'flex';
-        sideMarkers.style.flexDirection = 'column';
-        sideMarkers.style.justifyContent = 'center';
-        
-        // Hide side markers on mobile
-        if (isMobile) {
-            sideMarkers.style.display = 'none';
-        }
-        
-        // Create markers
-        for (let i = 6; i >= 1; i--) {
-            const marker = document.createElement('div');
-            marker.style.width = '100%';
-            marker.style.height = '2px';
-            marker.style.marginBottom = '40px';
-            marker.style.backgroundColor = '#00FFFF'; // Cyan color for markers
-            
-            const label = document.createElement('div');
-            label.textContent = `+0${i}`;
-            label.style.color = '#00FFFF';
-            label.style.fontSize = '12px';
-            label.style.position = 'relative';
-            label.style.top = '-8px';
-            
-            sideMarkers.appendChild(label);
-            sideMarkers.appendChild(marker);
-        }
-        
-        // Create "BORDER LINE" indicator - simplify on mobile
-        const borderLine = document.createElement('div');
-        borderLine.style.position = 'absolute';
-        borderLine.style.left = '0';
-        borderLine.style.right = '0';
-        borderLine.style.bottom = isMobile ? '70px' : '100px'; // Move up on mobile
-        borderLine.style.height = '2px';
-        borderLine.style.backgroundColor = '#00FFFF';
-        borderLine.style.display = 'flex';
-        borderLine.style.justifyContent = 'center';
-        borderLine.style.alignItems = 'center';
 
         // Create header with title panel - adjust for mobile
         const header = document.createElement('div');
-        header.style.padding = isMobile ? '15px 15px 10px 15px' : '25px 80px 15px 80px';
+        //header.style.padding = isMobile ? '15px 15px 10px 15px' : '25px 80px 15px 80px';
         header.style.display = 'flex';
         header.style.flexDirection = isMobile ? 'column' : 'column';
         header.style.alignItems = 'flex-start';
         
         // Main title in Evangelion style - smaller on mobile
         const titlePanel = document.createElement('div');
-        titlePanel.style.backgroundColor = 'rgba(0,0,0,0.7)';
-        titlePanel.style.border = '2px solid #FF6600';
-        titlePanel.style.padding = isMobile ? '5px 10px' : '10px 20px';
-        titlePanel.style.marginBottom = '15px';
-        titlePanel.style.width = isMobile ? 'calc(100% - 22px)' : 'auto'; // Full width minus padding and border
-        
+        titlePanel.id = "HN-title-panel";
+
         const title = document.createElement('div');
-        title.textContent = 'PANDA HACKER NEWS 🐼';
-        title.style.fontSize = isMobile ? '18px' : '24px';
-        title.style.fontWeight = 'bold';
-        title.style.letterSpacing = '1px';
-        title.style.textAlign = isMobile ? 'center' : 'left';
+        title.id = "HN-title";
+        title.textContent = 'PANDA HACKER NEWS';
         
         titlePanel.appendChild(title);
         
         // System status panel - hide on small mobile
         const statusPanel = document.createElement('div');
-        statusPanel.style.backgroundColor = 'rgba(0,0,0,0.7)';
-        statusPanel.style.border = '2px solid #FF6600';
-        statusPanel.style.padding = '6px 15px';
-        statusPanel.style.marginLeft = isMobile ? '0' : '20px';
-        statusPanel.style.marginTop = isMobile ? '5px' : '0';
-        statusPanel.style.width = isMobile ? 'calc(100% - 32px)' : 'auto'; // Full width minus padding and border
-        
+        statusPanel.id = "HN-status-panel";
+
         // Hide on very small screens
         if (isMobile && window.innerWidth < 360) {
             statusPanel.style.display = 'none';
         }
         
         const status = document.createElement('div');
-        status.textContent = 'FEED STATUS: ACTIVE';
-        status.style.fontSize = isMobile ? '12px' : '14px';
-        status.style.letterSpacing = '1px';
-        status.style.textAlign = isMobile ? 'center' : 'left';
-        
+        status.id = "HN-status";
+        status.textContent = 'FEED STATUS: ACTIVE';        
         statusPanel.appendChild(status);
         
         header.appendChild(titlePanel);
@@ -489,14 +427,7 @@ class Newspaper {
         
         // Date display in top right - smaller on mobile
         const datePanel = document.createElement('div');
-        datePanel.style.position = 'absolute';
-        datePanel.style.top = '0px';
-        datePanel.style.right = '0px';
-        datePanel.style.backgroundColor = 'rgba(0,0,0,0.7)';
-        datePanel.style.border = '1px solid #00FFFF';
-        datePanel.style.padding = isMobile ? '3px 5px' : '5px 10px';
-        datePanel.style.color = '#00FFFF';
-        datePanel.style.fontSize = isMobile ? '9px' : '11px';
+        datePanel.id = 'HN-date-panel';
         
         // Hide on very small screens
         if (isMobile && window.innerWidth < 360) {
@@ -509,13 +440,7 @@ class Newspaper {
         
         // Create content area - adjust padding for mobile
         const content = document.createElement('div');
-        content.style.padding = isMobile ? '0 15px' : '0 80px';
-        content.style.maxHeight = isMobile ? 'calc(100% - 180px)' : 'calc(100% - 230px)';
-        content.style.overflowY = 'auto';
-        content.style.webkitOverflowScrolling = 'touch'; // Smooth scrolling on iOS
-        content.style.position = 'relative';
-        content.style.scrollbarWidth = 'thin';
-        content.style.scrollbarColor = '#FF6600 #000';
+        content.id = "HN-content";
         
         // Enable touch scrolling explicitly
         content.style.touchAction = 'pan-y';
@@ -606,63 +531,17 @@ class Newspaper {
         document.head.appendChild(style);
         
         content.appendChild(loading);
-        
-        // Create footer with exit button - adjust for mobile
-        const footer = document.createElement('div');
-        footer.style.position = 'absolute';
-        footer.style.bottom = isMobile ? '10px' : '20px';
-        footer.style.left = isMobile ? '50%' : '20px';
-        footer.style.transform = isMobile ? 'translateX(-50%)' : 'none'; // Center on mobile
-        footer.style.padding = '0';
-        footer.style.width = isMobile ? '100%' : 'auto';
-        footer.style.textAlign = isMobile ? 'center' : 'left';
-        
+
         const exitButton = document.createElement('button');
-        exitButton.textContent = isMobile ? '🐼 EXIT' : '🐼 RETURN TO GAME';
-        exitButton.style.padding = isMobile ? '10px 30px' : '8px 20px';
-        exitButton.style.backgroundColor = 'transparent';
-        exitButton.style.color = '#FF6600';
-        exitButton.style.border = '2px solid #FF6600';
-        exitButton.style.cursor = 'pointer';
-        exitButton.style.fontSize = isMobile ? '18px' : '16px'; // Larger on mobile for touch
-        exitButton.style.fontFamily = 'monospace';
-        exitButton.style.letterSpacing = isMobile ? '1px' : '2px';
-        exitButton.style.boxShadow = '0 0 15px rgba(255, 102, 0, 0.7)';
-        exitButton.style.transition = 'all 0.3s ease';
-        
-        // Add touch-specific hover effect
-        if (isMobile) {
-            exitButton.addEventListener('touchstart', () => {
-                exitButton.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
-                exitButton.style.boxShadow = '0 0 20px rgba(255, 102, 0, 0.9)';
-            });
-            
-            exitButton.addEventListener('touchend', () => {
-                exitButton.style.backgroundColor = 'transparent';
-                exitButton.style.boxShadow = '0 0 15px rgba(255, 102, 0, 0.7)';
-            });
-        } else {
-            exitButton.onmouseover = () => {
-                exitButton.style.backgroundColor = 'rgba(255, 102, 0, 0.2)';
-                exitButton.style.boxShadow = '0 0 20px rgba(255, 102, 0, 0.9)';
-            };
-            exitButton.onmouseout = () => {
-                exitButton.style.backgroundColor = 'transparent';
-                exitButton.style.boxShadow = '0 0 15px rgba(255, 102, 0, 0.7)';
-            };
-        }
-        
+        exitButton.id = 'HN-exit-button';
+        exitButton.textContent = '🐼 RETURN TO GAME';
         exitButton.onclick = () => this.hideOverlay();
         
-        footer.appendChild(exitButton);
-                
         // Assemble overlay
-        overlay.appendChild(sideMarkers);
-        overlay.appendChild(borderLine);
+        header.appendChild(exitButton);
         overlay.appendChild(header);
         overlay.appendChild(datePanel);
         overlay.appendChild(content);
-        overlay.appendChild(footer);
         
         // Add to document
         document.body.appendChild(overlay);

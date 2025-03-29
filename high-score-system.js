@@ -209,20 +209,21 @@ class HighScoreSystem {
             // Create the HTML content
             promptOverlay.innerHTML = `
                 <h3 style="color: #84ffef; margin-top: 0; font-size: 24px; text-shadow: 0 0 8px #84ffef;">GAME OVER</h3>
-                <p style="color: #ffee84; margin-bottom: 20px;">Enter your username:</p>
+                <p style="color: #ffee84; margin-bottom: 5px;">Enter your username:</p>
                 <input type="text" id="username-input" maxlength="20" value="${suggestedUsername}" 
                        style="background: rgba(0, 0, 0, 0.5); 
                               color: #84ffef; 
-                              border: 2px solid #84ffef; 
-                              padding: 8px; 
+                              border: 2px solid rgb(255, 132, 239); 
+                              padding: 8px 2px; 
                               font-family: 'Courier New', monospace; 
                               font-size: 16px; 
                               width: 100%; 
-                              margin-bottom: 15px;
+                              margin-bottom: 10px;
+                              max-width: 175px;
                               text-align: center;
                               outline: none;
                               border-radius: 5px;">
-                <div style="display: flex; justify-content: space-between; gap: 10px;">
+                <div style="display: flex; justify-content: center;">
                     <button id="submit-username" 
                             style="background: rgba(0, 0, 0, 0.5); 
                                    color: #84ffef; 
@@ -230,19 +231,11 @@ class HighScoreSystem {
                                    padding: 8px 16px; 
                                    font-family: 'Courier New', monospace; 
                                    cursor: pointer;
+                                   width: 100%; 
+                                   max-width: 125px;
                                    flex: 1;
                                    border-radius: 5px;
                                    transition: all 0.2s;">SUBMIT</button>
-                    <button id="use-suggested" 
-                            style="background: rgba(0, 0, 0, 0.5); 
-                                   color: #ffee84; 
-                                   border: 2px solid #ffee84; 
-                                   padding: 8px 16px; 
-                                   font-family: 'Courier New', monospace; 
-                                   cursor: pointer;
-                                   flex: 1;
-                                   border-radius: 5px;
-                                   transition: all 0.2s;">RANDOM</button>
                 </div>
             `;
             
@@ -256,7 +249,6 @@ class HighScoreSystem {
             
             // Add button hover effects
             const submitButton = document.getElementById('submit-username');
-            const randomButton = document.getElementById('use-suggested');
             
             submitButton.addEventListener('mouseover', () => {
                 submitButton.style.backgroundColor = 'rgba(132, 255, 239, 0.2)';
@@ -268,16 +260,6 @@ class HighScoreSystem {
                 submitButton.style.boxShadow = 'none';
             });
             
-            randomButton.addEventListener('mouseover', () => {
-                randomButton.style.backgroundColor = 'rgba(255, 238, 132, 0.2)';
-                randomButton.style.boxShadow = '0 0 10px rgba(255, 238, 132, 0.7)';
-            });
-            
-            randomButton.addEventListener('mouseout', () => {
-                randomButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-                randomButton.style.boxShadow = 'none';
-            });
-            
             // Handle form submission
             submitButton.addEventListener('click', () => {
                 let username = inputField.value.trim();
@@ -287,14 +269,7 @@ class HighScoreSystem {
                 document.body.removeChild(promptOverlay);
                 resolve(username.substring(0, 20));
             });
-            
-            // Generate a new random username
-            randomButton.addEventListener('click', () => {
-                inputField.value = this.generateUsername();
-                inputField.focus();
-                inputField.select();
-            });
-            
+                        
             // Allow pressing Enter to submit
             inputField.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter') {
