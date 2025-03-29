@@ -60,7 +60,7 @@ class AnimationController {
     
     playAnimation(name, transitionTime = this.defaultTransitionTime) {
         // Allow spin animation to interrupt any other animation
-        if (name === 'spin') {
+        if (name === 'spin' || name === 'spin2') {
             // If we're spinning already, don't restart it
             if (this.isSpinning) {
                 return this.currentAction;
@@ -73,7 +73,7 @@ class AnimationController {
             return null;
         }
         // Block any animation changes if spinning (except finishing spin)
-        else if (this.isSpinning && name !== 'spin') {
+        else if (this.isSpinning && name !== 'spin' || this.isSpinning && name !== 'spin2') {
             console.log(`Blocked animation ${name} - spinning in progress`);
             return null;
         }
@@ -90,13 +90,13 @@ class AnimationController {
         }
         
         // If trying to start a spin animation that's already in progress, ignore
-        if (name === 'spin' && this.isSpinning) {
+        if (name === 'spin' && this.isSpinning || name === 'spin2' && this.isSpinning) {
             console.log('Spin animation already in progress');
             return this.currentAction;
         }
 
         // Stop any existing animations if jumping starts
-        if ((name === 'jump' || name === 'spin') && this.currentAction) {
+        if ((name === 'jump' || name === 'spin' || name === 'spin2') && this.currentAction) {
             this.currentAction.stop();
         }
 
@@ -169,7 +169,7 @@ class AnimationController {
         }
         
         // Handle spin animation (similar to jump but for spin)
-        if (name === 'spin') {
+        if (name === 'spin' || name === 'spin2') {
             this.isSpinning = true;
             nextAction.setLoop(THREE.LoopOnce);
             nextAction.clampWhenFinished = true;
@@ -330,9 +330,13 @@ class AnimationController {
         }
         
         // Only play spin if it's not already spinning
-        if (!this.isSpinning && this.animations['spin']) {
+        if (!this.isSpinning && this.animations['spin'] && this.animations['spin']) {
             console.log("Starting spin animation after jump kill");
-            this.playAnimation('spin');
+            if(Math.random()<0.5) {
+                this.playAnimation('spin');
+            } else {
+                this.playAnimation('spin2');
+            }
         }
     }
     

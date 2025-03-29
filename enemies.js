@@ -288,11 +288,6 @@ class EnemyManager {
             // Kill the enemy
             this.killEnemy(enemy);
         }
-        
-        // If enemies were killed by splash damage, play a special sound if available
-        if (nearbyEnemies.length > 0 && window.playSplashDamageSound) {
-            window.playSplashDamageSound();
-        }
     }
     
     // New method for a smaller death effect specifically for splash damage

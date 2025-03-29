@@ -9,6 +9,7 @@ let animationFiles = {
     'running': 'assets/pandaFBX/running.fbx',
     'walking': 'assets/pandaFBX/walking.fbx',
     'spin': 'assets/pandaFBX/spin.fbx',
+    'spin2': 'assets/pandaFBX/spin2.fbx',
     'dance': 'assets/pandaFBX/dance.fbx',
     'fly': 'assets/pandaFBX/fly.fbx',
     'walkingBackward': 'assets/pandaFBX/walkingBackward.fbx',
