@@ -750,57 +750,101 @@ class SoundSystem {
         if (!this.initialized) return;
         
         try {
-            console.log("Creating hit sound");
+            console.log("Creating Mario-style hit sound");
             
-            // Create buffer for sound
-            const duration = 0.2; // Shorter duration for punchier sound
+            // Create buffer for sound - very short for that Mario "boop" feeling
+            const duration = 0.13; 
             const sampleRate = this.audioContext.sampleRate;
             const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
             const data = buffer.getChannelData(0);
             
-            // Generate a distorted sine wave with quick decay for a retro 'hit' sound
+            // Generate classic 8-bit Mario coin/hit sound with frequency sweep
             for (let i = 0; i < buffer.length; i++) {
-                // Main tone
                 const t = i / sampleRate;
-                // Faster decay for punchier sound
-                const decay = Math.pow(1 - t / duration, 2.5);
-                // Higher frequencies for arcade-like sound
-                const wave1 = Math.sin(2 * Math.PI * 440 * t); // Higher base frequency (was 220)
-                const wave2 = Math.sin(2 * Math.PI * 880 * t) * 0.6; // Higher overtone (was 165)
-                const wave3 = Math.sin(2 * Math.PI * 660 * t) * 0.4; // Mid-high tone (was 330)
-                const wave4 = Math.sin(2 * Math.PI * 1200 * t) * 0.15; // Extra high frequency for brightness
                 
-                // Combine waves with more aggressive distortion
-                data[i] = (wave1 + wave2 + wave3 + wave4) * decay;
+                // Classic Mario sounds often use frequency sweeps (going from low to high quickly)
+                // Start at 700Hz and rise to 1400Hz
+                const freqSweep = 700 + (t * 4000); // Quick upward frequency sweep
                 
-                // Add more distortion for that classic arcade crunch
-                if (data[i] > 0.2) data[i] = 0.2 + (data[i] - 0.2) * 0.7;
-                if (data[i] < -0.2) data[i] = -0.2 + (data[i] + 0.2) * 0.7;
+                // Add harmonics for that 8-bit sound quality
+                const wave1 = Math.sin(2 * Math.PI * freqSweep * t);
+                const wave2 = Math.sin(2 * Math.PI * (freqSweep * 1.5) * t) * 0.5; // Higher harmonic
+                
+                // Envelope with quick attack and medium decay
+                let envelope;
+                if (t < 0.01) {
+                    // Quick attack
+                    envelope = t / 0.01;
+                } else {
+                    // Medium decay
+                    envelope = Math.pow(1 - ((t - 0.01) / (duration - 0.01)), 0.8);
+                }
+                
+                // Combine with minimal distortion - Nintendo sounds are "cleaner" than typical arcade
+                data[i] = (wave1 + wave2) * envelope * 0.8;
+                
+                // Light limiter for cleaner sound (less harsh than arcade)
+                if (data[i] > 0.8) data[i] = 0.8;
+                if (data[i] < -0.8) data[i] = -0.8;
             }
             
             this.hitSoundBuffer = buffer;
-            console.log("Hit sound created successfully");
+            console.log("Mario-style hit sound created successfully");
         } catch (error) {
             console.error("Failed to create hit sound:", error);
         }
     }
     
-    // Play hit sound
+    // Play hit sound - Mario style
     playHitSound() {
         if (!this.initialized || this.muted || !this.hitSoundBuffer) return;
         
         try {
-            console.log("Playing hit sound");
+            console.log("Playing Mario-style hit sound");
             
             const source = this.audioContext.createBufferSource();
             source.buffer = this.hitSoundBuffer;
             
             // Create gain node for volume control
             const gainNode = this.audioContext.createGain();
-            gainNode.gain.value = 0.6;
+            gainNode.gain.value = 0.8; // Bright, clear volume typical of Nintendo sounds
             
-            // Connect nodes
-            source.connect(gainNode);
+            // Add a slight reverb for that characteristic Mario coin echo
+            const convolver = this.audioContext.createConvolver();
+            
+            // Create a very short impulse response for a tiny bit of reverb
+            const reverbLength = 0.1;
+            const reverbBuffer = this.audioContext.createBuffer(
+                2, 
+                reverbLength * this.audioContext.sampleRate, 
+                this.audioContext.sampleRate
+            );
+            
+            // Fill the reverb buffer with a quick decay
+            for (let channel = 0; channel < 2; channel++) {
+                const data = reverbBuffer.getChannelData(channel);
+                for (let i = 0; i < reverbBuffer.length; i++) {
+                    // Exponential decay
+                    data[i] = (Math.random() * 2 - 1) * Math.exp(-10 * i / reverbBuffer.length);
+                }
+            }
+            
+            convolver.buffer = reverbBuffer;
+            
+            // Connect with slight reverb mix
+            const dryGain = this.audioContext.createGain();
+            dryGain.gain.value = 0.8;
+            
+            const wetGain = this.audioContext.createGain();
+            wetGain.gain.value = 0.2; // Subtle reverb
+            
+            // Connect everything
+            source.connect(dryGain);
+            source.connect(convolver);
+            convolver.connect(wetGain);
+            
+            dryGain.connect(gainNode);
+            wetGain.connect(gainNode);
             gainNode.connect(this.masterGain);
             
             // Play sound
