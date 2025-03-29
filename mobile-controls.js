@@ -433,7 +433,9 @@ class MobileControls {
                target.closest('#feedback-button') ||
                target.closest('#hit-point-bar') ||
                target.classList.contains('hit-point-heart') || 
-               target.closest('#level-indicator');
+               target.closest('#level-indicator') ||
+               target.closest('#social-links-container') || // Add this
+               target.classList.contains('link-element');   // Add this
     }
     
     // =============== GAME CONTROL METHODS ===============

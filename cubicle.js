@@ -31,14 +31,15 @@ class Cubicle {
             dx: 2.5,
             dy: 2,
             sprite: null,
-            scale: 1.5
+            scale: 1.0
         };
         
         // Social media links
         this.socialLinks = [
             { name: "Twitter", url: "https://x.com/measure_plan" },
             { name: "Instagram", url: "https://www.instagram.com/stereo.drift/" },
-            { name: "Github", url: "https://github.com/collidingScopes" }
+            { name: "Coffee💚", url: "https://buymeacoffee.com/stereodrift" },
+            { name: "Github", url: "https://github.com/collidingScopes" },
         ];
         
         this.logo = {
@@ -473,14 +474,6 @@ class Cubicle {
         // Create the canvas container
         this.computerScreenContainer = document.createElement('div');
         this.computerScreenContainer.id = 'computer-screen-container';
-        this.computerScreenContainer.style.position = 'fixed';
-        this.computerScreenContainer.style.top = '0';
-        this.computerScreenContainer.style.left = '0';
-        this.computerScreenContainer.style.width = '100%';
-        this.computerScreenContainer.style.height = '100%';
-        this.computerScreenContainer.style.backgroundColor = 'black';
-        this.computerScreenContainer.style.zIndex = '1000';
-        this.computerScreenContainer.style.display = 'none';
 
         // Create the canvas for the animation
         this.canvas = document.createElement('canvas');
@@ -494,21 +487,7 @@ class Cubicle {
 
         // Create a Windows 95/98 style dialog header
         const dialogHeader = document.createElement('div');
-        dialogHeader.style.position = 'fixed';
-        dialogHeader.style.top = '0px';
-        dialogHeader.style.right = '0px';
-        dialogHeader.style.width = '120px';
-        dialogHeader.style.height = '22px';
-        dialogHeader.style.backgroundColor = '#000080'; // Windows 95/98 blue
-        dialogHeader.style.display = 'flex';
-        dialogHeader.style.justifyContent = 'space-between';
-        dialogHeader.style.alignItems = 'center';
-        dialogHeader.style.padding = '20px';
-        dialogHeader.style.zIndex = '2000';
-        dialogHeader.style.borderTop = '1px solid #DFDFDF';
-        dialogHeader.style.borderLeft = '1px solid #DFDFDF';
-        dialogHeader.style.borderRight = '1px solid #000000';
-        dialogHeader.style.borderBottom = '1px solid #000000';
+        dialogHeader.id = 'dialog-header';
         
         // Add "X" text
         const headerText = document.createElement('span');
@@ -522,22 +501,6 @@ class Cubicle {
         const exitButton = document.createElement('button');
         exitButton.id = 'exit-computer-button';
         exitButton.textContent = 'X';
-        exitButton.style.width = '16px';
-        exitButton.style.height = '16px';
-        exitButton.style.display = 'flex';
-        exitButton.style.justifyContent = 'center';
-        exitButton.style.alignItems = 'center';
-        exitButton.style.backgroundColor = '#C0C0C0'; // Windows 95/98 gray
-        exitButton.style.color = 'red';
-        exitButton.style.border = '1px solid #FFFFFF';
-        exitButton.style.borderRight = '1px solid #848484';
-        exitButton.style.borderBottom = '1px solid #848484';
-        exitButton.style.cursor = 'pointer';
-        exitButton.style.fontSize = '16px';
-        exitButton.style.fontFamily = 'Courier New, sans-serif';
-        exitButton.style.fontWeight = 'bold';
-        exitButton.style.padding = '0';
-        exitButton.style.zIndex = '2001';
         
         // Add the click event
         const self = this;
@@ -562,45 +525,15 @@ class Cubicle {
     createSocialMediaLinks() {
         // Create a container for social media links
         const socialLinksContainer = document.createElement('div');
-        socialLinksContainer.style.position = 'fixed';
-        socialLinksContainer.style.top = '0px';
-        socialLinksContainer.style.left = '0';
-        socialLinksContainer.style.width = '100%';
-        socialLinksContainer.style.height = '40px';
-        socialLinksContainer.style.display = 'flex';
-        socialLinksContainer.style.justifyContent = 'left';
-        socialLinksContainer.style.alignItems = 'center';
-        socialLinksContainer.style.zIndex = '1002';
-        socialLinksContainer.style.backgroundColor = 'rgba(62, 98, 206, 0.7)';
-        socialLinksContainer.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.5)';
-        
+        socialLinksContainer.id = "social-links-container";
+
         // Create links
         this.socialLinks.forEach(link => {
             const linkElement = document.createElement('a');
+            linkElement.classList.add('link-element');
             linkElement.href = link.url;
             linkElement.textContent = link.name;
             linkElement.target = '_blank'; // Open in new tab
-            linkElement.style.color = 'white';
-            linkElement.style.textDecoration = 'none';
-            linkElement.style.margin = '0 2px';
-            linkElement.style.padding = '5px 10px';
-            linkElement.style.fontFamily = 'Courier New, sans-serif';
-            linkElement.style.fontSize = '16px';
-            linkElement.style.fontWeight = 'bold';
-            linkElement.style.backgroundColor = '#000080'; // Windows 95/98 blue
-            linkElement.style.border = '2px outset #DFDFDF';
-            linkElement.style.borderRadius = '3px';
-            
-            // Hover effect
-            linkElement.onmouseover = function() {
-                this.style.backgroundColor = '#0055AA';
-                this.style.cursor = 'pointer';
-            };
-            
-            linkElement.onmouseout = function() {
-                this.style.backgroundColor = '#000080';
-            };
-            
             socialLinksContainer.appendChild(linkElement);
         });
         

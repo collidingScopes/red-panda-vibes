@@ -869,3 +869,84 @@ button {
 .socialMediaButton > a {
     text-decoration: none !important;
 }
+
+/* Computer Screen styles */
+#computer-screen-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index: 1000;
+    display: none;
+}
+
+#dialog-header {
+    position: fixed;
+    top: 0px;
+    right: 0px;
+    width: 120px;
+    height: 22px;
+    background-color: #000080;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    z-index: 2000;
+    border-top: 1px solid #DFDFDF;
+    border-left: 1px solid #DFDFDF;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+}
+
+#exit-computer-button {
+    width: 16px;
+    height: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #C0C0C0;
+    color: red;
+    border: 1px solid #FFFFFF;
+    border-right: 1px solid #848484;
+    border-bottom: 1px solid #848484;
+    cursor: pointer;
+    font-size: 16px;
+    font-family: 'Courier New', sans-serif;
+    font-weight: bold;
+    padding: 0;
+    z-index: 2001;
+}
+
+#social-links-container {
+    position: fixed;
+    top: 0px;
+    left: 0;
+    width: 100%;
+    height: 40px;
+    display: flex;
+    gap: 5px;
+    justify-content: left;
+    align-items: center;
+    z-index: 1002;
+    background-color: rgba(62, 98, 206, 0.7);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+}
+
+.link-element {
+    /* position: fixed;
+    top: 0px;
+    left: 0;
+    width: 100%; */
+    height: 40px;
+    padding: 0 10px;
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    z-index: 1002;
+    background-color: rgb(219, 219, 219) !important;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+    font-size: 14px;
+    cursor: pointer;
+}
