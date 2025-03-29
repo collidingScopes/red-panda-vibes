@@ -475,6 +475,13 @@ function resetGame() {
     if (gameState.newspaper) {
         gameState.newspaper.placeRandomly();
     }
+    
+    // Refresh high scores when resetting the game
+    if (window.highScoreSystem) {
+        window.highScoreSystem.fetchHighScores()
+            .then(() => console.log('High scores refreshed for new game'))
+            .catch(error => console.error('Error refreshing high scores:', error));
+    }
 }
 
 // Helper function to dispose of THREE.js objects properly

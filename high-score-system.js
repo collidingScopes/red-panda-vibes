@@ -13,8 +13,8 @@ class HighScoreSystem {
         this.gameOverScreen = document.getElementById('game-over-screen');
         this.playAgainButton = document.getElementById('retry-button');
         
-        // Check if username exists in localStorage
-        this.username = localStorage.getItem('redPandaUsername');
+        // Initialize username based on priority ranking
+        this.initializeUsername();
         
         // Track user's personal best score
         this.personalBest = parseInt(localStorage.getItem('redPandaPersonalBest') || '0');
@@ -24,6 +24,21 @@ class HighScoreSystem {
         
         // Pre-load high scores when the game starts
         this.preloadHighScores();
+    }
+    
+    // Initialize username based on priority ranking
+    initializeUsername() {
+        // 1: Check localStorage first
+        this.username = localStorage.getItem('redPandaUsername');
+        
+        // 2: If not in localStorage, check URL parameters
+        if (!this.username && urlParamsReceived && urlParamsReceived.username) {
+            this.username = window.urlParamsReceived.username;
+            // Save to localStorage for future use
+            localStorage.setItem('redPandaUsername', this.username);
+        }
+        
+        // 3: Username will be generated randomly at game over if still null
     }
     
     // Pre-load high scores when the game initializes
@@ -74,16 +89,8 @@ class HighScoreSystem {
             
             <div class="game-over-buttons">
                 <button id="retry-button">Try Level Again</button>
-                <button id="change-username-btn">Change Username</button>
             </div>
         `;
-
-        // Add event listener for username change
-        this.gameOverScreen.addEventListener('click', (e) => {
-            if (e.target.id === 'change-username-btn') {
-                this.changeUsername();
-            }
-        });
 
         // Add event listener for retry button
         document.getElementById('retry-button').addEventListener('click', () => {
@@ -92,12 +99,9 @@ class HighScoreSystem {
     }
     
     // Show the game over screen with high scores
-    displayGameOver(level, killCount) {
-        // Prompt for username if not already set
-        if (!this.username) {
-            this.username = this.promptForUsername();
-            localStorage.setItem('redPandaUsername', this.username);
-        }
+    displayGameOver(level) {
+        this.username = this.promptForUsername();
+        localStorage.setItem('redPandaUsername', this.username);
         
         // Update the display with current level and score
         document.getElementById('final-level').textContent = `Level ${level}`;
@@ -111,13 +115,18 @@ class HighScoreSystem {
             isCurrentPlayer: true
         };
         
-        // Submit score if it's better than the player's personal best
-        if (level > this.personalBest) {
+        // Check if we need to submit the score
+        const shouldSubmitScore = this.shouldSubmitHighScore(level);
+        
+        if (shouldSubmitScore) {
             this.submitScore(this.username, level);
-            // Update personal best
-            this.personalBest = level;
-            localStorage.setItem('redPandaPersonalBest', this.personalBest.toString());
-            document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
+            
+            // Update personal best if necessary
+            if (level > this.personalBest) {
+                this.personalBest = level;
+                localStorage.setItem('redPandaPersonalBest', this.personalBest.toString());
+                document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
+            }
         }
         
         // If we already have high scores cached, display them immediately with the current score
@@ -143,20 +152,6 @@ class HighScoreSystem {
             
             this.displayHighScores(combinedScores, level);
             this.displayPercentile(level);
-            
-            /*
-            // Then fetch fresh scores in the background to update if needed
-            this.fetchHighScores().then(() => {
-                // After fetching, mark this run's score again
-                for (const score of this.highScores) {
-                    if (score.name === this.username && score.level === level) {
-                        score.isCurrentPlayer = true;
-                    }
-                }
-                this.displayHighScores(null, level);
-                this.displayPercentile(level);
-            });
-            */
         } else {
             // If no cached scores, show loading and fetch them
             document.getElementById('high-scores-body').innerHTML = '<tr><td colspan="3">Loading scores...</td></tr>';
@@ -176,20 +171,53 @@ class HighScoreSystem {
         this.gameOverScreen.classList.remove('hidden');
     }
     
-    // Prompt the user for a username
-    promptForUsername() {
-        let newUsername = '';
+    // Check if the score should be submitted to the high score system
+    shouldSubmitHighScore(level) {
+        // Submit if better than personal best
+        if (level > this.personalBest) {
+            return true;
+        }
         
-        while (!newUsername || newUsername.trim() === '') {
-            newUsername = prompt('Game Over! Enter your username (max 20 chars):');
-            
-            // If user cancels the prompt, generate a random username
-            if (newUsername === null) {
-                newUsername = this.generateUsername();
-                break;
+        // Submit if would rank in top 10
+        if (this.highScores && this.highScores.length > 0) {
+            // If we have fewer than 10 scores, always submit
+            if (this.highScores.length < 10) {
+                return true;
             }
             
-            newUsername = newUsername.trim();
+            // Check if score would make it into top 10
+            const lowestTopScore = this.highScores
+                .sort((a, b) => b.level - a.level)
+                .slice(0, 10)
+                .reduce((min, score) => Math.min(min, score.level), Infinity);
+            
+            return level >= lowestTopScore;
+        }
+        
+        // If no scores loaded yet, submit anyway to be safe
+        return true;
+    }
+    
+    // Prompt the user for a username with pre-filled value
+    promptForUsername() {
+        // Generate a suggested username for the prompt
+        let suggestedUsername = '';
+        
+        // Priority ranking for username: local storage, url param, random
+        if(localStorage.getItem('redPandaUsername')){
+            suggestedUsername = localStorage.getItem('redPandaUsername');
+        } else if (window.urlParamsReceived && window.urlParamsReceived.username) {
+            suggestedUsername = window.urlParamsReceived.username;
+        } else {
+            suggestedUsername = this.generateUsername();
+        }
+        
+        // Show prompt with pre-filled username
+        let newUsername = prompt('Game Over! Enter your username (max 20 chars):', suggestedUsername);
+        
+        // If user cancels the prompt, use the suggested username
+        if (newUsername === null || newUsername.trim() === '') {
+            newUsername = suggestedUsername;
         }
         
         // Limit to 20 characters
@@ -246,23 +274,6 @@ class HighScoreSystem {
                     return dateA - dateB;
                 });
             }
-            
-            /*
-            // Schedule a refresh of high scores after submission (after a delay to allow server processing)
-            setTimeout(() => {
-                this.fetchHighScores().then(scores => {
-                    // When we get the refreshed scores, we need to mark the current player's score again
-                    if (scores && scores.length > 0) {
-                        // Loop through the refreshed scores and mark the current player's score
-                        for (const score of scores) {
-                            if (score.name === username && score.level === numericLevel) {
-                                score.isCurrentPlayer = true;
-                            }
-                        }
-                    }
-                });
-            }, 1000);
-            */
         } catch (error) {
             console.error('Error submitting score:', error);
         }
@@ -370,7 +381,6 @@ class HighScoreSystem {
         // Check if current player is in top 10
         if (currentLevel !== null) {
             currentPlayerInTop10 = topScores.some(score => 
-                //(score.isCurrentPlayer === true) || 
                 (score.name === this.username && score.level === currentLevel)
             );
         }
@@ -447,20 +457,6 @@ class HighScoreSystem {
         const randomNoun = nouns[Math.floor(Math.random() * nouns.length)];
         
         return `${randomAdjective}${randomNoun}${Math.floor(Math.random() * 100)}`;
-    }
-    
-    // Allow player to change username
-    changeUsername() {
-        const newUsername = prompt('Enter your username (max 20 characters):', this.username);
-        
-        if (newUsername && newUsername.trim() !== '') {
-            // Limit to 20 characters
-            this.username = newUsername.trim().substring(0, 20);
-            localStorage.setItem('redPandaUsername', this.username);
-            
-            // Update any displayed usernames
-            this.displayHighScores();
-        }
     }
     
     // Helper method to escape HTML special characters
