@@ -74,7 +74,7 @@ button:hover {
 
 h2, h3 {
     color: #ffee84; /* Neon yellow */
-    text-shadow: 0 0 5px rgba(255, 238, 132, 0.5); /* Yellow glow */
+    /* text-shadow: 0 0 5px rgba(255, 238, 132, 0.5); Yellow glow */
     margin-top: 0;
 }
 
@@ -116,24 +116,23 @@ h2, h3 {
 
 .game-over-content h2 {
     color: #ff4477; /* Darker neon pink */
-    text-shadow: 0 0 5px rgba(255, 68, 119, 0.7); /* Pink glow */
-    font-size: 28px;
+    /* text-shadow: 0 0 5px rgba(255, 68, 119, 0.7); Pink glow */
+    font-size: 32px;
     margin-top: 0;
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
 
 #retry-button {
-    background-color: rgba(10, 10, 30, 0.7);
     color: #84ffef; /* Neon cyan */
+    background-color: rgba(10, 10, 30, 0.7);
     border: 1px solid #84ffef;
     padding: 10px 20px;
-    margin-top: 20px;
     font-size: 16px;
+    border-radius: 3px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
     cursor: pointer;
     font-family: 'Courier New', monospace;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    border-radius: 3px;
     transition: all 0.3s ease;
 }
 
@@ -691,23 +690,16 @@ button {
     }
 }
 
-.game-over-content h2 {
-    font-size: 32px;
-    margin-bottom: 20px;
-    color: #f5af89;
-    text-shadow: 0 0 8px rgba(245, 175, 137, 0.8);
-}
-
 .game-over-stats {
-    margin-bottom: 20px;
+    margin-bottom: 8px;
 }
 
 .stat-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 8px;
+    margin-bottom: 5px;
     font-size: 16px;
-    padding: 5px 0;
+    padding: 3px 0;
 }
 
 #final-level, #final-score {
@@ -716,7 +708,7 @@ button {
 }
 
 .high-score-table {
-    margin: 20px 0;
+    margin: 10px 0;
 }
 
 .high-score-table h3 {
@@ -726,11 +718,11 @@ button {
 }
 
 .table-container {
-    max-height: 250px;
+    max-height: 50vh;
     overflow-y: auto;
     margin-bottom: 10px;
     border-radius: 6px;
-    background-color: rgba(0, 0, 0, 0.5);
+    background-color: rgba(0, 0, 0, 0.8);
 }
 
 #high-scores-table {
@@ -768,34 +760,19 @@ button {
 }
 
 .percentile-message {
-    font-size: 14px;
+    font-size: 15px;
+    font-weight: bold;
     margin: 15px 0;
-    color: #5ef8f8;
-    background-color: rgba(94, 248, 248, 0.1);
+    color: #00ffbb;
+    background-color: rgba(3, 57, 57, 0.7);
     padding: 10px;
     border-radius: 6px;
 }
 
 .game-over-buttons {
-    margin-top: 20px;
-}
-
-.game-over-buttons button {
-    background-color: #f5af89;
-    color: #000;
-    border: none;
-    padding: 10px 15px;
-    margin: 0 5px;
-    border-radius: 6px;
-    font-family: 'Press Start 2P', monospace, system-ui;
-    font-size: 16px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-
-.game-over-buttons button:hover {
-    background-color: #f8d05c;
-    transform: scale(1.05);
+    margin-top: 10px;
+    display: flex;
+    gap: 5px;
 }
 
 .keyboard-hint {

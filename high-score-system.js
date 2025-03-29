@@ -51,7 +51,7 @@ class HighScoreSystem {
             </div>
             
             <div class="high-score-table">
-                <h3>Top 10 High Scores</h3>
+                <h3>Global Top 10</h3>
                 <div class="table-container">
                     <table id="high-scores-table">
                         <thead>
@@ -73,8 +73,8 @@ class HighScoreSystem {
             </div>
             
             <div class="game-over-buttons">
-                <button id="change-username-btn">Change Username</button>
                 <button id="retry-button">Try Level Again</button>
+                <button id="change-username-btn">Change Username</button>
             </div>
         `;
 
@@ -150,7 +150,7 @@ class HighScoreSystem {
         let newUsername = '';
         
         while (!newUsername || newUsername.trim() === '') {
-            newUsername = prompt('Enter your username (max 20 characters):');
+            newUsername = prompt('Game Over! Enter your username (max 20 chars):');
             
             // If user cancels the prompt, generate a random username
             if (newUsername === null) {
@@ -286,7 +286,7 @@ class HighScoreSystem {
         // Check if current player is in top 10
         if (currentLevel !== null) {
             currentPlayerInTop10 = topScores.some(score => 
-                (score.isCurrentPlayer === true) || 
+                //(score.isCurrentPlayer === true) || 
                 (score.name === this.username && score.level === currentLevel)
             );
         }
@@ -333,7 +333,7 @@ class HighScoreSystem {
         if (this.percentileCache && this.percentileCache[level]) {
             // Use cached percentile if available
             const percentile = this.percentileCache[level];
-            percentileMsg.textContent = `Your level of ${level} is better than ${percentile}% of all players`;
+            percentileMsg.textContent = `Your level is better than ${percentile}% of all players`;
         } else {
             // Calculate percentile if not cached
             this.calculatePercentile(level).then(percentile => {
