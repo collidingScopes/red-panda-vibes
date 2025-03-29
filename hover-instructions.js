@@ -6,13 +6,15 @@ document.addEventListener('DOMContentLoaded', function() {
         hoverInstructions.innerHTML = `
         <p>⬆️ Drag to move</p> 
         <p>👆 Tap to jump</p>
-        <p>🎋 Find the bamboo stalk to move to the next level!</p>
+        <p>🎋 Find the bamboo stalk to move to the next level</p>
+        <p>🫧 Avoid bubble monsters, or jump on their heads to smush them!</p>
         `;
     } else {
         hoverInstructions.innerHTML = `
         <p>⌨️ Move with arrow keys (or W/A/S/D)</p> 
         <p>🚀 Jump with spacebar</p>
-        <p>🎋 Find the bamboo stalk to move to the next level!</p>
+        <p>🎋 Find the bamboo stalk to move to the next level</p>
+        <p>🫧 Avoid bubble monsters, or jump on their heads to smush them!</p>
         `;
     }
 

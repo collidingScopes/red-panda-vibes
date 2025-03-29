@@ -165,8 +165,6 @@ class LevelSystem {
     // Show level complete screen
     showLevelComplete() {
 
-        document.getElementById('instructions').classList.add("hidden");
-
         // Update level status
         const statusEl = document.getElementById('level-status');
         if (statusEl) {

@@ -143,11 +143,6 @@ function initEventListeners() {
         gameState.keyStates[event.code] = false;
     });
 
-    // Add event listener for closing the instructions
-    document.getElementById('close-instructions').addEventListener('click', () => {
-        document.getElementById('instructions').style.display = 'none';
-    });
-
     // Handle window resize for all devices
     window.addEventListener('resize', handleViewportResize);
     
