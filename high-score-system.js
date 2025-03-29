@@ -99,35 +99,33 @@ class HighScoreSystem {
     }
     
     // Show the game over screen with high scores
-    displayGameOver(level) {
-        this.username = this.promptForUsername();
-        localStorage.setItem('redPandaUsername', this.username);
+    async displayGameOver(level) {
+        // Get username using the new async method
+        const username = await this.promptForUsername();
+        this.username = username;
+        localStorage.setItem('redPandaUsername', username);
         
         // Update the display with current level and score
-        if(gameState.levelsCompleted>0){
+        if(gameState.levelsCompleted > 0) {
             document.getElementById('final-level').textContent = `Level ${level-1}`;
         } else {
             document.getElementById('final-level').textContent = `n/a`;
         }
         document.getElementById('personal-best').textContent = `Level ${this.personalBest}`;
         
-        // FIXED: Calculate the completed level (current level - 1)
+        // Calculate the completed level (current level - 1)
         // If player is on level 1, they haven't completed any levels yet
         const completedLevel = level > 1 ? level - 1 : 0;
-
+    
         // Create a temporary score object for current player
         const currentPlayerScore = {
             name: this.username,
-            level: completedLevel, // Use completedLevel instead of current level
+            level: completedLevel,
             date: new Date(),
             isCurrentPlayer: true
         };
         
-        // FIXED: Check if we need to submit the score
-        // Only submit if:
-        // 1. They actually completed a level (completedLevel > 0)
-        // 2. It's not a retry attempt where they failed
-        // 3. The score is worthy of submission based on our criteria
+        // Check if we need to submit the score
         const shouldSubmitScore = 
             completedLevel > 0 && 
             gameState.levelsCompleted > 0 && 
@@ -217,10 +215,10 @@ class HighScoreSystem {
     // Prompt the user for a username with pre-filled value
     promptForUsername() {
         resetAllKeyStates();
-        // Generate a suggested username for the prompt
+        
+        // Generate a suggested username using the existing priority logic
         let suggestedUsername = '';
         
-        // Priority ranking for username: local storage, url param, random
         if(localStorage.getItem('redPandaUsername')){
             suggestedUsername = localStorage.getItem('redPandaUsername');
         } else if (window.urlParamsReceived && window.urlParamsReceived.username) {
@@ -229,16 +227,134 @@ class HighScoreSystem {
             suggestedUsername = this.generateUsername();
         }
         
-        // Show prompt with pre-filled username
-        let newUsername = prompt('Game Over! Enter your username (max 20 chars):', suggestedUsername);
-        
-        // If user cancels the prompt, use the suggested username
-        if (newUsername === null || newUsername.trim() === '') {
-            newUsername = suggestedUsername;
-        }
-        
-        // Limit to 20 characters
-        return newUsername.substring(0, 20);
+        // Create a promise that will resolve when the user submits the form
+        return new Promise(resolve => {
+            // Create the custom prompt container
+            const promptOverlay = document.createElement('div');
+            promptOverlay.style.position = 'fixed';
+            promptOverlay.style.top = '50%';
+            promptOverlay.style.left = '50%';
+            promptOverlay.style.transform = 'translate(-50%, -50%)';
+            promptOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0.75)';
+            promptOverlay.style.padding = '25px';
+            promptOverlay.style.border = '3px solid #ffee84'; // Neon yellow
+            promptOverlay.style.borderRadius = '10px';
+            promptOverlay.style.textAlign = 'center';
+            promptOverlay.style.zIndex = '999';
+            promptOverlay.style.boxShadow = '0 0 25px rgba(255, 238, 132, 0.7)'; // Yellow glow
+            promptOverlay.style.backdropFilter = 'blur(5px)';
+            promptOverlay.style.maxWidth = '400px';
+            promptOverlay.style.fontFamily = "'Courier New', monospace";
+            
+            // Create the HTML content
+            promptOverlay.innerHTML = `
+                <h3 style="color: #84ffef; margin-top: 0; font-size: 24px; text-shadow: 0 0 8px #84ffef;">GAME OVER</h3>
+                <p style="color: #ffee84; margin-bottom: 20px;">Enter your username:</p>
+                <input type="text" id="username-input" maxlength="20" value="${suggestedUsername}" 
+                       style="background: rgba(0, 0, 0, 0.5); 
+                              color: #84ffef; 
+                              border: 2px solid #84ffef; 
+                              padding: 8px; 
+                              font-family: 'Courier New', monospace; 
+                              font-size: 16px; 
+                              width: 100%; 
+                              margin-bottom: 15px;
+                              text-align: center;
+                              outline: none;
+                              border-radius: 5px;">
+                <div style="display: flex; justify-content: space-between; gap: 10px;">
+                    <button id="submit-username" 
+                            style="background: rgba(0, 0, 0, 0.5); 
+                                   color: #84ffef; 
+                                   border: 2px solid #84ffef; 
+                                   padding: 8px 16px; 
+                                   font-family: 'Courier New', monospace; 
+                                   cursor: pointer;
+                                   flex: 1;
+                                   border-radius: 5px;
+                                   transition: all 0.2s;">SUBMIT</button>
+                    <button id="use-suggested" 
+                            style="background: rgba(0, 0, 0, 0.5); 
+                                   color: #ffee84; 
+                                   border: 2px solid #ffee84; 
+                                   padding: 8px 16px; 
+                                   font-family: 'Courier New', monospace; 
+                                   cursor: pointer;
+                                   flex: 1;
+                                   border-radius: 5px;
+                                   transition: all 0.2s;">RANDOM</button>
+                </div>
+            `;
+            
+            // Add the prompt to the document
+            document.body.appendChild(promptOverlay);
+            
+            // Focus the input field
+            const inputField = document.getElementById('username-input');
+            inputField.focus();
+            inputField.select();
+            
+            // Add button hover effects
+            const submitButton = document.getElementById('submit-username');
+            const randomButton = document.getElementById('use-suggested');
+            
+            submitButton.addEventListener('mouseover', () => {
+                submitButton.style.backgroundColor = 'rgba(132, 255, 239, 0.2)';
+                submitButton.style.boxShadow = '0 0 10px rgba(132, 255, 239, 0.7)';
+            });
+            
+            submitButton.addEventListener('mouseout', () => {
+                submitButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                submitButton.style.boxShadow = 'none';
+            });
+            
+            randomButton.addEventListener('mouseover', () => {
+                randomButton.style.backgroundColor = 'rgba(255, 238, 132, 0.2)';
+                randomButton.style.boxShadow = '0 0 10px rgba(255, 238, 132, 0.7)';
+            });
+            
+            randomButton.addEventListener('mouseout', () => {
+                randomButton.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
+                randomButton.style.boxShadow = 'none';
+            });
+            
+            // Handle form submission
+            submitButton.addEventListener('click', () => {
+                let username = inputField.value.trim();
+                if(username === '') {
+                    username = suggestedUsername;
+                }
+                document.body.removeChild(promptOverlay);
+                resolve(username.substring(0, 20));
+            });
+            
+            // Generate a new random username
+            randomButton.addEventListener('click', () => {
+                inputField.value = this.generateUsername();
+                inputField.focus();
+                inputField.select();
+            });
+            
+            // Allow pressing Enter to submit
+            inputField.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    let username = inputField.value.trim();
+                    if(username === '') {
+                        username = suggestedUsername;
+                    }
+                    document.body.removeChild(promptOverlay);
+                    resolve(username.substring(0, 20));
+                }
+            });
+            
+            // Prevent keyboard events from propagating to the game
+            inputField.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+            });
+            promptOverlay.addEventListener('keydown', (e) => {
+                e.stopPropagation();
+            });
+        });
     }
     
     // Submit a new score to the Google Sheet
