@@ -349,7 +349,7 @@ class Jetpack {
             
             // Place jetpack x units away from player in a random direction
             const angle = Math.random() * Math.PI * 2;
-            const distance = 30 + Math.random()*30;
+            const distance = 40 + Math.random()*50;
             
             const x = playerPos.x + Math.cos(angle) * distance;
             const z = playerPos.z + Math.sin(angle) * distance;

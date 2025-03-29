@@ -79,7 +79,7 @@ class LevelSystem {
             this.updateTerrainHeight(settings.terrainHeightMultiplier);
 
             // Reposition the flag for this level (further away for higher levels)
-            const distance = 50 + (level * 7); // Increase distance with level
+            const distance = Math.min(200, 50 + (level * 7)); // Increase distance with level
             const angle = Math.random() * Math.PI * 2; // Random angle for variety
             const x = Math.cos(angle) * distance;
             const z = Math.sin(angle) * distance;

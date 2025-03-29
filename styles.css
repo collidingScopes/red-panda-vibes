@@ -108,10 +108,10 @@ h2, h3 {
     border-radius: 5px;
     text-align: center;
     box-shadow: 0 0 25px rgba(255, 68, 119, 0.7); /* Pink glow */
-    max-width: 400px;
+    max-width: min(90%, 500px);
     color: #84ffef; /* Neon cyan */
-    font-family: 'Courier New', monospace;
-    text-transform: uppercase;
+    font-family: Helvetica;
+    /* text-transform: uppercase; */
 }
 
 .game-over-content h2 {

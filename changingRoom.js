@@ -9,7 +9,7 @@ class ChangingRoom {
         this.cooldownTime = 1800; // Cooldown in milliseconds
         this.modelOptions = [
             { name: "Red Panda", path: 'assets/pandaFBX/panda.fbx' }, // Original panda model
-            { name: "Levels", path: 'assets/levelsFBX/levels.fbx' }   // Target model
+            { name: "Leveless", path: 'assets/levelsFBX/levels.fbx' }   // Target model
         ];
         this.currentModelIndex = 0; // Start with Red Panda
         this.loader = null;
@@ -327,7 +327,7 @@ class ChangingRoom {
                 }
                 
                 // Configure the new model based on which one it is
-                if (newModel.name === "Levels") {
+                if (newModel.name === "Leveless") {
                     // Scale adjustment for levels model
                     fbx.scale.set(0.035, 0.035, 0.035);
                     
