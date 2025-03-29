@@ -10,13 +10,6 @@ function setupKeyboardControls() {
 
         console.log("enter key pressed");
 
-        // Instructions screen
-        const instructionsScreen = document.getElementById('instructions');
-        if (instructionsScreen && instructionsScreen.style.display !== 'none') {
-          instructionsScreen.style.display = 'none';
-          //return;
-        }
-
         const startGameButton = document.getElementById('start-game-button');
         if (startGameButton && startGameButton.style.display !== 'none' && !gameState.gameStarted) {
           startGameButton.click();

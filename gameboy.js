@@ -371,7 +371,7 @@ class Gameboy {
                 `;
             } else {
                 instructionsMessage.innerText =
-                `Use W/A/S/D keys to move:
+                `Use arrow (or W/A/S/D) keys to move:
                 Eat food to grow!
                 Don't crash into walls or your own tail!
                 `;

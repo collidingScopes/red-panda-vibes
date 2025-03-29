@@ -41,9 +41,7 @@ class SoundSystem {
     async initialize() {
         if (this.initialized) return;
         
-        try {
-            console.log("Initializing sound system...");
-            
+        try {            
             // Create audio context - works on all modern browsers
             this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
             
@@ -86,10 +84,7 @@ class SoundSystem {
             audio.addEventListener('canplaythrough', () => {
                 track.loaded = true;
                 track.audio = audio;
-                tracksLoaded++;
-                
-                console.log(`Loaded track ${index + 1}: ${track.path}`);
-                
+                tracksLoaded++;                
                 // Check if all tracks are loaded
                 if (tracksLoaded === this.musicTracks.length) {
                     this.musicLoaded = true;
@@ -113,7 +108,6 @@ class SoundSystem {
     // Check if panda is loaded and start music if it is
     checkAndStartBackgroundMusic() {
         if (this.musicLoaded && window.gameState && window.gameState.pandaModelLoaded) {
-            console.log("Panda model is loaded, starting background music");
             this.startBackgroundMusic();
         } else {
             // Check again in a moment
@@ -126,7 +120,6 @@ class SoundSystem {
         if (!this.initialized || !this.musicLoaded || this.musicPlaying || this.muted) return;
         
         try {
-            console.log("Starting background music");
             this.playCurrentTrack();
             this.musicPlaying = true;
         } catch (error) {
@@ -750,8 +743,6 @@ class SoundSystem {
         if (!this.initialized) return;
         
         try {
-            console.log("Creating Mario-style hit sound");
-            
             // Create buffer for sound - very short for that Mario "boop" feeling
             const duration = 0.13; 
             const sampleRate = this.audioContext.sampleRate;
@@ -789,7 +780,6 @@ class SoundSystem {
             }
             
             this.hitSoundBuffer = buffer;
-            console.log("Mario-style hit sound created successfully");
         } catch (error) {
             console.error("Failed to create hit sound:", error);
         }
@@ -799,9 +789,7 @@ class SoundSystem {
     playHitSound() {
         if (!this.initialized || this.muted || !this.hitSoundBuffer) return;
         
-        try {
-            console.log("Playing Mario-style hit sound");
-            
+        try {            
             const source = this.audioContext.createBufferSource();
             source.buffer = this.hitSoundBuffer;
             
@@ -905,8 +893,6 @@ function connectSoundsToGameEvents() {
             }
         }, 500);
     }
-    
-    console.log("Sound system connected to game events");
 }
 
 // Initialize when the document is fully loaded
