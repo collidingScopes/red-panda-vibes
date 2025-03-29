@@ -561,16 +561,21 @@ class EnemyManager {
         enemy.lookAt(targetPosition);
     }
 
-    // Check if any enemy has caught the player
     checkPlayerCaught() {
         // Skip enemy collision check if we're on level 1 (no enemies) OR if the player is invisible
-        if (gameState.levelSystem && gameState.currentLevel === 1 || this.playerIsInvisible) return;
+        if ((gameState.levelSystem && gameState.currentLevel === 1) || this.playerIsInvisible) return;
         
         for (const enemy of this.enemies) {
             const distanceToPlayer = enemy.position.distanceTo(this.player.position);
             
             if (distanceToPlayer < this.KILL_DISTANCE) {
-                this.triggerGameOver();
+                // If hit points system exists, decrease hit points instead of immediate game over
+                if (gameState.hitPointsSystem) {
+                    gameState.hitPointsSystem.decreaseHitPoints();
+                } else {
+                    // Fall back to original behavior if hit points system is not initialized
+                    this.triggerGameOver();
+                }
                 break;
             }
         }

@@ -478,6 +478,11 @@ function resetGame() {
     if (gameState.newspaper) {
         gameState.newspaper.placeRandomly();
     }
+
+    // Reset hit points system
+    if (gameState.hitPointsSystem) {
+        gameState.hitPointsSystem.reset();
+    }
     
     // Refresh high scores using the instance
     if (gameState.highScoreSystem) {
@@ -597,6 +602,11 @@ function animate(currentTime) {
     if (gameState.newspaper && !gameState.goalReached) {
         gameState.newspaper.update(deltaTime);
     }
+
+    // Update hit points system
+    if (gameState.hitPointsSystem && !gameState.gamePaused) {
+        gameState.hitPointsSystem.update(deltaTime);
+    }
     
     renderer.render(scene, camera);
 }
@@ -674,6 +684,11 @@ function init() {
 
     gameState.highScoreSystem = new HighScoreSystem();
     console.log("HighScoreSystem initialized");
+
+    // Initialize hit points system
+    gameState.hitPointsSystem = new HitPointsSystem();
+    gameState.hitPointsSystem.addStyles();
+    console.log("Hit points system initialized");
 }
 
 function handleViewportResize() {

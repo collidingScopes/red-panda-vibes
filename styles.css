@@ -511,7 +511,7 @@ button {
 .portal-info {
     position: fixed;
     bottom: 10px;
-    left: 50%;
+    left: 75%;
     transform: translate(-50%, -50%);
     background-color: rgba(0, 0, 0, 0.7);
     color: #84ffef;

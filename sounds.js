@@ -9,7 +9,8 @@ class SoundSystem {
         this.muted = false;
         this.audioContext = null;
         this.masterGain = null;
-        
+        this.hitSoundBuffer = null;
+
         // Sound effect properties
         this.lastJumpTime = 0;
         this.lastFootstepTime = 0;
@@ -57,6 +58,7 @@ class SoundSystem {
             this.musicGain.connect(this.masterGain);
             
             this.initialized = true;
+            this.createHitSound();
             console.log("Sound system initialized successfully");
             
             // Start loading background music
@@ -742,6 +744,71 @@ class SoundSystem {
             return null;
         }
     }
+
+    // Create hit sound
+    createHitSound() {
+        if (!this.initialized) return;
+        
+        try {
+            console.log("Creating hit sound");
+            
+            // Create buffer for sound
+            const duration = 0.2; // Shorter duration for punchier sound
+            const sampleRate = this.audioContext.sampleRate;
+            const buffer = this.audioContext.createBuffer(1, duration * sampleRate, sampleRate);
+            const data = buffer.getChannelData(0);
+            
+            // Generate a distorted sine wave with quick decay for a retro 'hit' sound
+            for (let i = 0; i < buffer.length; i++) {
+                // Main tone
+                const t = i / sampleRate;
+                // Faster decay for punchier sound
+                const decay = Math.pow(1 - t / duration, 2.5);
+                // Higher frequencies for arcade-like sound
+                const wave1 = Math.sin(2 * Math.PI * 440 * t); // Higher base frequency (was 220)
+                const wave2 = Math.sin(2 * Math.PI * 880 * t) * 0.6; // Higher overtone (was 165)
+                const wave3 = Math.sin(2 * Math.PI * 660 * t) * 0.4; // Mid-high tone (was 330)
+                const wave4 = Math.sin(2 * Math.PI * 1200 * t) * 0.15; // Extra high frequency for brightness
+                
+                // Combine waves with more aggressive distortion
+                data[i] = (wave1 + wave2 + wave3 + wave4) * decay;
+                
+                // Add more distortion for that classic arcade crunch
+                if (data[i] > 0.2) data[i] = 0.2 + (data[i] - 0.2) * 0.7;
+                if (data[i] < -0.2) data[i] = -0.2 + (data[i] + 0.2) * 0.7;
+            }
+            
+            this.hitSoundBuffer = buffer;
+            console.log("Hit sound created successfully");
+        } catch (error) {
+            console.error("Failed to create hit sound:", error);
+        }
+    }
+    
+    // Play hit sound
+    playHitSound() {
+        if (!this.initialized || this.muted || !this.hitSoundBuffer) return;
+        
+        try {
+            console.log("Playing hit sound");
+            
+            const source = this.audioContext.createBufferSource();
+            source.buffer = this.hitSoundBuffer;
+            
+            // Create gain node for volume control
+            const gainNode = this.audioContext.createGain();
+            gainNode.gain.value = 0.6;
+            
+            // Connect nodes
+            source.connect(gainNode);
+            gainNode.connect(this.masterGain);
+            
+            // Play sound
+            source.start();
+        } catch (error) {
+            console.error("Failed to play hit sound:", error);
+        }
+    }
 }
 
 // Initialize sound system when the document is ready
@@ -851,4 +918,8 @@ window.playJetpackPickupSound = function() {
 
 window.playJetpackEmptySound = function() {
     if (soundSystem) soundSystem.playJetpackEmptySound();
+};
+
+window.playHitSound = function() {
+    if (soundSystem) soundSystem.playHitSound();
 };
