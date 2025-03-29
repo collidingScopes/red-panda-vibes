@@ -174,8 +174,7 @@ class EnemyManager {
             counterElement.textContent = `Monsters smushed: ${this.killCount}`;
         }
     }
-    
-    // Add this method to the EnemyManager class
+
     killEnemy(enemy) {
         // Increment kill counter
         this.killCount++;
@@ -201,6 +200,163 @@ class EnemyManager {
         // Play crush sound
         if (window.playEnemyCrushSound) {
             window.playEnemyCrushSound();
+        }
+    }
+    
+    // Modified checkJumpKill method to add splash damage
+    checkJumpKill() {
+        // Skip if we're on level 1 (no enemies) or game is over
+        if ((gameState.levelSystem && gameState.currentLevel === 1) || this.gameOver) {
+            return;
+        }
+        
+        // Only check when player is falling (velocity.y < 0)
+        if (gameState.playerVelocity.y >= 0) {
+            return;
+        }
+        
+        const playerPos = this.player.position.clone();
+        const playerBottom = playerPos.y - 0.5; // Approximate bottom of player
+        
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const enemyPos = enemy.position.clone();
+            const enemyTop = enemyPos.y + 1.0; // Approximate top of enemy
+            
+            // Calculate horizontal distance to enemy
+            enemyPos.y = 0;
+            playerPos.y = 0;
+            const horizontalDistance = enemyPos.distanceTo(playerPos);
+            
+            // If player is directly above enemy (within jump kill radius) and close to top of enemy
+            if (horizontalDistance < 1.4 && 
+                Math.abs(playerBottom - enemyTop) < 0.5) {
+                
+                // Kill the primary enemy
+                this.killEnemy(enemy);
+                
+                // Apply splash damage - kill all nearby enemies within [x] distance units
+                this.applySplashDamage(enemy.position.clone(), 1.5);
+                
+                // Make player bounce
+                gameState.playerVelocity.y = 11.0; // Bounce up velocity
+                
+                // Play spin animation after jump kill if animation controller exists
+                if (gameState.animationController) {
+                    gameState.animationController.playSpinAnimation();
+                }
+                
+                // Only kill one primary enemy per frame (splash kills are additional)
+                break;
+            }
+        }
+    }
+    
+    // New method to apply splash damage to nearby enemies
+    applySplashDamage(position, radius) {
+        // Store the original y value
+        const originalY = position.y;
+        
+        // Get a list of nearby enemies to kill
+        const nearbyEnemies = [];
+        
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+            const enemy = this.enemies[i];
+            const enemyPos = enemy.position.clone();
+            
+            // Set both positions to the same y-level for accurate horizontal distance calculation
+            position.y = 0;
+            enemyPos.y = 0;
+            
+            // Calculate horizontal distance between the killed enemy and this enemy
+            const distance = position.distanceTo(enemyPos);
+            
+            // If enemy is within splash radius, mark it for death
+            if (distance > 0 && distance <= radius) {
+                nearbyEnemies.push(enemy);
+            }
+        }
+        
+        // Restore the original y value
+        position.y = originalY;
+        
+        // Now kill all the nearby enemies
+        for (const enemy of nearbyEnemies) {
+            // Create a special smaller death effect for splash damage kills
+            this.createSplashDeathEffect(enemy.position.clone());
+            
+            // Kill the enemy
+            this.killEnemy(enemy);
+        }
+        
+        // If enemies were killed by splash damage, play a special sound if available
+        if (nearbyEnemies.length > 0 && window.playSplashDamageSound) {
+            window.playSplashDamageSound();
+        }
+    }
+    
+    // New method for a smaller death effect specifically for splash damage
+    createSplashDeathEffect(position) {
+        // Create a smaller, faster particle effect for splash kills
+        const ringCount = 4;
+        // Use a different color for splash kills to distinguish them
+        const ringColor = 0xffcc00; // Golden color for splash kills
+            
+        for (let i = 0; i < ringCount; i++) {
+            // Create ring geometry - smaller than the main death effect
+            const geometry = new THREE.RingGeometry(5.1, 5.2, 12);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: ringColor,
+                transparent: true,
+                opacity: 0.7,
+                side: THREE.DoubleSide
+            });
+            
+            const ring = new THREE.Mesh(geometry, material);
+            
+            // Position slightly above the enemy
+            const elevatedPosition = position.clone();
+            elevatedPosition.y += 1.5;
+            ring.position.copy(elevatedPosition);            
+            
+            // Rotate ring to be horizontal
+            ring.rotation.x = Math.PI / 2;
+            
+            this.scene.add(ring);
+            
+            // Animate the ring - faster than the main death effect
+            const delay = i * 80; // Faster stagger
+            const duration = 800; // Shorter duration
+            const startTime = performance.now() + delay;
+            
+            const animate = (time) => {
+                const elapsed = time - startTime;
+                
+                if (elapsed < 0) {
+                    requestAnimationFrame(animate);
+                    return;
+                }
+                
+                if (elapsed > duration) {
+                    this.scene.remove(ring);
+                    geometry.dispose();
+                    material.dispose();
+                    return;
+                }
+                
+                const progress = elapsed / duration;
+                
+                // Scale the ring - smaller maximum size
+                const scale = 0.5 + progress * 10;
+                ring.scale.set(scale, scale, scale);
+                
+                // Fade out
+                material.opacity = 0.7 * (1 - progress);
+                
+                requestAnimationFrame(animate);
+            };
+            
+            requestAnimationFrame(animate);
         }
     }
 
@@ -267,51 +423,6 @@ class EnemyManager {
             };
             
             requestAnimationFrame(animate);
-        }
-    }
-
-    checkJumpKill() {
-        // Skip if we're on level 1 (no enemies) or game is over
-        if ((gameState.levelSystem && gameState.currentLevel === 1) || this.gameOver) {
-            return;
-        }
-        
-        // Only check when player is falling (velocity.y < 0)
-        if (gameState.playerVelocity.y >= 0) {
-            return;
-        }
-        
-        const playerPos = this.player.position.clone();
-        const playerBottom = playerPos.y - 0.5; // Approximate bottom of player
-        
-        for (let i = this.enemies.length - 1; i >= 0; i--) {
-            const enemy = this.enemies[i];
-            const enemyPos = enemy.position.clone();
-            const enemyTop = enemyPos.y + 1.0; // Approximate top of enemy
-            
-            // Calculate horizontal distance to enemy
-            enemyPos.y = 0;
-            playerPos.y = 0;
-            const horizontalDistance = enemyPos.distanceTo(playerPos);
-            
-            // If player is directly above enemy (within jump kill radius) and close to top of enemy
-            if (horizontalDistance < 1.4 && 
-                Math.abs(playerBottom - enemyTop) < 0.5) {
-                
-                // Kill the enemy
-                this.killEnemy(enemy);
-                
-                // Make player bounce
-                gameState.playerVelocity.y = 11.0; // Bounce up velocity
-                
-                // Play spin animation after jump kill if animation controller exists
-                if (gameState.animationController) {
-                    gameState.animationController.playSpinAnimation();
-                }
-                
-                // Only kill one enemy per frame
-                break;
-            }
         }
     }
 
