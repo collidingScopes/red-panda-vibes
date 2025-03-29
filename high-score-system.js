@@ -122,20 +122,51 @@ class HighScoreSystem {
         
         // If we already have high scores cached, display them immediately with the current score
         if (this.highScores && this.highScores.length > 0) {
+            // Mark this run's score in the cached scores if it exists
+            for (const score of this.highScores) {
+                if (score.name === this.username && score.level === level) {
+                    score.isCurrentPlayer = true;
+                }
+            }
+            
             // Create a combined array with the current player's score
-            const combinedScores = [...this.highScores, currentPlayerScore];
+            const combinedScores = [...this.highScores];
+            
+            // Only add the current score if it's not already in the high scores
+            const scoreExists = combinedScores.some(s => 
+                s.name === this.username && s.level === level
+            );
+            
+            if (!scoreExists) {
+                combinedScores.push(currentPlayerScore);
+            }
+            
             this.displayHighScores(combinedScores, level);
             this.displayPercentile(level);
             
+            /*
             // Then fetch fresh scores in the background to update if needed
             this.fetchHighScores().then(() => {
+                // After fetching, mark this run's score again
+                for (const score of this.highScores) {
+                    if (score.name === this.username && score.level === level) {
+                        score.isCurrentPlayer = true;
+                    }
+                }
                 this.displayHighScores(null, level);
                 this.displayPercentile(level);
             });
+            */
         } else {
             // If no cached scores, show loading and fetch them
             document.getElementById('high-scores-body').innerHTML = '<tr><td colspan="3">Loading scores...</td></tr>';
             this.fetchHighScores().then(() => {
+                // After fetching, mark this run's score
+                for (const score of this.highScores) {
+                    if (score.name === this.username && score.level === level) {
+                        score.isCurrentPlayer = true;
+                    }
+                }
                 this.displayHighScores(null, level);
                 this.displayPercentile(level);
             });
@@ -202,14 +233,36 @@ class HighScoreSystem {
                 
                 // Add the new score to the existing scores
                 this.highScores.push(newScore);
+                
+                // Sort the high scores immediately so it appears in the right place
+                this.highScores.sort((a, b) => {
+                    // First sort by level (descending)
+                    if (b.level !== a.level) {
+                        return b.level - a.level;
+                    }
+                    // If date is a string, convert to Date
+                    const dateA = typeof a.date === 'string' ? new Date(a.date) : a.date;
+                    const dateB = typeof b.date === 'string' ? new Date(b.date) : b.date;
+                    return dateA - dateB;
+                });
             }
             
+            /*
             // Schedule a refresh of high scores after submission (after a delay to allow server processing)
             setTimeout(() => {
-                this.highScores = null; // Clear cache to force a fresh fetch
-                this.fetchHighScores();
+                this.fetchHighScores().then(scores => {
+                    // When we get the refreshed scores, we need to mark the current player's score again
+                    if (scores && scores.length > 0) {
+                        // Loop through the refreshed scores and mark the current player's score
+                        for (const score of scores) {
+                            if (score.name === username && score.level === numericLevel) {
+                                score.isCurrentPlayer = true;
+                            }
+                        }
+                    }
+                });
             }, 1000);
-            
+            */
         } catch (error) {
             console.error('Error submitting score:', error);
         }
@@ -235,6 +288,19 @@ class HighScoreSystem {
             const data = await response.json();
             console.log('Fetched scores data:', data);
             
+            // Store any current player flags before refreshing
+            const currentPlayerScores = [];
+            if (this.highScores) {
+                for (const score of this.highScores) {
+                    if (score.isCurrentPlayer) {
+                        currentPlayerScores.push({
+                            name: score.name,
+                            level: score.level
+                        });
+                    }
+                }
+            }
+            
             // Transform data to match the expected format
             this.highScores = data.scores.map(row => ({
                 name: row[0],
@@ -242,6 +308,24 @@ class HighScoreSystem {
                 date: row[2],
                 isCurrentPlayer: false
             }));
+            
+            // Restore current player flags
+            for (const playerScore of currentPlayerScores) {
+                for (const score of this.highScores) {
+                    if (score.name === playerScore.name && score.level === playerScore.level) {
+                        score.isCurrentPlayer = true;
+                    }
+                }
+            }
+            
+            // Also mark scores that match the current username and personal best
+            if (this.username) {
+                for (const score of this.highScores) {
+                    if (score.name === this.username && score.level === this.personalBest) {
+                        score.isCurrentPlayer = true;
+                    }
+                }
+            }
             
             this.isLoadingScores = false;
             return this.highScores;
