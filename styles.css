@@ -103,12 +103,13 @@ h2, h3 {
     backdrop-filter: blur(5px);
 
     background-color: rgba(10, 10, 30, 0.7);
-    padding: 30px;
+    padding: 5px 15px;
     border: 2px solid #ff4477; /* Darker neon pink */
     border-radius: 5px;
     text-align: center;
     box-shadow: 0 0 25px rgba(255, 68, 119, 0.7); /* Pink glow */
-    max-width: min(90%, 500px);
+    max-width: min(90%, 600px);
+    max-height: min(90%, 800px);
     color: #84ffef; /* Neon cyan */
     font-family: Helvetica;
     /* text-transform: uppercase; */
@@ -117,7 +118,7 @@ h2, h3 {
 .game-over-content h2 {
     color: #ff4477; /* Darker neon pink */
     /* text-shadow: 0 0 5px rgba(255, 68, 119, 0.7); Pink glow */
-    font-size: 32px;
+    font-size: 28px;
     margin-top: 0;
     margin-bottom: 5px;
 }
@@ -712,13 +713,13 @@ button {
 }
 
 .high-score-table h3 {
-    font-size: 18px;
-    margin-bottom: 10px;
+    font-size: 16px;
+    margin-bottom: 6px;
     color: #f8d05c;
 }
 
 .table-container {
-    max-height: 50vh;
+    max-height: min(600px, 45vh);
     overflow-y: auto;
     margin-bottom: 10px;
     border-radius: 6px;
@@ -762,7 +763,7 @@ button {
 .percentile-message {
     font-size: 15px;
     font-weight: bold;
-    margin: 15px 0;
+    margin: 8px 0;
     color: #00ffbb;
     background-color: rgba(3, 57, 57, 0.7);
     padding: 10px;
@@ -789,7 +790,7 @@ button {
     }
     
     .game-over-content h2 {
-        font-size: 24px;
+        font-size: 20px;
     }
     
     .stat-row {
