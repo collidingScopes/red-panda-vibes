@@ -954,7 +954,8 @@ button {
 /* HN Newspaper */
 
 #HN-exit-button {
-    padding: 8px 20px; /* Default for non-mobile */
+    padding: 10px;
+    margin: 0 !important;
     background-color: transparent;
     color: #a2ff84;
     border: 2px solid #a2ff84;
@@ -968,6 +969,7 @@ button {
     top: 0px;
     right: 0px;
     animation: pulse 2.5s infinite;
+    max-width: 35%;
 }
 
 @keyframes pulse {
@@ -1000,12 +1002,15 @@ button {
     font-weight: bold;
     letter-spacing: 1px;
     text-align: left;
+    padding: 10px
+    /* max-width: 55%; */
 }
 
 #HN-status-panel {
     background-color: rgba(0,0,0,0.7);
-    border: 2px solid #FF6600;
-    padding: 10px;
+    border: 2px solid #ffe8d0;
+    color: #ffe8d0;
+    padding: 5px;
     width: auto;
 }
 
@@ -1016,10 +1021,19 @@ button {
 }
 
 #HN-content {
-    padding: 0 20px;
+    padding: 0 10px;
     max-height: calc(100% - 200px);
     overflow-y: auto;
     position: relative;
     scrollbar-width: thin;
     scrollbar-color: #FF6600 #000;
+}
+
+@media (max-width: 600px) {
+    #HN-exit-button, #HN-title {
+        font-size: 14px;
+    }
+    #HN-status {
+        font-size: 12px;
+    }
 }
