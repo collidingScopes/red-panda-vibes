@@ -57,11 +57,24 @@ let fps = 0;
 const fpsCounter = document.getElementById('fps-counter');
 
 // Camera setup
+// Camera setup
 const camera = new THREE.PerspectiveCamera(85, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.set(0, 5, 10);
-const cameraOffset = new THREE.Vector3(0, 6, -10); // Will be dynamically changed
+
+// Create re-usable camera offset vectors
+// We'll add a new property to gameState to track the current offset
 const normalCameraOffset = new THREE.Vector3(0, 6, -10); // Normal offset
 const backwardCameraOffset = new THREE.Vector3(0, 7, -15); // Increased distance when moving backward
+// We'll create a portraitCameraOffset dynamically when needed
+
+// Create a current cameraOffset that can be modified based on conditions
+const cameraOffset = normalCameraOffset.clone();
+
+// Add references to gameState
+gameState.normalCameraOffset = normalCameraOffset;
+gameState.backwardCameraOffset = backwardCameraOffset;
+gameState.cameraOffset = cameraOffset;
+
 const cameraTransitionSpeed = 3.0; // Speed of transition between normal and backward camera
 const cameraLerpSpeed = 1.5; // Speed of camera interpolation (adjust for smoothness)
 
@@ -166,13 +179,19 @@ function updateCamera(deltaTime) {
     // Use different camera offset based on movement direction
     if (gameState.isMovingBackward) {
         // Smoothly transition to backward camera position
-        cameraOffset.lerp(backwardCameraOffset, cameraTransitionSpeed * deltaTime);
+        gameState.cameraOffset.lerp(gameState.backwardCameraOffset, cameraTransitionSpeed * deltaTime);
     } else {
-        // Smoothly transition back to normal camera position
-        cameraOffset.lerp(normalCameraOffset, cameraTransitionSpeed * deltaTime);
+        // Determine which camera offset to use based on device orientation
+        // Portrait mode on mobile uses portraitCameraOffset, otherwise use normalCameraOffset
+        const targetOffset = (isMobile && window.innerWidth / window.innerHeight < 1 && gameState.portraitCameraOffset) 
+            ? gameState.portraitCameraOffset 
+            : gameState.normalCameraOffset;
+            
+        // Smoothly transition back to the appropriate camera position
+        gameState.cameraOffset.lerp(targetOffset, cameraTransitionSpeed * deltaTime);
     }
 
-    const targetOffset = cameraOffset.clone()
+    const targetOffset = gameState.cameraOffset.clone()
         .applyAxisAngle(new THREE.Vector3(0, 1, 0), player.rotation.y);
     const targetPosition = player.position.clone().add(targetOffset);
 
@@ -865,7 +884,3 @@ init();
 window.camera = camera;
 window.player = player;
 window.regenerateTerrain = regenerateTerrain;
-
-// Expose camera angles to global scope for mobile camera flip button
-window.cameraAngleHorizontal = cameraAngleHorizontal;
-window.cameraAngleVertical = cameraAngleVertical;

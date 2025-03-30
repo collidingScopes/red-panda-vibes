@@ -132,23 +132,37 @@ class MobileControls {
         // Get current viewport dimensions and aspect ratio
         const currentAspect = window.innerWidth / window.innerHeight;
         const isPortrait = currentAspect < 1;
-        const baseDistance = 8.0;  // Original camera distance
         
-        // Calculate new camera distance: 
-        let aspectFactor;
-        
-        if (isPortrait) {
-            aspectFactor = 1.6;
-            this.log(`Portrait mode detected - setting camera factor: ${aspectFactor}`);
-        } else {
-            // Normal landscape - use base distance
-            aspectFactor = 1.0;
+        // Adjust camera offsets based on orientation
+        if (window.gameState) {
+            if (isPortrait) {
+                // Apply increased distance for portrait mode
+                if (window.gameState.portraitCameraOffset) {
+                    // Use existing portrait camera offset if defined
+                    window.gameState.cameraOffset.copy(window.gameState.portraitCameraOffset);
+                } else {
+                    // Create portrait camera offset if not already defined
+                    // Clone the normal offset with increased distance
+                    window.gameState.portraitCameraOffset = window.gameState.normalCameraOffset.clone();
+                    window.gameState.portraitCameraOffset.z *= 1.7; // 70% more distance
+                    window.gameState.portraitCameraOffset.y *= 1.2; // Slightly higher position
+                    
+                    // Apply the portrait offset immediately
+                    window.gameState.cameraOffset.copy(window.gameState.portraitCameraOffset);
+                }
+                this.log(`Portrait mode detected - adjusted camera offset: ${JSON.stringify({
+                    x: window.gameState.cameraOffset.x,
+                    y: window.gameState.cameraOffset.y,
+                    z: window.gameState.cameraOffset.z
+                })}`);
+            } else {
+                // Reset to normal camera offset for landscape
+                if (window.gameState.normalCameraOffset) {
+                    window.gameState.cameraOffset.copy(window.gameState.normalCameraOffset);
+                    this.log("Reset to normal camera offset for landscape");
+                }
+            }
         }
-        
-        // Set the new camera distance
-        window.cameraDistance = baseDistance * aspectFactor;
-        
-        this.log(`Adjusted camera distance to ${window.cameraDistance} (aspect: ${currentAspect}, portrait: ${isPortrait})`);
         
         // Maintain pixel ratio setting
         if (window.pixelRatio) {
