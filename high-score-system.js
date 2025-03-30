@@ -235,7 +235,7 @@ class HighScoreSystem {
                                    max-width: 125px;
                                    flex: 1;
                                    border-radius: 5px;
-                                   transition: all 0.2s;">SUBMIT</button>
+                                   transition: all 0.2s;">High Scores 🏆</button>
                 </div>
             `;
             
