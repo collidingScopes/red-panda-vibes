@@ -583,7 +583,9 @@ class MobileControls {
     }
 }
 
+/*
 // Initialize mobile controls when the DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     window.mobileControls = new MobileControls();
 });
+*/

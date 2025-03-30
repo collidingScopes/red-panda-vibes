@@ -635,10 +635,10 @@ function init() {
     // Make player and other key objects accessible to mobile controls
     window.player = player;
 
-    // Create direct references to gameState for mobile control access
-    if (window.mobileControls) {
-        console.log("Mobile controls found - ensuring proper integration");
-    }
+    setTimeout(() => {
+        console.log("init mobile controls from game.js");
+        window.mobileControls = new MobileControls();
+    }, 4000);
 
     gameState.sunset = createSunsetEnvironment(scene);
 

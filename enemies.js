@@ -10,8 +10,8 @@ class EnemyManager {
         // Enemy settings
         this.COUNT = 15; // Number of enemies in the world
         this.DETECTION_RADIUS = 25; // How far enemies can see the player
-        this.SPEED_WANDER = gameState.speed*0.55; // Speed when wandering randomly
-        this.SPEED_CHASE = gameState.speed*0.7; // Speed when chasing the player
+        this.SPEED_WANDER = gameState.speed*0.52; // Speed when wandering randomly
+        this.SPEED_CHASE = gameState.speed*0.67; // Speed when chasing the player
         this.KILL_DISTANCE = 1.4; // How close an enemy needs to be to catch the player
         
         // Add kill counter property

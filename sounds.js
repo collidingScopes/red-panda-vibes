@@ -29,6 +29,7 @@ class SoundSystem {
         this.musicLoaded = false;
         this.musicPlaying = false;
         this.musicGain = null;
+        this.firstTrackLoaded = false;
         
         // Create UI controls
         this.createSoundUI();
@@ -65,62 +66,94 @@ class SoundSystem {
         }
     }
     
-    // Preload background music tracks
+    // Preload background music tracks with a delay between each
     preloadBackgroundMusic() {
         if (!this.initialized) return;
         
         console.log("Preloading background music...");
         
-        // Track loading progress
-        let tracksLoaded = 0;
-        
-        // Load each track
-        this.musicTracks.forEach((track, index) => {
-            // Create an Audio element for this track
-            const audio = new Audio();
-            
-            // Set up event listeners
-            audio.addEventListener('canplaythrough', () => {
-                track.loaded = true;
-                track.audio = audio;
-                tracksLoaded++;                
-                // Check if all tracks are loaded
-                if (tracksLoaded === this.musicTracks.length) {
-                    this.musicLoaded = true;
-                    console.log("All background music tracks loaded successfully");
-                    
-                    // Start playing music after all tracks are loaded, but only if panda is loaded too
-                    this.checkAndStartBackgroundMusic();
-                }
-            });
-            
-            audio.addEventListener('error', (e) => {
-                console.error(`Error loading track ${index + 1}: ${track.path}`, e);
-            });
-            
-            // Start loading
-            audio.src = track.path;
-            audio.load();
-        });
+        // Load tracks sequentially with a delay
+        this.loadTrackWithDelay(0);
     }
     
-    // Check if panda is loaded and start music if it is
+    // Load tracks sequentially with a delay
+    loadTrackWithDelay(index) {
+        if (index >= this.musicTracks.length) {
+            console.log("All tracks queued for loading");
+            return;
+        }
+        
+        const track = this.musicTracks[index];
+        console.log(`Started loading track ${index + 1}: ${track.path}`);
+        
+        // Create an Audio element for this track
+        const audio = new Audio();
+        
+        // Set up event listeners
+        audio.addEventListener('canplaythrough', () => {
+            track.loaded = true;
+            track.audio = audio;
+            console.log(`Track ${index + 1} loaded successfully`);
+            
+            // Mark first track as loaded
+            if (index === 0) {
+                this.firstTrackLoaded = true;
+                // Check if we should start playing
+                this.checkAndStartBackgroundMusic();
+            }
+            
+            // Check if all tracks are loaded
+            const allTracksLoaded = this.musicTracks.every(t => t.loaded);
+            if (allTracksLoaded) {
+                this.musicLoaded = true;
+                console.log("All background music tracks loaded successfully");
+            }
+        });
+        
+        audio.addEventListener('error', (e) => {
+            console.error(`Error loading track ${index + 1}: ${track.path}`, e);
+            
+            // Continue loading next tracks even if one fails
+            setTimeout(() => {
+                this.loadTrackWithDelay(index + 1);
+            }, 3000); // 3 second delay before loading next track
+        });
+        
+        // Start loading
+        audio.src = track.path;
+        audio.load();
+        
+        // Queue the next track with delay
+        setTimeout(() => {
+            this.loadTrackWithDelay(index + 1);
+        }, 3000); // 3 second delay before loading next track
+    }
+    
+    // Check if panda is loaded and start music if first track is loaded
     checkAndStartBackgroundMusic() {
-        if (this.musicLoaded && window.gameState && window.gameState.pandaModelLoaded) {
+        if (this.firstTrackLoaded && window.gameState && window.gameState.pandaModelLoaded) {
             this.startBackgroundMusic();
-        } else {
-            // Check again in a moment
+        } else if (this.firstTrackLoaded) {
+            // If panda isn't loaded yet, check again in a moment
             setTimeout(() => this.checkAndStartBackgroundMusic(), 500);
         }
     }
     
     // Start playing background music
     startBackgroundMusic() {
-        if (!this.initialized || !this.musicLoaded || this.musicPlaying || this.muted) return;
+        if (!this.initialized || this.musicPlaying || this.muted) return;
+        
+        // Require at least the first track to be loaded
+        if (!this.musicTracks[0].loaded) {
+            console.log("First track not loaded yet, waiting...");
+            setTimeout(() => this.startBackgroundMusic(), 500);
+            return;
+        }
         
         try {
             this.playCurrentTrack();
             this.musicPlaying = true;
+            console.log("Background music started");
         } catch (error) {
             console.error("Error starting background music:", error);
         }
@@ -173,6 +206,13 @@ class SoundSystem {
         // Move to next track (loop back to first after the last)
         this.currentTrackIndex = (this.currentTrackIndex + 1) % this.musicTracks.length;
         console.log(`Advancing to track ${this.currentTrackIndex + 1}`);
+        
+        // If the next track isn't loaded yet, try again after a delay
+        if (!this.musicTracks[this.currentTrackIndex].loaded) {
+            console.log(`Next track (${this.currentTrackIndex + 1}) not loaded yet, waiting...`);
+            setTimeout(() => this.playNextTrack(), 1000);
+            return;
+        }
         
         // Play the next track
         this.playCurrentTrack();
