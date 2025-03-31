@@ -7,7 +7,7 @@ const COLORS = {
     sea: [0x00353f, 0x006273, 0x0097b2, 0x5cd9ff, 0xb8ebff],
     sunset: [0xff7b00, 0xff5252, 0xffb56b, 0xff3f00, 0x5c0029],
     dusk: [0x2c1e4a, 0x512b81, 0x7e4e90, 0xc55ffc, 0x9e8ec8],
-    matrix: [0x003b00, 0x008f11, 0x00ff41, 0x30ff70, 0x95ffb8],
+    evangelion: [0x5e3a83, 0xff6600, 0x1c3264, 0x00ff78, 0xfd2323],
     desert: [0xc2956e, 0xe3bc9a, 0xd4a76a, 0x8b5d33, 0xf2dba8],
     tundra: [0xd1fff6, 0xa1ffcc, 0xf0eaff, 0x00e5d5, 0xffd1fc],
 };
@@ -389,7 +389,7 @@ function createFlagPole() {
     const group = new THREE.Group();
     
     // Create a full bamboo stalk that goes all the way to the ground
-    const bambooHeight = 35; // Total height
+    const bambooHeight = 40; // Total height
     const bambooRadius = 1;
 
     // Create bamboo stalk with a more distinctly low-poly look

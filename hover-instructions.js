@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <p>👆 Tap to jump</p>
         <p>🎋 Find the bamboo stalk to move to the next level</p>
         <p>🫧 Avoid bubble monsters, or jump on their heads to smush them!</p>
+        <p>🔺 Each level brings more monsters / faster monsters</p>
         `;
     } else {
         hoverInstructions.innerHTML = `
@@ -15,6 +16,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <p>🚀 Jump with spacebar</p>
         <p>🎋 Find the bamboo stalk to move to the next level</p>
         <p>🫧 Avoid bubble monsters, or jump on their heads to smush them!</p>
+        <p>🔺 Each level brings more monsters / faster monsters</p>
         `;
     }
 

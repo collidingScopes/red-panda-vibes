@@ -358,7 +358,7 @@ function updatePlayerPosition(deltaTime) {
     const dz = player.position.z - flagPole.position.z;
     const horizontalDistanceToGoal = Math.sqrt(dx * dx + dz * dz);
 
-    if (horizontalDistanceToGoal < 2 && !gameState.goalReached) {
+    if (horizontalDistanceToGoal < 2.8 && !gameState.goalReached) {
         gameState.goalReached = true;
         gameState.levelsCompleted ++;
 

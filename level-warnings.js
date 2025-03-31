@@ -9,7 +9,7 @@ class LevelWarnings {
         // Warning messages for specific levels
         this.warnings = {
             2: "☣️ Warning: avoid the evil bubble monsters (or jump on their heads to smush them!) 🫧",
-            3: "🔺 Each level brings more monsters and a harder bamboo to find 🧐",
+            3: "🔺 Each level brings more monsters / faster monsters 😱",
             4: "Keep exploring! There are jetpacks, gameboys, and many other treasures... 👀",
             5: "Tip: find the speed / invisibility powerups to escape from monsters 👻",
         };
