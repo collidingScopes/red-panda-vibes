@@ -304,6 +304,28 @@ class ChangingRoom {
             window.animationController.stopCurrentAnimation();
         }
         
+        // JETPACK FIX: Check if player has a jetpack attached and temporarily remove it
+        let jetpackRef = null;
+        let jetpackScale = null;
+        let jetpackPosition = null;
+        let jetpackRotation = null;
+        
+        if (window.gameState && window.gameState.jetpack && window.gameState.jetpack.isCollected) {
+            jetpackRef = window.gameState.jetpack.object;
+            if (jetpackRef && jetpackRef.parent === this.player) {
+                // Store jetpack properties before removal
+                jetpackScale = jetpackRef.scale.clone();
+                jetpackPosition = jetpackRef.position.clone();
+                jetpackRotation = jetpackRef.rotation.clone();
+                
+                // Remove jetpack from player
+                this.player.remove(jetpackRef);
+                // Add to scene temporarily to preserve it
+                this.scene.add(jetpackRef);
+                jetpackRef.visible = false; // Hide while changing models
+            }
+        }
+        
         // Advance to next model (toggle between Red Panda and Levels)
         this.currentModelIndex = (this.currentModelIndex === 0) ? 1 : 0;
         const newModel = this.modelOptions[this.currentModelIndex];
@@ -362,6 +384,19 @@ class ChangingRoom {
                 // Add the model to the player
                 this.player.add(fbx);
                 
+                // JETPACK FIX: Reattach jetpack to player after model change if it was present
+                if (jetpackRef) {
+                    // Remove from scene
+                    this.scene.remove(jetpackRef);
+                    // Reattach to player
+                    this.player.add(jetpackRef);
+                    // Restore properties
+                    if (jetpackScale) jetpackRef.scale.copy(jetpackScale);
+                    if (jetpackPosition) jetpackRef.position.copy(jetpackPosition);
+                    if (jetpackRotation) jetpackRef.rotation.copy(jetpackRotation);
+                    jetpackRef.visible = true;
+                }
+                
                 // Update the global panda model reference if it exists
                 if (window.setPandaModel) {
                     window.setPandaModel(fbx, fbx.animations || []);
@@ -395,6 +430,16 @@ class ChangingRoom {
                 this.showNotification(`Failed to change model: ${error.message}`, true);
                 // Revert the index since we failed
                 this.currentModelIndex = (this.currentModelIndex === 0) ? 1 : 0;
+                
+                // JETPACK FIX: Make sure to restore jetpack if model loading fails
+                if (jetpackRef) {
+                    this.scene.remove(jetpackRef);
+                    this.player.add(jetpackRef);
+                    if (jetpackScale) jetpackRef.scale.copy(jetpackScale);
+                    if (jetpackPosition) jetpackRef.position.copy(jetpackPosition);
+                    if (jetpackRotation) jetpackRef.rotation.copy(jetpackRotation);
+                    jetpackRef.visible = true;
+                }
             }
         );
     }
