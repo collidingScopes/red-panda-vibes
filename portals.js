@@ -3,45 +3,40 @@
 let numPortalsPerLevel = 1;
 let urlParams = "?portal=true&username=panda&color=red&speed=5&ref=https://collidingscopes.github.io/red-panda-vibes/"
 urlParams += "&avatar_url=https://collidingscopes.github.io/red-panda-vibes/"+pandaModelLocation;
+let isPortalSystemInitialized = false;
 
 function initPortalSystem() {
+    if (isPortalSystemInitialized) {
+        console.log("Portal system already initialized, skipping...");
+        return;
+    }
+
     console.log("Waiting for game initialization...");
     let attempts = 0;
-    const maxAttempts = 30; // Give more time to initialize
-    
-    // Check for game initialization every second
+    const maxAttempts = 30;
+
     const checkInterval = setInterval(() => {
         attempts++;
-        // Look for key game elements
         const canvasExists = document.querySelector('canvas') !== null;
         const gameStarted = document.getElementById('start-game-button')?.classList.contains('hidden') || false;
-        
-        // Log progress to help debug
+
         if (attempts % 5 === 0) {
             console.log(`Portal init attempt ${attempts}/${maxAttempts} - Canvas: ${canvasExists}, Game started: ${gameStarted}`);
-            
-            // Check if scene would be available
             const scene = getGameScene();
             console.log(`Scene available: ${scene !== null}`);
         }
-        
+
         if (canvasExists && gameStarted) {
-            console.log("Game detected as running, creating portals...");
+            console.log("Game detected as running, creating initial portals...");
             clearInterval(checkInterval);
             createPortals();
+            isPortalSystemInitialized = true; // Set flag after successful initialization
             return;
         }
-        
-        // As a fallback, if we've waited too long, try creating portals anyway
-        if (attempts >= maxAttempts && canvasExists) {
-            console.log("Maximum wait time exceeded. Attempting to create portals anyway...");
+
+        if (attempts >= maxAttempts) {
+            console.log("Max attempts reached, stopping portal initialization check.");
             clearInterval(checkInterval);
-            
-            // Allow some extra time for scene to be available
-            setTimeout(() => {
-                console.log("Delayed portal creation starting...");
-                createPortals();
-            }, 2000);
         }
     }, 1000);
 }
@@ -563,67 +558,58 @@ function getGameScene() {
 }
 
 // Create the portals
-function createPortals() {    
-    // Verify if scene is available - very important!
+function createPortals() {
     const scene = getGameScene();
-    if (!scene) {        
-        // Check if we can access the scene via renderer
+    if (!scene) {
+        console.error("Cannot create portals: THREE.js scene not available.");
         if (window.renderer && typeof window.renderer.render === 'function') {
-            // If renderer exists, let's try to inject our scene detection
-            // This is a last resort approach
             const originalRender = window.renderer.render;
             window.renderer.render = function(scene, camera) {
                 if (!window.__scene && scene) {
                     window.__scene = scene;
-                    // Try creating portals again after a short delay
                     setTimeout(createPortals, 500);
                 }
                 return originalRender.call(this, scene, camera);
             };
-            return [];
         }
-        
-        console.error("Cannot create portals: THREE.js scene not available. Portals will not work.");
         return [];
     }
-        
-    // Calculate positions in a circle around the map, but at Y=60
+
+    // Remove any existing portals first
+    if (window.__portals && window.__portals.length > 0) {
+        removeAllPortals();
+    }
+
     const portals = [];
     const portalCount = numPortalsPerLevel;
-    const mapRadius = 50; // Slightly smaller radius for sky portal
-    let randomDistance = 20; // Less random distance for more predictable placement
+    const mapRadius = 50;
+    let randomDistance = 20;
     let portalDestinationsCopy = portalDestinations.slice();
     let selectedPortalDestinations = getRandomUniqueValues(portalDestinationsCopy, portalCount);
 
     for (let i = 0; i < portalCount; i++) {
-        // Calculate angle for even distribution
         const angle = (i / portalCount) * Math.PI * 2;
-        
-        // Calculate position - with fixed Y=60 for sky placement
-        const x = Math.cos(angle) * (mapRadius + Math.random()*randomDistance);
-        const z = Math.sin(angle) * (mapRadius + Math.random()*randomDistance);
+        const x = Math.cos(angle) * (mapRadius + Math.random() * randomDistance);
+        const z = Math.sin(angle) * (mapRadius + Math.random() * randomDistance);
         const position = { x, y: 60, z };
-        
+
         try {
-            // Create the portal
             const portal = new Portal(
                 position,
-                selectedPortalDestinations[i].url+urlParams,
-                COLORS.synthwave[Math.floor((COLORS.synthwave.length-1)*Math.random())],
-                selectedPortalDestinations[i].name,
+                selectedPortalDestinations[i].url + urlParams,
+                COLORS.synthwave[Math.floor((COLORS.synthwave.length - 1) * Math.random())],
+                selectedPortalDestinations[i].name
             );
-            
             portals.push(portal);
         } catch (e) {
             console.error(`Error creating sky portal ${i}:`, e);
         }
-    }    
-    // Setup update loop for portals
+    }
+
     setupPortalUpdates(portals);
-    
-    // Store portals in window for external access
     window.__portals = portals;
-    
+
+    console.log(`Created ${portals.length} new sky portals`);
     return portals;
 }
 
@@ -703,57 +689,4 @@ function getRandomUniqueValues(array, count) {
     
     // Return the first 'count' elements
     return shuffled.slice(0, count);
-}
-
-function isInAppBrowser() {
-    const ua = navigator.userAgent || navigator.vendor || window.opera;
-    
-    // Common patterns for in-app browsers
-    const inAppPatterns = [
-        // X/Twitter
-        'Twitter',
-        'TwitterAndroid',
-        'TwitteriOS',
-        
-        // Facebook
-        'FB_IAB',           // Facebook In-App Browser
-        'FBAN',            // Facebook App Native
-        'FBAV',            // Facebook App Version
-        
-        // Instagram
-        'Instagram',
-        
-        // LinkedIn
-        'LinkedInApp',
-        
-        // Snapchat
-        'Snapchat',
-        
-        // TikTok
-        'TikTok',
-        
-        // Mobile-specific indicators often present with in-app browsers
-        /\bMobile\b.*\bSafari\b/,  // Mobile Safari-like but not standalone
-    ];
-
-    // Check if any pattern matches
-    for (let pattern of inAppPatterns) {
-        if (typeof pattern === 'string') {
-            if (ua.includes(pattern)) return true;
-        } else if (pattern instanceof RegExp) {
-            if (pattern.test(ua)) return true;
-        }
-    }
-
-    // Additional check: window size vs screen size
-    // In-app browsers often have different dimensions due to UI elements
-    const isFullScreen = window.innerHeight === screen.height && 
-                        window.innerWidth === screen.width;
-
-    // Check for standalone browser features that might be absent
-    const isStandalone = ('standalone' in window.navigator) && 
-                        window.navigator.standalone;
-
-    // If it's not full screen and not standalone, might be in-app
-    return !isFullScreen && !isStandalone;
 }

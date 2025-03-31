@@ -476,15 +476,11 @@ function resetGame() {
     }, 1000);
 
     // Remove old portals and create new ones
-    if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
-        window.removeAllPortals();
-        
-        // Create new portals after a short delay
-        setTimeout(() => {
-            if (window.createPortals && typeof window.createPortals === 'function') {
-                window.createPortals();
-            }
-        }, 1000);
+    if (window.removeAllPortals && window.createPortals) {
+        window.removeAllPortals(); // Remove existing portals
+        window.createPortals();    // Immediately create new portals
+    } else {
+        console.warn("Portal functions not available during reset");
     }
     
     if (gameState.changingRoom) {

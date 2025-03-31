@@ -135,18 +135,6 @@ class LevelSystem {
         // Hide level complete screen and reset goal reached state
         document.getElementById('level-complete-content').classList.add('hidden');
         gameState.goalReached = false;
-        
-        // Handle portals for the new level
-        if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
-            window.removeAllPortals();
-        }
-        
-        // Create new portals after a short delay
-        setTimeout(() => {
-            if (window.createPortals && typeof window.createPortals === 'function') {
-                window.createPortals();
-            }
-        }, 1000);
 
         // Remove old trampoline if it exists
         if (gameState.trampoline && gameState.trampoline.object) {
@@ -172,11 +160,6 @@ class LevelSystem {
         
         // Show the level complete screen
         document.getElementById('level-complete-content').classList.remove('hidden');
-    
-        // Remove portals when level is completed
-        if (window.removeAllPortals && typeof window.removeAllPortals === 'function') {
-            window.removeAllPortals();
-        }
 
         // Remove trampoline when level is completed
         if (gameState.trampoline && gameState.trampoline.object) {

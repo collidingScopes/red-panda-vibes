@@ -124,3 +124,56 @@ function resetAllKeyStates() {
       }
   }
 }
+
+function isInAppBrowser() {
+  const ua = navigator.userAgent || navigator.vendor || window.opera;
+  
+  // Common patterns for in-app browsers
+  const inAppPatterns = [
+      // X/Twitter
+      'Twitter',
+      'TwitterAndroid',
+      'TwitteriOS',
+      
+      // Facebook
+      'FB_IAB',           // Facebook In-App Browser
+      'FBAN',            // Facebook App Native
+      'FBAV',            // Facebook App Version
+      
+      // Instagram
+      'Instagram',
+      
+      // LinkedIn
+      'LinkedInApp',
+      
+      // Snapchat
+      'Snapchat',
+      
+      // TikTok
+      'TikTok',
+      
+      // Mobile-specific indicators often present with in-app browsers
+      /\bMobile\b.*\bSafari\b/,  // Mobile Safari-like but not standalone
+  ];
+
+  // Check if any pattern matches
+  for (let pattern of inAppPatterns) {
+      if (typeof pattern === 'string') {
+          if (ua.includes(pattern)) return true;
+      } else if (pattern instanceof RegExp) {
+          if (pattern.test(ua)) return true;
+      }
+  }
+
+  // Additional check: window size vs screen size
+  // In-app browsers often have different dimensions due to UI elements
+  const isFullScreen = window.innerHeight === screen.height && 
+                      window.innerWidth === screen.width;
+
+  // Check for standalone browser features that might be absent
+  const isStandalone = ('standalone' in window.navigator) && 
+                      window.navigator.standalone;
+
+  // If it's not full screen and not standalone, might be in-app
+  return !isFullScreen && !isStandalone;
+}
