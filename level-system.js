@@ -12,10 +12,7 @@ class LevelSystem {
             enemySpeedWander: gameState.speed*0.6,     // Base speed when wandering
             enemySpeedChase: gameState.speed*0.8,      // Base speed when chasing
         };
-        
-        // Create level indicator UI
-        this.createLevelIndicator();
-        
+         
         // Create level completion UI
         this.createLevelCompleteUI();
     }
@@ -107,14 +104,6 @@ class LevelSystem {
         if (window.regenerateTerrain) {
             window.regenerateTerrain();
         }
-    }
-    
-    // Create level indicator UI
-    createLevelIndicator() {
-        const levelIndicator = document.createElement('div');
-        levelIndicator.id = 'level-indicator';
-        levelIndicator.innerHTML = `<span>Level ${gameState.currentLevel}</span>`;
-        document.body.appendChild(levelIndicator);
     }
     
     // Update level indicator text

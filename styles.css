@@ -127,6 +127,15 @@ h2, h3 {
     color: #84ffef; /* Neon cyan */
     background-color: rgba(10, 10, 30, 0.7);
     border: 1px solid #84ffef;
+}
+
+#restart-button {
+    color: #eb84ff; /* Neon cyan */
+    background-color: rgba(10, 10, 30, 0.7);
+    border: 1px solid #eb84ff;
+}
+
+#retry-button, #restart-button {
     padding: 8px;
     font-size: 16px;
     border-radius: 3px;
@@ -138,7 +147,7 @@ h2, h3 {
     margin-bottom: 5px;
 }
 
-#retry-button:hover {
+#retry-button:hover, #restart-button:hover {
     background-color: rgba(132, 255, 239, 0.2); /* Cyan tint */
     color: #ffffff;
     box-shadow: 0 0 10px rgba(132, 255, 239, 0.6); /* Cyan glow */

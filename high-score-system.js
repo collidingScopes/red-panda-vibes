@@ -56,6 +56,12 @@ class HighScoreSystem {
         document.getElementById('retry-button').addEventListener('click', () => {
             resetGame(); // This function is defined in game.js
         });
+
+        document.getElementById('restart-button').addEventListener('click', () => {
+            gameState.currentLevel = 1;
+            document.querySelector("#level-indicator").innerHTML = "Level 1";
+            resetGame();
+        });
     }
     
     // Show the game over screen with high scores
