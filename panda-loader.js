@@ -60,10 +60,6 @@ function createRedPandaPlayer() {
         console.log("use custom yacht glb model");
         avatarUrl = "https://collidingscopes.github.io/red-panda-vibes/assets/customGLB/yacht.glb";
         loadGlbModel(avatarUrl, playerGroup, placeholder);
-    } else if(avatarUrl && avatarUrl.includes("levelsBuff") ){
-        console.log("use custom levels buff glb model");
-        avatarUrl = "https://collidingscopes.github.io/red-panda-vibes/assets/customGLB/levelsBuff.glb";
-        loadGlbModel(avatarUrl, playerGroup, placeholder);
     } else if (avatarUrl && isGlbFile(avatarUrl)) {
         // Use GLTFLoader for GLB files
         loadGlbModel(avatarUrl, playerGroup, placeholder);
