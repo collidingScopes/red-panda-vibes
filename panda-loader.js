@@ -58,7 +58,7 @@ function createRedPandaPlayer() {
     // Determine which loader to use based on avatar URL
     if(avatarUrl && avatarUrl.includes("yacht") ){
         console.log("use custom yacht glb model");
-        avatarUrl = "https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/customGLB/yacht.glb";
+        avatarUrl = "https://collidingScopes.github.io/red-panda-vibes/assets/customGLB/yacht.glb";
         loadGlbModel(avatarUrl, playerGroup, placeholder);
     } else if (avatarUrl && isGlbFile(avatarUrl)) {
         // Use GLTFLoader for GLB files
@@ -92,6 +92,9 @@ function loadGlbModel(modelUrl, playerGroup, placeholder) {
             let animations = gltf.animations || [];
             
             // Apply scale to the model
+            if(modelUrl.includes("yacht")){
+                glbModelScale = 0.25;
+            }
             model.scale.set(glbModelScale, glbModelScale, glbModelScale);
             
             // Center the model
