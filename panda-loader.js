@@ -1,8 +1,7 @@
 // Script to ensure the 3D model loader is initialized correctly
-// Enhanced with support for custom avatar URLs and separate animation files
+// Enhanced with support for GLB and FBX models with separate animation files
 
 let pandaModelLocation = 'assets/pandaFBX/panda.fbx';
-//let pandaModelLocation = 'assets/levelsFBX/levels.fbx';
 let animationFiles = {
     'idle': 'assets/pandaFBX/lookBehind.fbx',
     'jump': 'assets/pandaFBX/jump.fbx',
@@ -15,11 +14,12 @@ let animationFiles = {
     'walkingBackward': 'assets/pandaFBX/walkingBackward.fbx',
 };
 let pandaModelScale = 2.4;
+let glbModelScale = 2.0; // Default scale for GLB models
 
 // Function to parse URL parameters
 function getUrlParameters() {
     const params = new URLSearchParams(window.location.search);
-    console.log("Url params: "+params);
+    console.log("Url params: " + params);
     return {
         avatarUrl: params.get('avatar_url'),
         username: params.get('username'),
@@ -27,7 +27,12 @@ function getUrlParameters() {
     };
 }
 
-// Function to create the red panda player with FBX support and animations
+// Function to determine if a URL is a GLB file
+function isGlbFile(url) {
+    return url && url.toLowerCase().endsWith('.glb');
+}
+
+// Function to create the player with support for both GLB and FBX models
 function createRedPandaPlayer() {
     const playerGroup = new THREE.Group();
     
@@ -36,20 +41,7 @@ function createRedPandaPlayer() {
         return playerGroup;
     }
     
-    // Use FBXLoader instead of GLTFLoader
-    const loader = THREE.FBXLoader ? new THREE.FBXLoader() : null;
-    
-    if (!loader) {
-        console.error('FBXLoader not available, using fallback panda');
-        const fallbackPanda = createBlockPanda();
-        playerGroup.add(fallbackPanda);
-        if (window.setPandaModel) {
-            window.setPandaModel(fallbackPanda, []);
-        }
-        return playerGroup;
-    }
-    
-    // Placeholder remains the same
+    // Create placeholder while loading
     const placeholderGeometry = new THREE.BoxGeometry(0.5, 0.5, 0.5);
     const placeholderMaterial = new THREE.MeshStandardMaterial({ 
         color: 0xff9966,
@@ -61,7 +53,92 @@ function createRedPandaPlayer() {
     playerGroup.add(placeholder);
     
     const params = getUrlParameters();
-    const modelUrl = params.avatarUrl || pandaModelLocation;
+    const avatarUrl = params.avatarUrl;
+    
+    // Determine which loader to use based on avatar URL
+    if (avatarUrl && isGlbFile(avatarUrl)) {
+        // Use GLTFLoader for GLB files
+        loadGlbModel(avatarUrl, playerGroup, placeholder);
+    } else {
+        // Use FBXLoader for FBX files (or fallback)
+        loadFbxModel(avatarUrl || pandaModelLocation, playerGroup, placeholder);
+    }
+    
+    return playerGroup;
+}
+
+// Function to load GLB model using GLTFLoader
+function loadGlbModel(modelUrl, playerGroup, placeholder) {
+    // Check if GLTFLoader is available
+    if (!THREE.GLTFLoader) {
+        console.error('GLTFLoader not available, falling back to FBX');
+        loadFbxModel(pandaModelLocation, playerGroup, placeholder);
+        return;
+    }
+    
+    const loader = new THREE.GLTFLoader();
+    console.log(`Loading GLB model: ${modelUrl}`);
+    
+    loader.load(
+        modelUrl,
+        (gltf) => {
+            console.log('GLB model loaded successfully:', modelUrl);
+            
+            const model = gltf.scene;
+            let animations = gltf.animations || [];
+            
+            // Apply scale to the model
+            model.scale.set(glbModelScale, glbModelScale, glbModelScale);
+            
+            // Center the model
+            const box = new THREE.Box3().setFromObject(model);
+            const center = box.getCenter(new THREE.Vector3());
+            model.position.sub(center);
+            const size = box.getSize(new THREE.Vector3());
+            model.position.y += size.y / 2;
+            
+            // Apply shadows
+            model.traverse((node) => {
+                if (node.isMesh) {
+                    node.castShadow = true;
+                    node.receiveShadow = true;
+                }
+            });
+            
+            playerGroup.add(model);
+            playerGroup.remove(placeholder);
+            
+            // Set the model in the game with its animations
+            if (window.setPandaModel) {
+                window.setPandaModel(model, animations);
+            }
+        },
+        (xhr) => {
+            console.log(`Loading GLB model: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+        },
+        (error) => {
+            console.error('Error loading GLB model:', error);
+            console.log('GLB model failed, falling back to FBX model');
+            loadFbxModel(pandaModelLocation, playerGroup, placeholder);
+        }
+    );
+}
+
+// Function to load FBX model using FBXLoader
+function loadFbxModel(modelUrl, playerGroup, placeholder) {
+    // Check if FBXLoader is available
+    if (!THREE.FBXLoader) {
+        console.error('FBXLoader not available, using fallback panda');
+        const fallbackPanda = createBlockPanda();
+        playerGroup.add(fallbackPanda);
+        playerGroup.remove(placeholder);
+        if (window.setPandaModel) {
+            window.setPandaModel(fallbackPanda, []);
+        }
+        return;
+    }
+    
+    const loader = new THREE.FBXLoader();
     console.log(`Loading FBX model: ${modelUrl}`);
     
     // Load main character model
@@ -73,9 +150,9 @@ function createRedPandaPlayer() {
             const model = fbx;
             let animations = fbx.animations || [];
             
-            // Scale adjustment remains similar
-
-            let modelScale = params.avatarUrl ? 1.5 : pandaModelScale; // Adjust as needed for your FBX
+            // Scale adjustment
+            const isCustomModel = modelUrl !== pandaModelLocation;
+            let modelScale = isCustomModel ? 1.5 : pandaModelScale;
             model.scale.set(modelScale, modelScale, modelScale);
             
             // Center the model
@@ -103,50 +180,17 @@ function createRedPandaPlayer() {
             });
         },
         (xhr) => {
-            console.log(`Loading model: ${(xhr.loaded / xhr.total * 100)}% loaded`);
+            console.log(`Loading FBX model: ${(xhr.loaded / xhr.total * 100)}% loaded`);
         },
         (error) => {
             console.error('Error loading FBX model:', error);
-            // Fallback logic
-            if (params.avatarUrl) {
-                console.log('Custom model failed, trying default...');
-                loader.load(
-                    pandaModelLocation,
-                    (fbx) => {
-                        const model = fbx;
-                        model.scale.set(pandaModelScale, pandaModelScale, pandaModelScale);
-                        const box = new THREE.Box3().setFromObject(model);
-                        const center = box.getCenter(new THREE.Vector3());
-                        model.position.sub(center);
-                        const size = box.getSize(new THREE.Vector3());
-                        model.position.y += size.y / 2;
-                        model.traverse((node) => {
-                            if (node.isMesh) {
-                                node.castShadow = true;
-                                node.receiveShadow = true;
-                            }
-                        });
-                        playerGroup.add(model);
-                        playerGroup.remove(placeholder);
-                        
-                        // Load animations for default model
-                        loadAnimations(model, fbx.animations || [], (combinedAnimations) => {
-                            if (window.setPandaModel) {
-                                window.setPandaModel(model, combinedAnimations);
-                            }
-                        });
-                    },
-                    null,
-                    (secondError) => {
-                        console.error('Default FBX failed:', secondError);
-                        fallbackToBlockPanda();
-                    }
-                );
-            } else {
-                fallbackToBlockPanda();
-            }
             
-            function fallbackToBlockPanda() {
+            // If the custom model failed, try the default
+            if (modelUrl !== pandaModelLocation) {
+                console.log('Custom FBX model failed, trying default panda...');
+                loadFbxModel(pandaModelLocation, playerGroup, placeholder);
+            } else {
+                // If even the default model fails, use block panda
                 console.log('Falling back to block-based panda');
                 const fallbackPanda = createBlockPanda();
                 playerGroup.add(fallbackPanda);
@@ -157,8 +201,6 @@ function createRedPandaPlayer() {
             }
         }
     );
-    
-    return playerGroup;
 }
 
 // Function to load animation files and combine them with the model
@@ -251,4 +293,5 @@ function createBlockPanda() {
     return pandaGroup;
 }
 
+// Execute on script load
 let urlParamsReceived = getUrlParameters();
