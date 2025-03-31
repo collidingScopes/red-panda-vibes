@@ -145,7 +145,7 @@ class LevelSystem {
         // Create a new trampoline for this level
         setTimeout(() => {
             initTrampoline();
-        }, 1000);
+        }, 500);
     }
     
     // Show level complete screen
