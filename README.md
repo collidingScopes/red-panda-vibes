@@ -1,10 +1,12 @@
 # Red Panda Vibes
 
-Be a red panda, explore the world, find the bamboo.
+Be a red panda, explore the world, avoid peril, and find bamboo!
 
-![Red Panda Vibes Game Screenshot](/assets/siteOGImage2.png)
+![Red Panda Vibes Game Screenshot](/assets/pandaSiteOG4.png)
 
-**Live demo: https://collidingscopes.github.io/red-panda-vibes/**
+**Play the game: https://collidingscopes.github.io/red-panda-vibes/**
+
+A free web game (3D platformer) built with three.js.
 
 ## Features
 
@@ -19,5 +21,5 @@ Be a red panda, explore the world, find the bamboo.
 - Built with vanilla JavaScript and Three.js
 - Code mostly written by Claude Sonnet 3.7 and Grok AI
 - Open source repo hosted on Github
-- Red panda 3D model built with Gemini and TripoAI
+- Red panda 3D model built with Gemini, TripoAI, and rigging / animations from Miaxmo
 - Soundtrack made with Suno
