@@ -33,7 +33,7 @@ class HighScoreSystem {
         
         // 2: If not in localStorage, check URL parameters
         if (!this.username && urlParamsReceived && urlParamsReceived.username) {
-            this.username = window.urlParamsReceived.username;
+            this.username = urlParamsReceived.username;
             // Save to localStorage for future use
             localStorage.setItem('redPandaUsername', this.username);
         }
@@ -187,8 +187,8 @@ class HighScoreSystem {
         
         if(localStorage.getItem('redPandaUsername')){
             suggestedUsername = localStorage.getItem('redPandaUsername');
-        } else if (window.urlParamsReceived && window.urlParamsReceived.username) {
-            suggestedUsername = window.urlParamsReceived.username;
+        } else if (urlParamsReceived && urlParamsReceived.username) {
+            suggestedUsername = urlParamsReceived.username;
         } else {
             suggestedUsername = this.generateUsername();
         }
