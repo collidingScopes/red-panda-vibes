@@ -1,6 +1,17 @@
-const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+const isIPad = () => {
+    // For iPadOS 13+
+    const isIPadOS = navigator.maxTouchPoints > 1 && 
+                        navigator.platform === 'MacIntel';
+                        
+    // Traditional iPad detection
+    const isTraditionalIPad = /iPad/i.test(navigator.userAgent);
+
+    return isIPadOS || isTraditionalIPad;
+};
+
+// General mobile detection including fixed iPad detection
+const isMobile = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || isIPad();
 console.log("Mobile check:", isMobile);
-if(isMobile) document.querySelector("#enemy-kill-counter").classList.add("hidden");
 
 // Game state
 const gameState = {
