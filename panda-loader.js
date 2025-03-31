@@ -53,10 +53,14 @@ function createRedPandaPlayer() {
     playerGroup.add(placeholder);
     
     const params = getUrlParameters();
-    const avatarUrl = params.avatarUrl;
+    let avatarUrl = params.avatarUrl;
     
     // Determine which loader to use based on avatar URL
-    if (avatarUrl && isGlbFile(avatarUrl)) {
+    if(avatarUrl && avatarUrl.includes("yacht") ){
+        console.log("use custom yacht glb model");
+        avatarUrl = "https://github.com/collidingScopes/red-panda-vibes/raw/refs/heads/main/assets/customGLB/yacht.glb";
+        loadGlbModel(avatarUrl, playerGroup, placeholder);
+    } else if (avatarUrl && isGlbFile(avatarUrl)) {
         // Use GLTFLoader for GLB files
         loadGlbModel(avatarUrl, playerGroup, placeholder);
     } else {
